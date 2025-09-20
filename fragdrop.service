@@ -1,0 +1,24 @@
+[Unit]
+Description=FragDropDetector - Fragrance Drop Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/source/FragDropDetector
+Environment="PATH=/usr/bin:/usr/local/bin"
+ExecStart=/usr/bin/python3 /home/pi/source/FragDropDetector/main.py
+Restart=always
+RestartSec=30
+
+# Logging
+StandardOutput=append:/home/pi/source/FragDropDetector/logs/systemd.log
+StandardError=append:/home/pi/source/FragDropDetector/logs/systemd.error.log
+
+# Security
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

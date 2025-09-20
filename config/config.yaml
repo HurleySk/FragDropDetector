@@ -1,0 +1,102 @@
+# FragDropDetector Configuration
+
+reddit:
+  subreddit: "MontagneParfums"
+  check_interval: 300  # seconds (5 minutes)
+  post_limit: 50  # Number of posts to check each interval
+
+detection:
+  # Primary keywords that strongly indicate a drop
+  primary_keywords:
+    - drop
+    - dropped
+    - dropping
+    - release
+    - released
+    - available
+    - launch
+    - restock
+    - "in stock"
+    - "now live"
+    - "new fragrance"
+    - "new perfume"
+
+  # Secondary keywords that support detection
+  secondary_keywords:
+    - limited
+    - exclusive
+    - special
+    - pre-order
+    - sale
+    - discount
+    - batch
+    - decant
+    - split
+    - bottle
+    - price
+    - order
+    - link
+
+  # Minimum confidence score to consider as a drop (0.0 to 1.0)
+  confidence_threshold: 0.4
+
+  # Known vendor accounts (Reddit usernames)
+  known_vendors:
+    - montagneparfums
+    - montagne_parfums
+
+notifications:
+  # Test notification on startup
+  send_test_on_start: false
+
+  # Discord configuration
+  discord:
+    enabled: true
+    # Webhook URL will be read from .env file
+
+  # Telegram configuration
+  telegram:
+    enabled: false
+    # Bot token and chat ID will be read from .env file
+
+  # Email configuration
+  email:
+    enabled: false
+    # SMTP settings will be read from .env file
+
+database:
+  # Path to SQLite database (relative to project root)
+  path: "data/fragdrop.db"
+
+  # Keep posts for this many days
+  retention_days: 30
+
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: INFO
+
+  # Log to file
+  file_enabled: true
+  file_path: "logs/fragdrop.log"
+
+  # Maximum log file size before rotation (MB)
+  max_file_size: 10
+
+  # Number of backup log files to keep
+  backup_count: 5
+
+monitoring:
+  # Health check endpoint (for future web dashboard)
+  health_check_enabled: false
+  health_check_port: 8080
+
+advanced:
+  # Rate limiting
+  reddit_rate_limit_delay: 1  # seconds between API calls
+
+  # Retry configuration
+  max_retries: 3
+  retry_delay: 5  # seconds
+
+  # User agent for Reddit API
+  user_agent: "FragDropDetector/1.0 (by /u/YourRedditUsername)"
