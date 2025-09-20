@@ -60,6 +60,7 @@ htmlcov/
 
 # Documentation
 docs/_build/
+SOLUTION_DESIGN.md
 
 # Temporary files
 *.tmp
