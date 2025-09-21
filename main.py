@@ -9,7 +9,8 @@ import sys
 import time
 import logging
 import colorlog
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+import pytz
 from dotenv import load_dotenv
 
 # Add src to path
@@ -17,7 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from services.reddit_client import RedditClient
 from services.drop_detector import DropDetector
-from services.notifiers import DiscordNotifier, TelegramNotifier, EmailNotifier, NotificationManager
+from services.notifiers import FCMNotifier, EmailNotifier, NotificationManager
 from models.database import Database
 
 
@@ -96,20 +97,17 @@ class FragDropMonitor:
 
     def _setup_notifications(self):
         """Setup notification services"""
-        # Discord
-        discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
-        if discord_webhook:
-            self.notification_manager.add_notifier(DiscordNotifier(discord_webhook))
-            self.logger.info("Discord notifications enabled")
-
-        # Telegram
-        telegram_token = os.getenv('TELEGRAM_BOT_TOKEN')
-        telegram_chat = os.getenv('TELEGRAM_CHAT_ID')
-        if telegram_token and telegram_chat:
-            self.notification_manager.add_notifier(
-                TelegramNotifier(telegram_token, telegram_chat)
-            )
-            self.logger.info("Telegram notifications enabled")
+        # Firebase Cloud Messaging
+        fcm_service_account = os.getenv('FCM_SERVICE_ACCOUNT')
+        fcm_topic = os.getenv('FCM_TOPIC', 'fragdrops')
+        if fcm_service_account:
+            self.notification_manager.add_notifier(FCMNotifier(fcm_service_account, fcm_topic))
+            self.logger.info(f"FCM notifications enabled for topic: {fcm_topic}")
+        else:
+            # Try to use default Google Application Credentials
+            if os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
+                self.notification_manager.add_notifier(FCMNotifier(topic=fcm_topic))
+                self.logger.info(f"FCM notifications enabled using default credentials for topic: {fcm_topic}")
 
         # Email
         smtp_server = os.getenv('SMTP_SERVER')
@@ -130,12 +128,60 @@ class FragDropMonitor:
 
         if not self.notification_manager.notifiers:
             self.logger.warning("No notification services configured!")
-            self.logger.warning("Set DISCORD_WEBHOOK_URL or other notification credentials")
+            self.logger.warning("Set FCM_SERVICE_ACCOUNT or other notification credentials")
+
+    def is_drop_window(self):
+        """Check if current time is within Friday 12-5 PM ET window"""
+        et_tz = pytz.timezone('America/New_York')
+        now_et = datetime.now(et_tz)
+
+        # Check if it's Friday (4 = Friday in weekday())
+        if now_et.weekday() != 4:
+            return False
+
+        # Check if between 12 PM and 5 PM
+        if not (12 <= now_et.hour < 17):
+            return False
+
+        return True
+
+    def get_time_until_next_window(self):
+        """Calculate time until next Friday 12 PM ET"""
+        et_tz = pytz.timezone('America/New_York')
+        now_et = datetime.now(et_tz)
+
+        # Find next Friday at 12 PM
+        days_until_friday = (4 - now_et.weekday()) % 7
+        if days_until_friday == 0 and now_et.hour >= 17:
+            # If it's Friday after 5 PM, go to next Friday
+            days_until_friday = 7
+
+        next_window = now_et.replace(hour=12, minute=0, second=0, microsecond=0)
+        next_window = next_window + timedelta(days=days_until_friday)
+
+        if days_until_friday == 0 and now_et.hour < 12:
+            # If it's Friday before noon, window is today
+            next_window = now_et.replace(hour=12, minute=0, second=0, microsecond=0)
+
+        time_diff = next_window - now_et
+        return time_diff.total_seconds()
 
     def check_for_drops(self):
         """Check for new drops"""
+        # Check if we're in the drop window
+        if not self.is_drop_window():
+            et_tz = pytz.timezone('America/New_York')
+            now_et = datetime.now(et_tz)
+            self.logger.info(f"Outside drop window (Friday 12-5 PM ET). Current time: {now_et.strftime('%A %I:%M %p ET')}")
+
+            # Calculate time until next window
+            seconds_until = self.get_time_until_next_window()
+            hours_until = seconds_until / 3600
+            self.logger.info(f"Next drop window in {hours_until:.1f} hours")
+            return
+
         try:
-            self.logger.info(f"Checking r/{self.subreddit} for drops...")
+            self.logger.info(f"🔥 DROP WINDOW ACTIVE - Checking r/{self.subreddit} for drops...")
 
             # Get last check time
             last_check = self.db.get_last_check_time()

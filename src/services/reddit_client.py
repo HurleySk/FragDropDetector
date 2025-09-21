@@ -122,7 +122,7 @@ class RedditClient:
             'title': submission.title,
             'author': str(submission.author) if submission.author else '[deleted]',
             'created_utc': submission.created_utc,
-            'url': f"https://reddit.com{submission.permalink}",
+            'url': f"https://www.reddit.com{submission.permalink}",
             'selftext': submission.selftext,
             'link_flair_text': submission.link_flair_text,
             'score': submission.score,

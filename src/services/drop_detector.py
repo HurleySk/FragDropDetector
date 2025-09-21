@@ -18,11 +18,12 @@ class DropDetector:
 
         # Primary keywords that strongly indicate a drop
         self.primary_keywords = [
+            'restock',  # Most common!
+            'restocked', 'restocking',
             'drop', 'dropped', 'dropping', 'drops',
             'release', 'released', 'releasing',
             'available', 'availability',
             'launch', 'launched', 'launching',
-            'restock', 'restocked', 'restocking',
             'in stock', 'back in stock',
             'now live', 'live now',
             'new fragrance', 'new perfume',
@@ -45,10 +46,28 @@ class DropDetector:
         # Known vendor/brand patterns
         self.vendor_patterns = [
             r'montagne\s*parfums',
+            r'montagne\s*family',  # Common greeting in posts
             r'montagne',
             r'MP\b',
             r'official',
             r'announcement'
+        ]
+
+        # Time patterns that indicate drops
+        self.time_patterns = [
+            r'\d{1,2}\s*pm\s*est',  # "5pm EST", "5 PM EST"
+            r'\d{1,2}\s*pm\s*et',   # Eastern Time variants
+            r'today\s*@',            # "today @"
+            r'today\s*at',           # "today at"
+            r'\d{1,2}/\d{1,2}/\d{2,4}',  # Date format MM/DD/YY
+        ]
+
+        # Known restock authors (high confidence)
+        self.trusted_authors = [
+            'ayybrahamlmaocoln',
+            'wide_parsley1799',
+            'montagneparfums',  # Official account if exists
+            'mpofficial'
         ]
 
         # Exclusion patterns (false positives)
@@ -57,10 +76,13 @@ class DropDetector:
             r'where\s+to\s+buy',
             r'anyone\s+have',
             r'wtb',  # want to buy
+            r'wts',  # want to sell (individual sales, not official)
             r'iso',  # in search of
             r'recommendation',
             r'review',
-            r'thoughts\s+on'
+            r'thoughts\s+on',
+            r'\[wtb\]',
+            r'\[wts\]'  # Exclude personal sales
         ]
 
     def detect_drop(self, post: Dict) -> Tuple[bool, float, Dict]:
@@ -92,14 +114,32 @@ class DropDetector:
             'primary_matches': [],
             'secondary_matches': [],
             'vendor_match': False,
-            'author_reputation': False
+            'author_reputation': False,
+            'time_match': False,
+            'flair_match': None
         }
+
+        # HIGHEST PRIORITY: Check if author is trusted
+        if author in self.trusted_authors:
+            score += 0.6  # Very high confidence for trusted authors
+            metadata['author_reputation'] = True
+            metadata['trusted_author'] = author
+
+        # Check for 'restock' in title (extremely strong signal)
+        if 'restock' in title:
+            score += 0.5
+            metadata['primary_matches'].append('RESTOCK IN TITLE')
+
+        # Check for time patterns (strong signal for drops)
+        if self._has_time_patterns(full_text):
+            score += 0.3
+            metadata['time_match'] = True
 
         # Check primary keywords (high weight)
         primary_matches = self._find_keyword_matches(full_text, self.primary_keywords)
         if primary_matches:
-            score += 0.5 * min(len(primary_matches), 3)  # Cap at 3 matches
-            metadata['primary_matches'] = primary_matches
+            score += 0.2 * min(len(primary_matches), 3)  # Reduced weight since we check restock separately
+            metadata['primary_matches'].extend(primary_matches)
 
         # Check secondary keywords (lower weight)
         secondary_matches = self._find_keyword_matches(full_text, self.secondary_keywords)
@@ -112,15 +152,19 @@ class DropDetector:
             score += 0.3
             metadata['vendor_match'] = True
 
-        # Check if author is a known vendor (you can expand this)
-        if self._is_known_vendor(author):
+        # Additional vendor check if not already caught by trusted authors
+        if not metadata['author_reputation'] and self._is_known_vendor(author):
             score += 0.2
             metadata['author_reputation'] = True
 
-        # Check for flair indicators
-        if flair and any(word in flair for word in ['drop', 'release', 'news', 'announcement']):
-            score += 0.2
-            metadata['flair_match'] = flair
+        # Check for flair indicators (especially ⭐️RESTOCK⭐️)
+        if flair:
+            if 'restock' in flair:
+                score += 0.4  # High weight for restock flair
+                metadata['flair_match'] = flair
+            elif any(word in flair for word in ['drop', 'release', 'news', 'announcement']):
+                score += 0.2
+                metadata['flair_match'] = flair
 
         # Check for links (drops often include purchase links)
         if self._has_purchase_links(text):
@@ -162,14 +206,18 @@ class DropDetector:
                 return True
         return False
 
+    def _has_time_patterns(self, text: str) -> bool:
+        """Check if text contains time-related patterns for drops"""
+        for pattern in self.time_patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                return True
+        return False
+
     def _is_known_vendor(self, author: str) -> bool:
         """Check if author is a known vendor account"""
-        known_vendors = [
-            'montagneparfums',
-            'montagne_parfums',
-            # Add more known vendor accounts as discovered
-        ]
-        return author in known_vendors
+        # This is now mostly handled by trusted_authors
+        # Keep this for backward compatibility
+        return author in self.trusted_authors
 
     def _has_purchase_links(self, text: str) -> bool:
         """Check if text contains purchase-related links"""

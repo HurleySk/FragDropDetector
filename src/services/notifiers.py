@@ -4,9 +4,12 @@ Notification services for FragDropDetector
 
 import logging
 import requests
+import json
 from typing import Dict, List, Optional
 from datetime import datetime
-from discord_webhook import DiscordWebhook, DiscordEmbed
+from pathlib import Path
+import firebase_admin
+from firebase_admin import credentials, messaging
 
 logger = logging.getLogger(__name__)
 
@@ -19,22 +22,39 @@ class NotificationService:
         raise NotImplementedError
 
 
-class DiscordNotifier(NotificationService):
-    """Discord webhook notification service"""
+class FCMNotifier(NotificationService):
+    """Firebase Cloud Messaging notification service"""
 
-    def __init__(self, webhook_url: str):
+    def __init__(self, service_account_path: str = None, topic: str = "fragdrops"):
         """
-        Initialize Discord notifier
+        Initialize FCM notifier
 
         Args:
-            webhook_url: Discord webhook URL
+            service_account_path: Path to Firebase service account JSON file
+            topic: FCM topic name for subscribers (default: "fragdrops")
         """
-        self.webhook_url = webhook_url
-        logger.info("Discord notifier initialized")
+        self.topic = topic
+        self.initialized = False
+
+        try:
+            # Initialize Firebase Admin SDK if not already initialized
+            if not firebase_admin._apps:
+                if service_account_path and Path(service_account_path).exists():
+                    cred = credentials.Certificate(service_account_path)
+                    firebase_admin.initialize_app(cred)
+                else:
+                    # Try default initialization (for environments with GOOGLE_APPLICATION_CREDENTIALS)
+                    firebase_admin.initialize_app()
+
+            self.initialized = True
+            logger.info(f"FCM notifier initialized for topic: {topic}")
+        except Exception as e:
+            logger.error(f"Failed to initialize FCM: {e}")
+            logger.error("Make sure you have set up Firebase service account credentials")
 
     def send(self, drop: Dict) -> bool:
         """
-        Send Discord notification for a drop
+        Send FCM notification for a drop
 
         Args:
             drop: Drop dictionary with metadata
@@ -42,150 +62,90 @@ class DiscordNotifier(NotificationService):
         Returns:
             True if notification sent successfully
         """
+        if not self.initialized:
+            logger.error("FCM not initialized, cannot send notification")
+            return False
+
         try:
-            webhook = DiscordWebhook(url=self.webhook_url)
+            confidence = drop.get('confidence', 0) * 100
+            author = drop.get('author', 'Unknown')
 
-            # Create embed
-            embed = DiscordEmbed(
-                title=drop['title'],
-                description=self._format_description(drop),
-                color='FF6B6B',  # Nice red color for drops
-                url=drop.get('url', ''),
-                timestamp=datetime.utcnow().isoformat()
-            )
+            # Build notification title and body
+            title = f"🚨 Restock Alert: {drop['title'][:50]}"
 
-            # Add fields
-            embed.add_embed_field(
-                name='Author',
-                value=drop.get('author', 'Unknown'),
-                inline=True
-            )
-            embed.add_embed_field(
-                name='Confidence',
-                value=f"{drop.get('confidence', 0) * 100:.0f}%",
-                inline=True
-            )
+            body = f"Author: u/{author}\n"
+            body += f"Confidence: {confidence:.0f}%\n"
 
             # Add keywords if available
             metadata = drop.get('detection_metadata', {})
             if metadata.get('primary_matches'):
                 keywords = ', '.join(metadata['primary_matches'][:3])
-                embed.add_embed_field(
-                    name='Keywords',
-                    value=keywords,
-                    inline=False
-                )
+                body += f"Keywords: {keywords}"
 
-            # Set footer
-            embed.set_footer(
-                text='FragDropDetector',
-                icon_url='https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-180x180.png'
+            # Create the message
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title=title,
+                    body=body,
+                ),
+                data={
+                    'url': drop.get('url', ''),
+                    'author': author,
+                    'confidence': str(confidence),
+                    'drop_id': drop.get('id', ''),
+                },
+                android=messaging.AndroidConfig(
+                    priority='high',
+                    notification=messaging.AndroidNotification(
+                        icon='shopping_cart',
+                        color='#FF6B6B',
+                        sound='default',
+                        click_action='FLUTTER_NOTIFICATION_CLICK',
+                    ),
+                ),
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(
+                            alert=messaging.ApsAlert(
+                                title=title,
+                                body=body,
+                            ),
+                            badge=1,
+                            sound='default',
+                        ),
+                    ),
+                ),
+                topic=self.topic,
             )
 
-            # Add to webhook and send
-            webhook.add_embed(embed)
-            response = webhook.execute()
-
-            if response.status_code == 200:
-                logger.info(f"Discord notification sent for: {drop['title'][:50]}...")
-                return True
-            else:
-                logger.error(f"Discord webhook failed with status {response.status_code}")
-                return False
+            # Send the message
+            response = messaging.send(message)
+            logger.info(f"FCM notification sent for: {drop['title'][:50]}... (ID: {response})")
+            return True
 
         except Exception as e:
-            logger.error(f"Error sending Discord notification: {e}")
+            logger.error(f"Error sending FCM notification: {e}")
             return False
 
-    def _format_description(self, drop: Dict) -> str:
-        """Format drop description for Discord embed"""
-        text = drop.get('selftext', '')
-        if len(text) > 200:
-            text = text[:197] + '...'
-        return text if text else 'Click the link for more details.'
-
     def send_test(self) -> bool:
-        """Send a test notification"""
+        """
+        Send a test notification
+
+        Returns:
+            True if test notification sent successfully
+        """
         test_drop = {
-            'title': 'Test Drop Alert',
-            'author': 'FragDropDetector',
-            'url': 'https://reddit.com',
-            'selftext': 'This is a test notification from FragDropDetector.',
+            'title': 'Test Notification - FragDropDetector',
+            'author': 'TestBot',
             'confidence': 1.0,
+            'url': 'https://reddit.com/r/MontagneParfums',
             'detection_metadata': {
                 'primary_matches': ['test', 'notification']
             }
         }
+
+        logger.info("Sending FCM test notification...")
         return self.send(test_drop)
-
-
-class TelegramNotifier(NotificationService):
-    """Telegram bot notification service"""
-
-    def __init__(self, bot_token: str, chat_id: str):
-        """
-        Initialize Telegram notifier
-
-        Args:
-            bot_token: Telegram bot token
-            chat_id: Chat ID to send notifications to
-        """
-        self.bot_token = bot_token
-        self.chat_id = chat_id
-        self.api_url = f"https://api.telegram.org/bot{bot_token}"
-        logger.info("Telegram notifier initialized")
-
-    def send(self, drop: Dict) -> bool:
-        """
-        Send Telegram notification for a drop
-
-        Args:
-            drop: Drop dictionary with metadata
-
-        Returns:
-            True if notification sent successfully
-        """
-        try:
-            message = self._format_telegram_message(drop)
-
-            payload = {
-                'chat_id': self.chat_id,
-                'text': message,
-                'parse_mode': 'Markdown',
-                'disable_web_page_preview': False
-            }
-
-            response = requests.post(
-                f"{self.api_url}/sendMessage",
-                json=payload
-            )
-
-            if response.status_code == 200:
-                logger.info(f"Telegram notification sent for: {drop['title'][:50]}...")
-                return True
-            else:
-                logger.error(f"Telegram API failed with status {response.status_code}")
-                return False
-
-        except Exception as e:
-            logger.error(f"Error sending Telegram notification: {e}")
-            return False
-
-    def _format_telegram_message(self, drop: Dict) -> str:
-        """Format drop for Telegram message"""
-        message = f"*🚨 FRAGRANCE DROP ALERT*\n\n"
-        message += f"*{drop['title']}*\n"
-        message += f"Author: {drop.get('author', 'Unknown')}\n"
-        message += f"Confidence: {drop.get('confidence', 0) * 100:.0f}%\n"
-
-        metadata = drop.get('detection_metadata', {})
-        if metadata.get('primary_matches'):
-            keywords = ', '.join(metadata['primary_matches'][:3])
-            message += f"Keywords: {keywords}\n"
-
-        message += f"\n[View on Reddit]({drop.get('url', '')})"
-
-        return message
 
 
 class EmailNotifier(NotificationService):

@@ -2,14 +2,17 @@
 
 Automated monitoring system for r/MontagneParfums fragrance drops with real-time notifications.
 
+**🕐 Montagne drops happen Fridays 12-5 PM ET only!** This bot runs exclusively during that window.
+
 ## Features
 
-- 🔍 **Automated Monitoring**: Scans r/MontagneParfums every 5 minutes for new drops
+- 🔍 **Automated Monitoring**: Scans r/MontagneParfums during drop window (Friday 12-5 PM ET)
+- ⏰ **Smart Scheduling**: Only runs during official drop times
 - 🎯 **Smart Detection**: Pattern-based drop detection with confidence scoring
-- 📱 **Multiple Notifications**: Discord, Telegram, and Email support
+- 📱 **Push Notifications**: Firebase Cloud Messaging for reliable alerts
 - 💾 **Database Tracking**: SQLite database for historical data
 - 🚀 **Lightweight**: Perfect for Raspberry Pi deployment
-- ⚡ **Real-time Alerts**: <2 minute notification latency
+- ⚡ **Real-time Alerts**: <2 minute notification latency during drop window
 
 ## Quick Start
 
@@ -17,7 +20,8 @@ Automated monitoring system for r/MontagneParfums fragrance drops with real-time
 
 - Python 3.9+
 - Reddit API credentials
-- Discord webhook URL (recommended)
+- Firebase project with FCM enabled
+- Mobile app with FCM support (for receiving notifications)
 
 ### 2. Installation
 
@@ -45,13 +49,16 @@ cp .env.example .env
 4. Note your `client_id` (under "personal use script")
 5. Note your `client_secret`
 
-### 4. Discord Webhook Setup
+### 4. Notification Setup - Firebase Cloud Messaging
 
-1. Open Discord server settings
-2. Go to Integrations > Webhooks
-3. Click "New Webhook"
-4. Name it "FragDropDetector"
-5. Copy the webhook URL
+1. Create a Firebase project at https://console.firebase.google.com/
+2. Go to Project Settings > Service Accounts
+3. Click "Generate new private key" to download service account JSON
+4. Save the JSON file and note its path
+5. In your mobile app, subscribe to the topic: **`fragdrops`**
+6. Update `.env` with the path to your service account JSON file
+
+**Note**: You'll need to build a mobile app or use a web app that supports FCM to receive notifications.
 
 ### 5. Configuration
 
@@ -61,7 +68,10 @@ Edit `.env` file:
 # Required
 REDDIT_CLIENT_ID=your_client_id
 REDDIT_CLIENT_SECRET=your_secret
-DISCORD_WEBHOOK_URL=your_webhook_url
+
+# Firebase Cloud Messaging
+FCM_SERVICE_ACCOUNT=path/to/firebase-service-account.json
+FCM_TOPIC=fragdrops  # Topic name for subscribers
 
 # Optional
 SUBREDDIT=MontagneParfums
@@ -74,9 +84,14 @@ CHECK_INTERVAL=300
 # Test run (single check)
 python main.py --once
 
-# Continuous monitoring
+# Continuous monitoring (will wait until Friday 12-5 PM ET)
 python main.py
 ```
+
+**Note**: The bot will only check for drops during the official window:
+- **Day**: Friday only
+- **Time**: 12:00 PM - 5:00 PM Eastern Time
+- Outside this window, it will sleep and show when the next window opens
 
 ## Advanced Setup
 
@@ -95,17 +110,6 @@ sudo systemctl start fragdrop.service
 
 # Check status
 sudo systemctl status fragdrop.service
-```
-
-### Telegram Notifications
-
-1. Create bot with @BotFather
-2. Get bot token
-3. Get your chat ID
-4. Add to `.env`:
-```env
-TELEGRAM_BOT_TOKEN=your_token
-TELEGRAM_CHAT_ID=your_chat_id
 ```
 
 ### Email Notifications

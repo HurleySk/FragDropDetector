@@ -49,15 +49,10 @@ notifications:
   # Test notification on startup
   send_test_on_start: false
 
-  # Discord configuration
-  discord:
+  # Firebase Cloud Messaging configuration
+  fcm:
     enabled: true
-    # Webhook URL will be read from .env file
-
-  # Telegram configuration
-  telegram:
-    enabled: false
-    # Bot token and chat ID will be read from .env file
+    # Service account path and topic will be read from .env file
 
   # Email configuration
   email:

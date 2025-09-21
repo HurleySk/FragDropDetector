@@ -52,7 +52,7 @@ class Notification(Base):
 
     id = Column(Integer, primary_key=True)
     drop_id = Column(Integer, nullable=False, index=True)
-    method = Column(String(50))  # discord, telegram, email
+    method = Column(String(50))  # ntfy, telegram, email
     status = Column(String(50))  # sent, failed, pending
     error_message = Column(Text)
     sent_at = Column(DateTime)
