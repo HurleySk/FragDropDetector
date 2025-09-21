@@ -49,10 +49,15 @@ notifications:
   # Test notification on startup
   send_test_on_start: false
 
-  # Firebase Cloud Messaging configuration
-  fcm:
+  # Pushover configuration (Best for iOS)
+  pushover:
     enabled: true
-    # Service account path and topic will be read from .env file
+    # Credentials will be read from .env file
+
+  # Discord webhook configuration
+  discord:
+    enabled: false
+    # Webhook URL will be read from .env file
 
   # Email configuration
   email:

@@ -12,9 +12,6 @@ uvicorn==0.24.0
 # HTTP Requests (for notifications)
 requests==2.31.0
 
-# Firebase Cloud Messaging
-firebase-admin==6.1.0
-
 # Environment Variables
 python-dotenv==1.0.0
 

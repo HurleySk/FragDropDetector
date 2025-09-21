@@ -8,8 +8,6 @@ import json
 from typing import Dict, List, Optional
 from datetime import datetime
 from pathlib import Path
-import firebase_admin
-from firebase_admin import credentials, messaging
 
 logger = logging.getLogger(__name__)
 
@@ -22,178 +20,150 @@ class NotificationService:
         raise NotImplementedError
 
 
-class FCMNotifier(NotificationService):
-    """Firebase Cloud Messaging notification service"""
+class PushoverNotifier(NotificationService):
+    """Pushover notification service - Best for iOS"""
 
-    def __init__(self, service_account_path: str = None, topic: str = "fragdrops"):
-        """
-        Initialize FCM notifier
-
-        Args:
-            service_account_path: Path to Firebase service account JSON file
-            topic: FCM topic name for subscribers (default: "fragdrops")
-        """
-        self.topic = topic
-        self.initialized = False
-
-        try:
-            # Initialize Firebase Admin SDK if not already initialized
-            if not firebase_admin._apps:
-                if service_account_path and Path(service_account_path).exists():
-                    cred = credentials.Certificate(service_account_path)
-                    firebase_admin.initialize_app(cred)
-                else:
-                    # Try default initialization (for environments with GOOGLE_APPLICATION_CREDENTIALS)
-                    firebase_admin.initialize_app()
-
-            self.initialized = True
-            logger.info(f"FCM notifier initialized for topic: {topic}")
-        except Exception as e:
-            logger.error(f"Failed to initialize FCM: {e}")
-            logger.error("Make sure you have set up Firebase service account credentials")
+    def __init__(self, app_token: str, user_key: str):
+        """Initialize Pushover notifier"""
+        self.app_token = app_token
+        self.user_key = user_key
+        logger.info("Pushover notifier initialized")
 
     def send(self, drop: Dict) -> bool:
-        """
-        Send FCM notification for a drop
-
-        Args:
-            drop: Drop dictionary with metadata
-
-        Returns:
-            True if notification sent successfully
-        """
-        if not self.initialized:
-            logger.error("FCM not initialized, cannot send notification")
-            return False
-
+        """Send notification via Pushover"""
         try:
-            confidence = drop.get('confidence', 0) * 100
-            author = drop.get('author', 'Unknown')
+            title = f"🚨 FragDrop: {drop.get('author', 'Unknown')}"
+            message = f"{drop['title'][:100]}\n\nConfidence: {drop.get('confidence', 0) * 100:.0f}%"
 
-            # Build notification title and body
-            title = f"🚨 Restock Alert: {drop['title'][:50]}"
+            data = {
+                "token": self.app_token,
+                "user": self.user_key,
+                "title": title,
+                "message": message,
+                "url": drop.get("url", ""),
+                "url_title": "View on Reddit",
+                "priority": 1,  # High priority (bypasses quiet hours)
+                "sound": "cashregister"
+            }
 
-            body = f"Author: u/{author}\n"
-            body += f"Confidence: {confidence:.0f}%\n"
-
-            # Add keywords if available
-            metadata = drop.get('detection_metadata', {})
-            if metadata.get('primary_matches'):
-                keywords = ', '.join(metadata['primary_matches'][:3])
-                body += f"Keywords: {keywords}"
-
-            # Create the message
-            message = messaging.Message(
-                notification=messaging.Notification(
-                    title=title,
-                    body=body,
-                ),
-                data={
-                    'url': drop.get('url', ''),
-                    'author': author,
-                    'confidence': str(confidence),
-                    'drop_id': drop.get('id', ''),
-                },
-                android=messaging.AndroidConfig(
-                    priority='high',
-                    notification=messaging.AndroidNotification(
-                        icon='shopping_cart',
-                        color='#FF6B6B',
-                        sound='default',
-                        click_action='FLUTTER_NOTIFICATION_CLICK',
-                    ),
-                ),
-                apns=messaging.APNSConfig(
-                    payload=messaging.APNSPayload(
-                        aps=messaging.Aps(
-                            alert=messaging.ApsAlert(
-                                title=title,
-                                body=body,
-                            ),
-                            badge=1,
-                            sound='default',
-                        ),
-                    ),
-                ),
-                topic=self.topic,
+            response = requests.post(
+                "https://api.pushover.net/1/messages.json",
+                data=data,
+                timeout=10
             )
 
-            # Send the message
-            response = messaging.send(message)
-            logger.info(f"FCM notification sent for: {drop['title'][:50]}... (ID: {response})")
-            return True
+            if response.status_code == 200:
+                logger.info(f"Pushover notification sent for: {drop['title'][:50]}...")
+                return True
+            else:
+                logger.error(f"Pushover API error: {response.text}")
+                return False
 
         except Exception as e:
-            logger.error(f"Error sending FCM notification: {e}")
+            logger.error(f"Error sending Pushover notification: {e}")
             return False
 
-    def send_test(self) -> bool:
-        """
-        Send a test notification
 
-        Returns:
-            True if test notification sent successfully
-        """
-        test_drop = {
-            'title': 'Test Notification - FragDropDetector',
-            'author': 'TestBot',
-            'confidence': 1.0,
-            'url': 'https://reddit.com/r/MontagneParfums',
-            'detection_metadata': {
-                'primary_matches': ['test', 'notification']
+class DiscordWebhookNotifier(NotificationService):
+    """Discord webhook notification service"""
+
+    def __init__(self, webhook_url: str):
+        """Initialize Discord notifier"""
+        self.webhook_url = webhook_url
+        logger.info("Discord webhook notifier initialized")
+
+    def send(self, drop: Dict) -> bool:
+        """Send notification to Discord"""
+        try:
+            # Build embed
+            confidence = drop.get('confidence', 0) * 100
+            metadata = drop.get('detection_metadata', {})
+            keywords = ', '.join(metadata.get('primary_matches', [])[:3]) if metadata.get('primary_matches') else 'N/A'
+
+            embed = {
+                "title": f"🚨 {drop['title'][:100]}",
+                "url": drop.get('url', ''),
+                "color": 16725806,  # Red color
+                "author": {
+                    "name": f"u/{drop.get('author', 'Unknown')}",
+                    "url": f"https://reddit.com/u/{drop.get('author', '')}"
+                },
+                "fields": [
+                    {
+                        "name": "Confidence",
+                        "value": f"{confidence:.0f}%",
+                        "inline": True
+                    },
+                    {
+                        "name": "Keywords",
+                        "value": keywords,
+                        "inline": True
+                    }
+                ],
+                "footer": {
+                    "text": "FragDropDetector"
+                },
+                "timestamp": datetime.utcnow().isoformat()
             }
-        }
 
-        logger.info("Sending FCM test notification...")
-        return self.send(test_drop)
+            # Build message
+            payload = {
+                "content": "@everyone New fragrance drop detected!",
+                "embeds": [embed]
+            }
+
+            # Send webhook
+            response = requests.post(
+                self.webhook_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+
+            if response.status_code in [200, 204]:
+                logger.info(f"Discord notification sent for: {drop['title'][:50]}...")
+                return True
+            else:
+                logger.error(f"Discord webhook error: {response.status_code} - {response.text}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error sending Discord notification: {e}")
+            return False
 
 
 class EmailNotifier(NotificationService):
     """Email notification service"""
 
-    def __init__(self, smtp_server: str, smtp_port: int, sender: str,
-                 password: str, recipients: List[str]):
-        """
-        Initialize email notifier
-
-        Args:
-            smtp_server: SMTP server address
-            smtp_port: SMTP server port
-            sender: Sender email address
-            password: Sender email password
-            recipients: List of recipient email addresses
-        """
+    def __init__(self, smtp_server: str, smtp_port: int, sender: str, password: str, recipients: List[str]):
+        """Initialize email notifier"""
+        import smtplib
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
         self.sender = sender
         self.password = password
         self.recipients = recipients
-        logger.info("Email notifier initialized")
+        logger.info(f"Email notifier initialized with {len(recipients)} recipients")
 
     def send(self, drop: Dict) -> bool:
-        """
-        Send email notification for a drop
-
-        Args:
-            drop: Drop dictionary with metadata
-
-        Returns:
-            True if notification sent successfully
-        """
+        """Send email notification"""
         import smtplib
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
 
         try:
+            # Create message
             msg = MIMEMultipart('alternative')
-            msg['Subject'] = f"FragDrop Alert: {drop['title'][:50]}"
+            msg['Subject'] = f"🚨 FragDrop Alert: {drop['title'][:50]}..."
             msg['From'] = self.sender
             msg['To'] = ', '.join(self.recipients)
 
             # Create HTML content
-            html = self._format_email_html(drop)
-            part = MIMEText(html, 'html')
-            msg.attach(part)
+            html_content = self._format_email_html(drop)
+
+            # Attach HTML
+            html_part = MIMEText(html_content, 'html')
+            msg.attach(html_part)
 
             # Send email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:

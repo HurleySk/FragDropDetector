@@ -62,6 +62,26 @@ htmlcov/
 docs/_build/
 SOLUTION_DESIGN.md
 
+# Firebase / Cloud Service Files
+firebase-service-account.json
+*-service-account.json
+*.serviceaccount.json
+service-account-*.json
+
+# Test files
+test_*.py
+*_test.py
+
+# Claude artifacts
+.claude/
+claude.md
+CLAUDE.md
+*.claude.*
+
+# Pushover test files
+test_pushover.py
+test_fcm.py
+
 # Temporary files
 *.tmp
 *.bak
