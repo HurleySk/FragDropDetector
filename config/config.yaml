@@ -56,7 +56,7 @@ notifications:
 
   # Discord webhook configuration
   discord:
-    enabled: false
+    enabled: true
     # Webhook URL will be read from .env file
 
   # Email configuration

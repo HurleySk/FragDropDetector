@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from services.reddit_client import RedditClient
 from services.drop_detector import DropDetector
-from services.notifiers import FCMNotifier, EmailNotifier, NotificationManager
+from services.notifiers import PushoverNotifier, DiscordWebhookNotifier, EmailNotifier, NotificationManager
 from models.database import Database
 
 
@@ -97,17 +97,18 @@ class FragDropMonitor:
 
     def _setup_notifications(self):
         """Setup notification services"""
-        # Firebase Cloud Messaging
-        fcm_service_account = os.getenv('FCM_SERVICE_ACCOUNT')
-        fcm_topic = os.getenv('FCM_TOPIC', 'fragdrops')
-        if fcm_service_account:
-            self.notification_manager.add_notifier(FCMNotifier(fcm_service_account, fcm_topic))
-            self.logger.info(f"FCM notifications enabled for topic: {fcm_topic}")
-        else:
-            # Try to use default Google Application Credentials
-            if os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
-                self.notification_manager.add_notifier(FCMNotifier(topic=fcm_topic))
-                self.logger.info(f"FCM notifications enabled using default credentials for topic: {fcm_topic}")
+        # Pushover (iOS)
+        pushover_token = os.getenv('PUSHOVER_APP_TOKEN')
+        pushover_user = os.getenv('PUSHOVER_USER_KEY')
+        if pushover_token and pushover_user and pushover_token != 'your_app_token_here':
+            self.notification_manager.add_notifier(PushoverNotifier(pushover_token, pushover_user))
+            self.logger.info("Pushover notifications enabled")
+
+        # Discord Webhook
+        discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
+        if discord_webhook and discord_webhook != 'paste_your_webhook_url_here':
+            self.notification_manager.add_notifier(DiscordWebhookNotifier(discord_webhook))
+            self.logger.info("Discord webhook notifications enabled")
 
         # Email
         smtp_server = os.getenv('SMTP_SERVER')
@@ -128,7 +129,7 @@ class FragDropMonitor:
 
         if not self.notification_manager.notifiers:
             self.logger.warning("No notification services configured!")
-            self.logger.warning("Set FCM_SERVICE_ACCOUNT or other notification credentials")
+            self.logger.warning("Set PUSHOVER or DISCORD credentials in .env")
 
     def is_drop_window(self):
         """Check if current time is within Friday 12-5 PM ET window"""
