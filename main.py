@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from services.reddit_client import RedditClient
 from services.drop_detector import DropDetector
 from services.notifiers import PushoverNotifier, DiscordWebhookNotifier, EmailNotifier, NotificationManager
+from services.stock_monitor import StockMonitor
 from models.database import Database
 
 
@@ -70,6 +71,7 @@ class FragDropMonitor:
         self.detector = DropDetector()
         self.db = Database()
         self.notification_manager = NotificationManager()
+        self.stock_monitor = StockMonitor()
 
         # Configuration
         self.subreddit = os.getenv('SUBREDDIT', 'MontagneParfums')
@@ -85,6 +87,11 @@ class FragDropMonitor:
         self.drop_window_start_minute = self.drop_window_config.get('start_minute', 0)
         self.drop_window_end_hour = self.drop_window_config.get('end_hour', 17)
         self.drop_window_end_minute = self.drop_window_config.get('end_minute', 0)
+
+        # Stock monitoring configuration
+        self.stock_config = self.config.get('stock_monitoring', {})
+        self.stock_enabled = self.stock_config.get('enabled', True)
+        self.stock_notifications = self.stock_config.get('notifications', {})
 
         self._setup_reddit_client()
         self._setup_notifications()
@@ -305,6 +312,125 @@ class FragDropMonitor:
         except Exception as e:
             self.logger.error(f"Error during drop check: {e}")
 
+    def check_stock_changes(self):
+        """Check for stock changes on Montagne Parfums website"""
+        if not self.stock_enabled:
+            return
+
+        # Check if we're in the drop window (same as Reddit monitoring)
+        if not self.is_drop_window():
+            return
+
+        try:
+            self.logger.info("DROP WINDOW ACTIVE - Checking Montagne Parfums stock...")
+
+            # Get current stock from website
+            current_stock = self.stock_monitor.get_current_stock()
+            if not current_stock:
+                self.logger.warning("Failed to retrieve current stock")
+                return
+
+            # Get previous stock from database
+            previous_stock_data = self.db.get_all_fragrances()
+
+            # Convert database format to stock monitor format for comparison
+            previous_stock = {}
+            for slug, data in previous_stock_data.items():
+                previous_stock[slug] = type('Product', (), {
+                    'name': data['name'],
+                    'url': data['url'],
+                    'price': data['price'],
+                    'in_stock': data['in_stock'],
+                    'slug': slug
+                })()
+
+            # Save current stock to database
+            for slug, product in current_stock.items():
+                self.db.save_fragrance_stock(product.to_dict())
+
+            # Compare and find changes
+            if previous_stock:
+                changes = self.stock_monitor.compare_stock(previous_stock, current_stock)
+
+                if any(changes.values()):
+                    self.logger.info(self.stock_monitor.format_changes_summary(changes))
+
+                    # Process and notify about changes
+                    self._process_stock_changes(changes)
+                else:
+                    self.logger.info("No stock changes detected")
+            else:
+                self.logger.info(f"Initial stock scan complete - tracking {len(current_stock)} products")
+
+        except Exception as e:
+            self.logger.error(f"Error during stock check: {e}")
+
+    def _process_stock_changes(self, changes):
+        """Process stock changes and send notifications"""
+        notifications_to_send = []
+
+        # New products
+        if changes['new_products'] and self.stock_notifications.get('new_products', True):
+            for product in changes['new_products']:
+                self.db.save_stock_change({
+                    'fragrance_slug': product.slug,
+                    'change_type': 'new',
+                    'new_value': product.name
+                })
+                notifications_to_send.append({
+                    'title': f'New Fragrance: {product.name}',
+                    'url': f"https://www.montagneparfums.com{product.url}",
+                    'price': product.price,
+                    'change_type': 'new_product'
+                })
+
+        # Restocked products
+        if changes['restocked'] and self.stock_notifications.get('restocked_products', True):
+            for product in changes['restocked']:
+                self.db.save_stock_change({
+                    'fragrance_slug': product.slug,
+                    'change_type': 'restocked',
+                    'new_value': 'In Stock'
+                })
+                notifications_to_send.append({
+                    'title': f'Restocked: {product.name}',
+                    'url': f"https://www.montagneparfums.com{product.url}",
+                    'price': product.price,
+                    'change_type': 'restock'
+                })
+
+        # Price changes
+        if changes['price_changes'] and self.stock_notifications.get('price_changes', False):
+            for change in changes['price_changes']:
+                product = change['product']
+                self.db.save_stock_change({
+                    'fragrance_slug': product.slug,
+                    'change_type': 'price_change',
+                    'old_value': change['old_price'],
+                    'new_value': change['new_price']
+                })
+                notifications_to_send.append({
+                    'title': f'Price Change: {product.name}',
+                    'url': f"https://www.montagneparfums.com{product.url}",
+                    'price': f"{change['old_price']} → {change['new_price']}",
+                    'change_type': 'price_change'
+                })
+
+        # Send notifications
+        for notification in notifications_to_send:
+            # Format as drop-like notification for compatibility
+            drop_notification = {
+                'title': notification['title'],
+                'author': 'Stock Monitor',
+                'url': notification['url'],
+                'confidence': 1.0,
+                'detection_metadata': {
+                    'change_type': notification['change_type'],
+                    'price': notification['price']
+                }
+            }
+            self.notification_manager.send_notifications(drop_notification)
+
     def run(self):
         """Run the monitor"""
         self.logger.info("Starting FragDropMonitor...")
@@ -321,6 +447,7 @@ class FragDropMonitor:
         try:
             while True:
                 self.check_for_drops()
+                self.check_stock_changes()
                 self.logger.info(f"Next check in {self.check_interval} seconds...")
                 time.sleep(self.check_interval)
 
@@ -332,6 +459,7 @@ class FragDropMonitor:
         """Run a single check (for testing)"""
         self.logger.info("Running single check...")
         self.check_for_drops()
+        self.check_stock_changes()
         self.logger.info("Single check complete")
 
 

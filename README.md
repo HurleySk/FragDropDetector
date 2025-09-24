@@ -6,15 +6,30 @@ Automated monitoring system for r/MontagneParfums fragrance drops with real-time
 
 ## Features
 
+### Core Monitoring
 - **Automated Monitoring**: Scans r/MontagneParfums during configured drop windows
-- **Configurable Schedule**: Set custom days, times, and timezone via web UI
-- **Web Configuration Interface**: Easy setup and management through local web server
+- **Stock Monitoring**: Tracks Montagne Parfums website for inventory changes
+- **Unified Scheduling**: Both Reddit and stock monitoring use same drop window for simplicity
 - **Smart Detection**: Pattern-based drop detection with confidence scoring
-- **Multiple Notifications**: Pushover (iOS), Discord webhooks, and Email support
-- **Database Tracking**: SQLite database for historical data
-- **Mobile-Optimized UI**: Responsive web interface works on all devices
-- **Lightweight**: Perfect for Raspberry Pi deployment
 - **Real-time Alerts**: <2 minute notification latency during drop window
+
+### Web Interface & Configuration
+- **Modern Web UI**: Separated HTML/CSS/JavaScript with responsive design
+- **Input Validation**: Pydantic-based validation for all API endpoints
+- **Health Checks**: `/health`, `/health/ready`, `/health/live` endpoints for monitoring
+- **Structured Logging**: Memory-conscious log rotation (10MB files, 3 backups)
+- **Mobile-Optimized**: Works perfectly on phones and tablets
+
+### Notifications & Data
+- **Multiple Notifications**: Pushover (iOS), Discord webhooks, and Email support
+- **Database Tracking**: SQLite database for historical drops and stock changes
+- **API Endpoints**: RESTful API for all configuration and data access
+- **Error Handling**: Comprehensive error handling with structured logging
+
+### Deployment & Reliability
+- **Memory Efficient**: Log rotation and optimized for resource-constrained devices
+- **Raspberry Pi Ready**: Lightweight architecture perfect for Pi deployment
+- **Production Ready**: Health checks, proper error handling, input validation
 
 ## Quick Start
 
@@ -109,7 +124,7 @@ python main.py
 python web_server.py
 ```
 
-Access web interface at: http://localhost:8000
+Access web interface at: http://localhost:8080
 
 **Note**: Default drop window is Fridays 12-5 PM ET. Configure via web interface or config.yaml.
 
@@ -121,17 +136,23 @@ Access web interface at: http://localhost:8000
 python web_server.py
 ```
 
-Then access: http://localhost:8000
+Then access: http://localhost:8080
 
-From other devices on network: http://[raspberry-pi-ip]:8000
+From other devices on network: http://[raspberry-pi-ip]:8080
 
 ### Web Interface Features
 
+- **Modern Architecture**: Separated HTML/CSS/JavaScript with clean FastAPI backend
+- **Input Validation**: All API endpoints use Pydantic validation for security
+- **Health Monitoring**: Health check endpoints at `/health`, `/health/ready`, `/health/live`
+- **Structured Logging**: Automatic log rotation (10MB files, 3 backups max)
 - **Drop Window Configuration**: Set active days, times, and timezone
+- **Stock Monitoring**: Configure website inventory tracking with notifications
 - **Detection Settings**: Customize keywords and confidence thresholds
 - **Notification Management**: Configure and test notification services
-- **Live Statistics**: View drop count, recent detections
+- **Live Statistics**: View drop count, recent detections, stock changes
 - **Mobile Optimized**: Responsive design for phones and tablets
+- **Error Handling**: Comprehensive error handling with user-friendly messages
 
 ### Finding Your Raspberry Pi IP
 

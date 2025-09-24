@@ -8,9 +8,14 @@ alembic==1.13.0
 # Web Framework (for future API/Dashboard)
 fastapi==0.104.1
 uvicorn==0.24.0
+jinja2==3.1.2
+aiofiles==23.2.1
 
 # HTTP Requests (for notifications)
 requests==2.31.0
+
+# HTML Parsing (for stock monitoring)
+beautifulsoup4==4.13.5
 
 # Environment Variables
 python-dotenv==1.0.0
@@ -26,6 +31,7 @@ pyyaml==6.0.1
 
 # Logging
 colorlog==6.7.0
+structlog==24.1.0
 
 # Date/Time handling
 python-dateutil==2.8.2

@@ -1,0 +1,371 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 10px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    body {
+        padding: 20px;
+    }
+}
+
+.header {
+    text-align: center;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
+}
+
+.header p {
+    font-size: 0.95em;
+    opacity: 0.9;
+}
+
+@media (min-width: 768px) {
+    .header {
+        margin-bottom: 30px;
+    }
+    .header h1 {
+        font-size: 2.5em;
+    }
+    .header p {
+        font-size: 1.1em;
+    }
+}
+
+.status-bar {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+@media (min-width: 768px) {
+    .status-bar {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .status-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+}
+
+.status-item {
+    text-align: center;
+}
+
+.status-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.status-label {
+    color: #666;
+    margin-top: 5px;
+    font-size: 0.85em;
+}
+
+@media (min-width: 768px) {
+    .status-value {
+        font-size: 2em;
+    }
+    .status-label {
+        font-size: 1em;
+    }
+}
+
+.config-section {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    font-size: 1.2em;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+@media (min-width: 768px) {
+    .config-section {
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .section-header {
+        font-size: 1.5em;
+        margin-bottom: 20px;
+    }
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    -webkit-appearance: none;
+}
+
+@media (min-width: 768px) {
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 10px;
+        font-size: 14px;
+    }
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+@media (min-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+}
+
+.btn {
+    background: #667eea;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s;
+    min-height: 44px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+@media (min-width: 768px) {
+    .btn {
+        width: auto;
+        padding: 10px 20px;
+        margin-bottom: 0;
+        margin-right: 10px;
+    }
+}
+
+.btn:hover {
+    background: #5a67d8;
+}
+
+.btn-secondary {
+    background: #48bb78;
+}
+
+.btn-secondary:hover {
+    background: #38a169;
+}
+
+.btn-danger {
+    background: #f56565;
+}
+
+.btn-danger:hover {
+    background: #e53e3e;
+}
+
+.alert {
+    padding: 12px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.alert.success {
+    background: #c6f6d5;
+    color: #22543d;
+    border: 1px solid #9ae6b4;
+}
+
+.alert.error {
+    background: #fed7d7;
+    color: #742a2a;
+    border: 1px solid #fc8181;
+}
+
+.alert.info {
+    background: #bee3f8;
+    color: #2a4e7c;
+    border: 1px solid #90cdf4;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+@media (min-width: 768px) {
+    .badge {
+        font-size: 12px;
+        margin-left: 10px;
+    }
+}
+
+.badge.active {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.badge.inactive {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.drops-list {
+    max-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.drop-item {
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+@media (min-width: 768px) {
+    .drops-list {
+        max-height: 400px;
+    }
+    .drop-item {
+        padding: 15px;
+    }
+}
+
+.drop-title {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 5px;
+}
+
+.drop-meta {
+    color: #718096;
+    font-size: 14px;
+}
+
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+input[type="checkbox"] {
+    -webkit-appearance: checkbox !important;
+    -moz-appearance: checkbox !important;
+    appearance: checkbox !important;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: static !important;
+}
+
+input[type="time"],
+input[type="number"] {
+    min-height: 44px;
+}
+
+select {
+    background: white url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") no-repeat right 10px center;
+    background-size: 16px;
+    padding-right: 35px;
+}
+
+/* Ensure buttons don't overlap on mobile */
+.form-group {
+    margin-bottom: 20px;
+}
+
+/* Better touch targets for mobile */
+@media (max-width: 767px) {
+    input, select, textarea, button {
+        min-height: 44px;
+    }
+
+    .btn + .btn {
+        margin-top: 10px;
+    }
+}
+
+/* Smooth scrolling for iOS */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.info-text {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -1,116 +1,77 @@
-# FragDropDetector Configuration
-
-reddit:
-  subreddit: "MontagneParfums"
-  check_interval: 300  # seconds (5 minutes)
-  post_limit: 50  # Number of posts to check each interval
-
-drop_window:
-  # Drop window schedule configuration
-  enabled: true  # Set to false to disable time window restrictions
-  timezone: "America/New_York"  # Timezone for the drop window (ET)
-
-  # Days of week (0=Monday, 1=Tuesday, ..., 4=Friday, 6=Sunday)
-  days_of_week: [4]  # Friday only by default
-
-  # Time window (24-hour format)
-  start_hour: 12  # 12:00 PM
-  start_minute: 0
-  end_hour: 17    # 5:00 PM (17:00 in 24-hour)
-  end_minute: 0
-
-detection:
-  # Primary keywords that strongly indicate a drop
-  primary_keywords:
-    - drop
-    - dropped
-    - dropping
-    - release
-    - released
-    - available
-    - launch
-    - restock
-    - "in stock"
-    - "now live"
-    - "new fragrance"
-    - "new perfume"
-
-  # Secondary keywords that support detection
-  secondary_keywords:
-    - limited
-    - exclusive
-    - special
-    - pre-order
-    - sale
-    - discount
-    - batch
-    - decant
-    - split
-    - bottle
-    - price
-    - order
-    - link
-
-  # Minimum confidence score to consider as a drop (0.0 to 1.0)
-  confidence_threshold: 0.4
-
-  # Known vendor accounts (Reddit usernames)
-  known_vendors:
-    - montagneparfums
-    - montagne_parfums
-
-notifications:
-  # Test notification on startup
-  send_test_on_start: false
-
-  # Pushover configuration (Best for iOS)
-  pushover:
-    enabled: true
-    # Credentials will be read from .env file
-
-  # Discord webhook configuration
-  discord:
-    enabled: true
-    # Webhook URL will be read from .env file
-
-  # Email configuration
-  email:
-    enabled: false
-    # SMTP settings will be read from .env file
-
+advanced:
+  max_retries: 3
+  reddit_rate_limit_delay: 1
+  retry_delay: 5
+  user_agent: FragDropDetector/1.0 (by /u/YourRedditUsername)
 database:
-  # Path to SQLite database (relative to project root)
-  path: "data/fragdrop.db"
-
-  # Keep posts for this many days
+  path: data/fragdrop.db
   retention_days: 30
-
+detection:
+  confidence_threshold: 0.4
+  known_vendors:
+  - montagneparfums
+  - montagne_parfums
+  primary_keywords:
+  - drop
+  - dropped
+  - dropping
+  - release
+  - released
+  - available
+  - launch
+  - restock
+  - in stock
+  - now live
+  - new fragrance
+  - new perfume
+  secondary_keywords:
+  - limited
+  - exclusive
+  - special
+  - pre-order
+  - sale
+  - discount
+  - batch
+  - decant
+  - split
+  - bottle
+  - price
+  - order
+  - link
+drop_window:
+  days_of_week:
+  - 4
+  enabled: true
+  end_hour: 18
+  end_minute: 0
+  start_hour: 12
+  start_minute: 0
+  timezone: America/New_York
 logging:
-  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
-  level: INFO
-
-  # Log to file
-  file_enabled: true
-  file_path: "logs/fragdrop.log"
-
-  # Maximum log file size before rotation (MB)
-  max_file_size: 10
-
-  # Number of backup log files to keep
   backup_count: 5
-
+  file_enabled: true
+  file_path: logs/fragdrop.log
+  level: INFO
+  max_file_size: 10
 monitoring:
-  # Health check endpoint (for future web dashboard)
   health_check_enabled: false
   health_check_port: 8080
-
-advanced:
-  # Rate limiting
-  reddit_rate_limit_delay: 1  # seconds between API calls
-
-  # Retry configuration
-  max_retries: 3
-  retry_delay: 5  # seconds
-
-  # User agent for Reddit API
-  user_agent: "FragDropDetector/1.0 (by /u/YourRedditUsername)"
+notifications:
+  discord:
+    enabled: true
+  email:
+    enabled: false
+  pushover:
+    enabled: true
+  send_test_on_start: false
+reddit:
+  check_interval: 300
+  post_limit: 50
+  subreddit: MontagneParfums
+stock_monitoring:
+  enabled: true
+  notifications:
+    new_products: true
+    out_of_stock: false
+    price_changes: false
+    restocked_products: true

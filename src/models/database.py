@@ -69,6 +69,35 @@ class Setting(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class FragranceStock(Base):
+    """Fragrance stock tracking model"""
+    __tablename__ = 'fragrance_stock'
+
+    id = Column(Integer, primary_key=True)
+    slug = Column(String(100), nullable=False, index=True)
+    name = Column(String(300), nullable=False)
+    url = Column(String(500), nullable=False)
+    price = Column(String(20))
+    in_stock = Column(Boolean, default=True, index=True)
+    first_seen = Column(DateTime, default=datetime.utcnow)
+    last_seen = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class StockChange(Base):
+    """Stock change history model"""
+    __tablename__ = 'stock_changes'
+
+    id = Column(Integer, primary_key=True)
+    fragrance_slug = Column(String(100), nullable=False, index=True)
+    change_type = Column(String(50), nullable=False)  # 'new', 'restocked', 'out_of_stock', 'price_change', 'removed'
+    old_value = Column(String(500))  # Previous price or stock status
+    new_value = Column(String(500))  # New price or stock status
+    detected_at = Column(DateTime, default=datetime.utcnow)
+    notified = Column(Boolean, default=False)
+
+
 class Database:
     """Database manager class"""
 
@@ -271,5 +300,110 @@ class Database:
                     'metadata': json.loads(drop.detection_metadata) if drop.detection_metadata else {}
                 })
             return result
+        finally:
+            session.close()
+
+    def save_fragrance_stock(self, fragrance_data: dict):
+        """Save or update fragrance stock data"""
+        session = self.get_session()
+        try:
+            slug = fragrance_data['slug']
+            existing = session.query(FragranceStock).filter_by(slug=slug).first()
+
+            if existing:
+                # Update existing record
+                existing.name = fragrance_data['name']
+                existing.url = fragrance_data['url']
+                existing.price = fragrance_data['price']
+                existing.in_stock = fragrance_data['in_stock']
+                existing.last_seen = datetime.utcnow()
+                existing.updated_at = datetime.utcnow()
+            else:
+                # Create new record
+                fragrance = FragranceStock(
+                    slug=slug,
+                    name=fragrance_data['name'],
+                    url=fragrance_data['url'],
+                    price=fragrance_data['price'],
+                    in_stock=fragrance_data['in_stock']
+                )
+                session.add(fragrance)
+
+            session.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error saving fragrance stock: {e}")
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+    def save_stock_change(self, change_data: dict):
+        """Save a stock change event"""
+        session = self.get_session()
+        try:
+            change = StockChange(
+                fragrance_slug=change_data['fragrance_slug'],
+                change_type=change_data['change_type'],
+                old_value=change_data.get('old_value'),
+                new_value=change_data.get('new_value')
+            )
+            session.add(change)
+            session.commit()
+            return change.id
+        except Exception as e:
+            logger.error(f"Error saving stock change: {e}")
+            session.rollback()
+            return None
+        finally:
+            session.close()
+
+    def get_fragrance_count(self) -> int:
+        """Get total number of fragrances tracked"""
+        session = self.get_session()
+        try:
+            count = session.query(FragranceStock).count()
+            return count
+        finally:
+            session.close()
+
+    def get_recent_stock_changes(self, limit: int = 10) -> list:
+        """Get recent stock changes"""
+        session = self.get_session()
+        try:
+            changes = session.query(StockChange, FragranceStock).join(
+                FragranceStock, StockChange.fragrance_slug == FragranceStock.slug
+            ).order_by(StockChange.detected_at.desc()).limit(limit).all()
+
+            result = []
+            for change, fragrance in changes:
+                result.append({
+                    'id': change.id,
+                    'fragrance_name': fragrance.name,
+                    'fragrance_slug': fragrance.slug,
+                    'change_type': change.change_type,
+                    'old_value': change.old_value,
+                    'new_value': change.new_value,
+                    'detected_at': change.detected_at.isoformat(),
+                    'notified': change.notified
+                })
+            return result
+        finally:
+            session.close()
+
+    def get_all_fragrances(self) -> dict:
+        """Get all fragrances as dict keyed by slug"""
+        session = self.get_session()
+        try:
+            fragrances = session.query(FragranceStock).all()
+            return {
+                f.slug: {
+                    'name': f.name,
+                    'url': f.url,
+                    'price': f.price,
+                    'in_stock': f.in_stock,
+                    'last_seen': f.last_seen.isoformat()
+                } for f in fragrances
+            }
         finally:
             session.close()

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>FragDropDetector Configuration</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>FragDropDetector</h1>
+            <p>Configuration & Monitoring Dashboard</p>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <div class="status-bar">
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-value" id="status-drops">0</div>
+                    <div class="status-label">Drops Detected</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="status-posts">0</div>
+                    <div class="status-label">Posts Processed</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="status-fragrances">0</div>
+                    <div class="status-label">Fragrances Tracked</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="status-stock-changes">0</div>
+                    <div class="status-label">Recent Stock Changes</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="status-next">--</div>
+                    <div class="status-label">Next Window</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="status-notifications">
+                        <span id="notification-badges"></span>
+                    </div>
+                    <div class="status-label">Notifications</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h2 class="section-header">Reddit Configuration</h2>
+            <form id="reddit-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Client ID</label>
+                        <input type="text" id="reddit-client-id" placeholder="Your Reddit App Client ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Secret</label>
+                        <input type="password" id="reddit-client-secret" placeholder="Your Reddit App Client Secret">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Subreddit</label>
+                        <input type="text" id="reddit-subreddit" value="MontagneParfums">
+                    </div>
+                    <div class="form-group">
+                        <label>Check Interval (seconds)</label>
+                        <input type="number" id="reddit-interval" value="300" min="60">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <button type="button" class="btn" onclick="testRedditConnection()">Test Connection</button>
+                        <button type="submit" class="btn btn-secondary">Save Reddit Settings</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="config-section">
+            <h2 class="section-header">Notification Services</h2>
+            <form id="notification-form">
+                <h3 style="margin-bottom: 15px; color: #4a5568;">Pushover (iOS)</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>App Token</label>
+                        <input type="text" id="pushover-app-token" placeholder="Your Pushover App Token">
+                    </div>
+                    <div class="form-group">
+                        <label>User Key</label>
+                        <input type="text" id="pushover-user-key" placeholder="Your Pushover User Key">
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0 15px; color: #4a5568;">Discord Webhook</h3>
+                <div class="form-group">
+                    <label>Webhook URL</label>
+                    <input type="text" id="discord-webhook" placeholder="https://discord.com/api/webhooks/...">
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <button type="button" class="btn" onclick="testNotifications()">Test Notifications</button>
+                        <button type="submit" class="btn btn-secondary">Save Notification Settings</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="config-section">
+            <h2 class="section-header">Drop Window Schedule</h2>
+            <form id="window-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Window Checking</label>
+                        <select id="window-enabled">
+                            <option value="true">Enabled (Check during specific times)</option>
+                            <option value="false">Disabled (Check 24/7)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Timezone</label>
+                        <select id="window-timezone">
+                            <option value="America/New_York">Eastern Time (ET)</option>
+                            <option value="America/Chicago">Central Time (CT)</option>
+                            <option value="America/Denver">Mountain Time (MT)</option>
+                            <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                            <option value="UTC">UTC</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Days of Week</label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-0" value="0" style="margin-right: 8px;"> Monday</label>
+                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-1" value="1" style="margin-right: 8px;"> Tuesday</label>
+                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-2" value="2" style="margin-right: 8px;"> Wednesday</label>
+                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-3" value="3" style="margin-right: 8px;"> Thursday</label>
+                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-4" value="4" checked style="margin-right: 8px;"> Friday</label>
+                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-5" value="5" style="margin-right: 8px;"> Saturday</label>
+                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-6" value="6" style="margin-right: 8px;"> Sunday</label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="time" id="window-start-time" value="12:00">
+                    </div>
+                    <div class="form-group">
+                        <label>End Time</label>
+                        <input type="time" id="window-end-time" value="17:00">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-secondary">Save Drop Window Settings</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="config-section">
+            <h2 class="section-header">Detection Keywords</h2>
+            <form id="detection-form">
+                <div class="form-group">
+                    <label>Primary Keywords (one per line)</label>
+                    <textarea id="primary-keywords" rows="5">drop
+dropped
+release
+available
+launch</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Secondary Keywords (one per line)</label>
+                    <textarea id="secondary-keywords" rows="5">limited
+exclusive
+sale
+batch
+decant</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Confidence Threshold</label>
+                    <input type="number" id="confidence-threshold" value="0.4" min="0" max="1" step="0.1">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-secondary">Save Detection Settings</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="config-section">
+            <h2 class="section-header">Stock Monitoring</h2>
+            <p class="info-text">Stock monitoring runs during the same drop window schedule as Reddit monitoring for simplicity.</p>
+            <form id="stock-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="stock-enabled" name="enabled">
+                            <span class="checkmark"></span>
+                            Enable Stock Monitoring
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Notify on:</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="notify-new-products" name="new_products">
+                                <span class="checkmark"></span>
+                                New Products
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="notify-restocked" name="restocked_products">
+                                <span class="checkmark"></span>
+                                Restocked Products
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="notify-price-changes" name="price_changes">
+                                <span class="checkmark"></span>
+                                Price Changes
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="notify-out-of-stock" name="out_of_stock">
+                                <span class="checkmark"></span>
+                                Out of Stock
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-secondary">Save Stock Monitoring Settings</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="config-section">
+            <h2 class="section-header">Stock Changes</h2>
+            <div class="drops-list" id="stock-changes-list">
+                <p style="color: #718096;">Loading recent stock changes...</p>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h2 class="section-header">Recent Drops</h2>
+            <div class="drops-list" id="drops-list">
+                <p style="color: #718096;">Loading recent drops...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
