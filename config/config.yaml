@@ -5,6 +5,20 @@ reddit:
   check_interval: 300  # seconds (5 minutes)
   post_limit: 50  # Number of posts to check each interval
 
+drop_window:
+  # Drop window schedule configuration
+  enabled: true  # Set to false to disable time window restrictions
+  timezone: "America/New_York"  # Timezone for the drop window (ET)
+
+  # Days of week (0=Monday, 1=Tuesday, ..., 4=Friday, 6=Sunday)
+  days_of_week: [4]  # Friday only by default
+
+  # Time window (24-hour format)
+  start_hour: 12  # 12:00 PM
+  start_minute: 0
+  end_hour: 17    # 5:00 PM (17:00 in 24-hour)
+  end_minute: 0
+
 detection:
   # Primary keywords that strongly indicate a drop
   primary_keywords:

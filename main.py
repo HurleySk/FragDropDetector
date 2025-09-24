@@ -9,6 +9,7 @@ import sys
 import time
 import logging
 import colorlog
+import yaml
 from datetime import datetime, timezone, timedelta
 import pytz
 from dotenv import load_dotenv
@@ -61,6 +62,9 @@ class FragDropMonitor:
         # Load environment variables
         load_dotenv()
 
+        # Load YAML configuration
+        self.config = self._load_yaml_config()
+
         # Initialize components
         self.reddit_client = None
         self.detector = DropDetector()
@@ -72,8 +76,26 @@ class FragDropMonitor:
         self.check_interval = int(os.getenv('CHECK_INTERVAL', '300'))  # 5 minutes default
         self.post_limit = int(os.getenv('POST_LIMIT', '50'))
 
+        # Drop window configuration
+        self.drop_window_config = self.config.get('drop_window', {})
+        self.drop_window_enabled = self.drop_window_config.get('enabled', True)
+        self.drop_window_timezone = self.drop_window_config.get('timezone', 'America/New_York')
+        self.drop_window_days = self.drop_window_config.get('days_of_week', [4])  # Default Friday
+        self.drop_window_start_hour = self.drop_window_config.get('start_hour', 12)
+        self.drop_window_start_minute = self.drop_window_config.get('start_minute', 0)
+        self.drop_window_end_hour = self.drop_window_config.get('end_hour', 17)
+        self.drop_window_end_minute = self.drop_window_config.get('end_minute', 0)
+
         self._setup_reddit_client()
         self._setup_notifications()
+
+    def _load_yaml_config(self):
+        """Load configuration from config.yaml"""
+        config_path = os.path.join(os.path.dirname(__file__), 'config', 'config.yaml')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                return yaml.safe_load(f)
+        return {}
 
     def _setup_reddit_client(self):
         """Setup Reddit client"""
@@ -132,48 +154,96 @@ class FragDropMonitor:
             self.logger.warning("Set PUSHOVER or DISCORD credentials in .env")
 
     def is_drop_window(self):
-        """Check if current time is within Friday 12-5 PM ET window"""
-        et_tz = pytz.timezone('America/New_York')
-        now_et = datetime.now(et_tz)
+        """Check if current time is within configured drop window"""
+        # If window checking is disabled, always return True
+        if not self.drop_window_enabled:
+            return True
 
-        # Check if it's Friday (4 = Friday in weekday())
-        if now_et.weekday() != 4:
+        tz = pytz.timezone(self.drop_window_timezone)
+        now = datetime.now(tz)
+
+        # Check if it's one of the configured days
+        if now.weekday() not in self.drop_window_days:
             return False
 
-        # Check if between 12 PM and 5 PM
-        if not (12 <= now_et.hour < 17):
-            return False
+        # Create time objects for comparison
+        current_time = now.time()
+        start_time = datetime.now().replace(
+            hour=self.drop_window_start_hour,
+            minute=self.drop_window_start_minute,
+            second=0,
+            microsecond=0
+        ).time()
+        end_time = datetime.now().replace(
+            hour=self.drop_window_end_hour,
+            minute=self.drop_window_end_minute,
+            second=0,
+            microsecond=0
+        ).time()
 
-        return True
+        # Check if current time is within window
+        return start_time <= current_time < end_time
 
     def get_time_until_next_window(self):
-        """Calculate time until next Friday 12 PM ET"""
-        et_tz = pytz.timezone('America/New_York')
-        now_et = datetime.now(et_tz)
+        """Calculate time until next configured drop window"""
+        if not self.drop_window_enabled:
+            return 0  # If disabled, window is always "now"
 
-        # Find next Friday at 12 PM
-        days_until_friday = (4 - now_et.weekday()) % 7
-        if days_until_friday == 0 and now_et.hour >= 17:
-            # If it's Friday after 5 PM, go to next Friday
-            days_until_friday = 7
+        tz = pytz.timezone(self.drop_window_timezone)
+        now = datetime.now(tz)
 
-        next_window = now_et.replace(hour=12, minute=0, second=0, microsecond=0)
-        next_window = next_window + timedelta(days=days_until_friday)
+        # Find the next occurrence of a configured day
+        min_days_until = 7
+        for day in self.drop_window_days:
+            days_until = (day - now.weekday()) % 7
 
-        if days_until_friday == 0 and now_et.hour < 12:
-            # If it's Friday before noon, window is today
-            next_window = now_et.replace(hour=12, minute=0, second=0, microsecond=0)
+            # Check if it's today and we haven't passed the end time
+            if days_until == 0:
+                current_time = now.time()
+                end_time = datetime.now().replace(
+                    hour=self.drop_window_end_hour,
+                    minute=self.drop_window_end_minute,
+                    second=0,
+                    microsecond=0
+                ).time()
 
-        time_diff = next_window - now_et
+                if current_time >= end_time:
+                    # Already passed today's window, look at next week
+                    days_until = 7
+
+            min_days_until = min(min_days_until, days_until)
+
+        # Calculate the next window start time
+        next_window = now.replace(
+            hour=self.drop_window_start_hour,
+            minute=self.drop_window_start_minute,
+            second=0,
+            microsecond=0
+        )
+
+        if min_days_until == 0 and now.hour < self.drop_window_start_hour:
+            # Window is today but hasn't started yet
+            pass
+        else:
+            next_window = next_window + timedelta(days=min_days_until if min_days_until > 0 else 7)
+
+        time_diff = next_window - now
         return time_diff.total_seconds()
 
     def check_for_drops(self):
         """Check for new drops"""
         # Check if we're in the drop window
         if not self.is_drop_window():
-            et_tz = pytz.timezone('America/New_York')
-            now_et = datetime.now(et_tz)
-            self.logger.info(f"Outside drop window (Friday 12-5 PM ET). Current time: {now_et.strftime('%A %I:%M %p ET')}")
+            tz = pytz.timezone(self.drop_window_timezone)
+            now = datetime.now(tz)
+
+            # Format the days for display
+            day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            configured_days = ', '.join([day_names[d] for d in sorted(self.drop_window_days)])
+
+            window_time = f"{self.drop_window_start_hour:02d}:{self.drop_window_start_minute:02d}-{self.drop_window_end_hour:02d}:{self.drop_window_end_minute:02d}"
+
+            self.logger.info(f"Outside drop window ({configured_days} {window_time} {self.drop_window_timezone}). Current time: {now.strftime('%A %I:%M %p %Z')}")
 
             # Calculate time until next window
             seconds_until = self.get_time_until_next_window()

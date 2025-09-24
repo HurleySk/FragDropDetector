@@ -63,6 +63,16 @@ class PushoverNotifier(NotificationService):
             logger.error(f"Error sending Pushover notification: {e}")
             return False
 
+    def send_test(self) -> bool:
+        """Send a test notification via Pushover"""
+        test_drop = {
+            'title': 'Test Notification - FragDropDetector',
+            'author': 'System',
+            'confidence': 1.0,
+            'url': 'https://reddit.com/r/MontagneParfums'
+        }
+        return self.send(test_drop)
+
 
 class DiscordWebhookNotifier(NotificationService):
     """Discord webhook notification service"""
@@ -130,6 +140,19 @@ class DiscordWebhookNotifier(NotificationService):
         except Exception as e:
             logger.error(f"Error sending Discord notification: {e}")
             return False
+
+    def send_test(self) -> bool:
+        """Send a test notification to Discord"""
+        test_drop = {
+            'title': 'Test Notification - FragDropDetector',
+            'author': 'System',
+            'confidence': 1.0,
+            'url': 'https://reddit.com/r/MontagneParfums',
+            'detection_metadata': {
+                'primary_matches': ['test', 'notification']
+            }
+        }
+        return self.send(test_drop)
 
 
 class EmailNotifier(NotificationService):

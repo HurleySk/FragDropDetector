@@ -230,3 +230,46 @@ class Database:
             session.rollback()
         finally:
             session.close()
+
+    def get_drop_count(self) -> int:
+        """Get total number of drops detected"""
+        session = self.get_session()
+        try:
+            count = session.query(Drop).count()
+            return count
+        finally:
+            session.close()
+
+    def get_post_count(self) -> int:
+        """Get total number of posts processed"""
+        session = self.get_session()
+        try:
+            count = session.query(Post).count()
+            return count
+        finally:
+            session.close()
+
+    def get_recent_drops(self, limit: int = 10) -> list:
+        """Get recent drops with post information"""
+        import json
+        session = self.get_session()
+        try:
+            drops = session.query(Drop, Post).join(
+                Post, Drop.post_reddit_id == Post.reddit_id
+            ).order_by(Drop.created_at.desc()).limit(limit).all()
+
+            result = []
+            for drop, post in drops:
+                result.append({
+                    'id': drop.id,
+                    'title': post.title,
+                    'author': post.author,
+                    'url': post.url,
+                    'confidence': drop.confidence_score,
+                    'created_at': drop.created_at.isoformat(),
+                    'notified': drop.notified,
+                    'metadata': json.loads(drop.detection_metadata) if drop.detection_metadata else {}
+                })
+            return result
+        finally:
+            session.close()

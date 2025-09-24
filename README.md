@@ -1,18 +1,20 @@
 # FragDropDetector
 
-Automated monitoring system for r/MontagneParfums fragrance drops with real-time notifications.
+Automated monitoring system for r/MontagneParfums fragrance drops with real-time notifications and web configuration interface.
 
-**🕐 Montagne drops happen Fridays 12-5 PM ET only!** This bot runs exclusively during that window.
+**Default: Fridays 12-5 PM ET** - Fully configurable via web interface.
 
 ## Features
 
-- 🔍 **Automated Monitoring**: Scans r/MontagneParfums during drop window (Friday 12-5 PM ET)
-- ⏰ **Smart Scheduling**: Only runs during official drop times
-- 🎯 **Smart Detection**: Pattern-based drop detection with confidence scoring
-- 📱 **Push Notifications**: Firebase Cloud Messaging for reliable alerts
-- 💾 **Database Tracking**: SQLite database for historical data
-- 🚀 **Lightweight**: Perfect for Raspberry Pi deployment
-- ⚡ **Real-time Alerts**: <2 minute notification latency during drop window
+- **Automated Monitoring**: Scans r/MontagneParfums during configured drop windows
+- **Configurable Schedule**: Set custom days, times, and timezone via web UI
+- **Web Configuration Interface**: Easy setup and management through local web server
+- **Smart Detection**: Pattern-based drop detection with confidence scoring
+- **Multiple Notifications**: Pushover (iOS), Discord webhooks, and Email support
+- **Database Tracking**: SQLite database for historical data
+- **Mobile-Optimized UI**: Responsive web interface works on all devices
+- **Lightweight**: Perfect for Raspberry Pi deployment
+- **Real-time Alerts**: <2 minute notification latency during drop window
 
 ## Quick Start
 
@@ -20,8 +22,10 @@ Automated monitoring system for r/MontagneParfums fragrance drops with real-time
 
 - Python 3.9+
 - Reddit API credentials
-- Firebase project with FCM enabled
-- Mobile app with FCM support (for receiving notifications)
+- At least one notification service:
+  - Pushover account ($4.99 iOS app) - Recommended for iPhone users
+  - Discord server with webhook access
+  - Email account with app-specific password
 
 ### 2. Installation
 
@@ -49,16 +53,29 @@ cp .env.example .env
 4. Note your `client_id` (under "personal use script")
 5. Note your `client_secret`
 
-### 4. Notification Setup - Firebase Cloud Messaging
+### 4. Notification Setup
 
-1. Create a Firebase project at https://console.firebase.google.com/
-2. Go to Project Settings > Service Accounts
-3. Click "Generate new private key" to download service account JSON
-4. Save the JSON file and note its path
-5. In your mobile app, subscribe to the topic: **`fragdrops`**
-6. Update `.env` with the path to your service account JSON file
+#### Pushover (Recommended for iOS)
+1. Sign up at https://pushover.net
+2. Create an application in Pushover
+3. Note your User Key and Application Token
+4. Add to `.env`:
+   ```
+   PUSHOVER_USER_KEY=your_user_key
+   PUSHOVER_APP_TOKEN=your_app_token
+   ```
 
-**Note**: You'll need to build a mobile app or use a web app that supports FCM to receive notifications.
+#### Discord Webhook
+1. In your Discord server, go to Server Settings > Integrations
+2. Create a new webhook
+3. Copy the webhook URL
+4. Add to `.env`:
+   ```
+   DISCORD_WEBHOOK_URL=your_webhook_url
+   ```
+
+#### Email
+Configure in `.env` - see Email Notifications section below.
 
 ### 5. Configuration
 
@@ -69,9 +86,10 @@ Edit `.env` file:
 REDDIT_CLIENT_ID=your_client_id
 REDDIT_CLIENT_SECRET=your_secret
 
-# Firebase Cloud Messaging
-FCM_SERVICE_ACCOUNT=path/to/firebase-service-account.json
-FCM_TOPIC=fragdrops  # Topic name for subscribers
+# Notification Services (at least one required)
+PUSHOVER_USER_KEY=your_user_key
+PUSHOVER_APP_TOKEN=your_app_token
+DISCORD_WEBHOOK_URL=your_webhook_url
 
 # Optional
 SUBREDDIT=MontagneParfums
@@ -84,14 +102,42 @@ CHECK_INTERVAL=300
 # Test run (single check)
 python main.py --once
 
-# Continuous monitoring (will wait until Friday 12-5 PM ET)
+# Continuous monitoring
 python main.py
+
+# Run web configuration interface
+python web_server.py
 ```
 
-**Note**: The bot will only check for drops during the official window:
-- **Day**: Friday only
-- **Time**: 12:00 PM - 5:00 PM Eastern Time
-- Outside this window, it will sleep and show when the next window opens
+Access web interface at: http://localhost:8000
+
+**Note**: Default drop window is Fridays 12-5 PM ET. Configure via web interface or config.yaml.
+
+## Web Configuration Interface
+
+### Starting the Web Server
+
+```bash
+python web_server.py
+```
+
+Then access: http://localhost:8000
+
+From other devices on network: http://[raspberry-pi-ip]:8000
+
+### Web Interface Features
+
+- **Drop Window Configuration**: Set active days, times, and timezone
+- **Detection Settings**: Customize keywords and confidence thresholds
+- **Notification Management**: Configure and test notification services
+- **Live Statistics**: View drop count, recent detections
+- **Mobile Optimized**: Responsive design for phones and tablets
+
+### Finding Your Raspberry Pi IP
+
+```bash
+hostname -I
+```
 
 ## Advanced Setup
 
@@ -227,4 +273,4 @@ Built with:
 - PRAW (Python Reddit API Wrapper)
 - SQLAlchemy
 - Discord Webhooks
-- Love for fragrances 💝
+- Love for fragrances
