@@ -1,0 +1,398 @@
+/* FragDropDetector - Dashboard Components */
+
+/* Dashboard animations */
+.dashboard-page {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Status cards grid */
+.status-overview {
+    margin-bottom: var(--space-8);
+}
+
+/* Status card component */
+.status-card {
+    text-align: center;
+    position: relative;
+    padding: var(--space-4);
+    transition: all 0.15s ease;
+    margin-bottom: 0;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.status-card-icon {
+    width: 40px;
+    height: 40px;
+    background-color: var(--blue-50);
+    border-radius: var(--rounded);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-3);
+    font-size: var(--text-xl);
+}
+
+.status-value {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--gray-900);
+    margin-bottom: var(--space-2);
+    line-height: 1;
+}
+
+.status-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* System health components */
+.health-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.health-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-4);
+    background-color: var(--gray-50);
+    border-radius: var(--rounded);
+    transition: background-color 0.15s ease;
+}
+
+.health-item:hover {
+    background-color: var(--gray-100);
+}
+
+.health-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: var(--space-4);
+    flex-shrink: 0;
+}
+
+.health-indicator.healthy {
+    background-color: var(--green-600);
+}
+
+.health-indicator.unhealthy {
+    background-color: var(--red-600);
+}
+
+.health-indicator.warning {
+    background-color: var(--amber-600);
+}
+
+.health-info {
+    flex: 1;
+}
+
+.health-name {
+    font-weight: var(--font-medium);
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+}
+
+.health-status {
+    font-size: var(--text-xs);
+    color: var(--gray-500);
+}
+
+/* Notification services */
+.notification-services {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.service-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-4);
+    background-color: var(--gray-50);
+    border-radius: var(--rounded);
+    transition: background-color 0.15s ease;
+}
+
+.service-item:hover {
+    background-color: var(--gray-100);
+}
+
+.service-icon {
+    width: 40px;
+    height: 40px;
+    background-color: var(--blue-50);
+    border-radius: var(--rounded);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--space-4);
+    flex-shrink: 0;
+    font-size: var(--text-lg);
+}
+
+.service-info {
+    flex: 1;
+}
+
+.service-name {
+    font-weight: var(--font-medium);
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+}
+
+.service-status {
+    font-size: var(--text-xs);
+    color: var(--gray-500);
+}
+
+.service-status.active {
+    color: var(--green-600);
+}
+
+.service-status.disabled {
+    color: var(--gray-400);
+}
+
+.test-btn {
+    background-color: var(--blue-600);
+    color: var(--white);
+    border: none;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--rounded);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.test-btn:hover {
+    background-color: var(--blue-700);
+}
+
+.test-btn:disabled {
+    background-color: var(--gray-300);
+    cursor: not-allowed;
+}
+
+/* Quick actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--rounded);
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.action-btn.primary {
+    background-color: var(--blue-600);
+    color: var(--white);
+}
+
+.action-btn.primary:hover {
+    background-color: var(--blue-700);
+    transform: translateY(-1px);
+}
+
+.action-btn.secondary {
+    background-color: var(--white);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
+}
+
+.action-btn.secondary:hover {
+    background-color: var(--gray-50);
+    border-color: var(--gray-300);
+    transform: translateY(-1px);
+}
+
+.btn-icon {
+    margin-right: var(--space-2);
+    font-size: var(--text-base);
+}
+
+/* Recent activity */
+.recent-activity {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-4);
+    background-color: var(--gray-50);
+    border-radius: var(--rounded);
+    transition: background-color 0.15s ease;
+}
+
+.activity-item:hover {
+    background-color: var(--gray-100);
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    background-color: var(--blue-50);
+    border-radius: var(--rounded);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--space-3);
+    flex-shrink: 0;
+    font-size: var(--text-sm);
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: var(--font-medium);
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.activity-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--gray-500);
+}
+
+.activity-confidence {
+    font-weight: var(--font-medium);
+}
+
+.activity-link {
+    background-color: var(--blue-600);
+    color: var(--white);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--rounded);
+    text-decoration: none;
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    transition: background-color 0.15s ease;
+}
+
+.activity-link:hover {
+    background-color: var(--blue-700);
+}
+
+.activity-placeholder {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--gray-500);
+}
+
+.activity-footer {
+    text-align: center;
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--gray-200);
+}
+
+.view-all-btn {
+    background: none;
+    border: none;
+    color: var(--blue-600);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--rounded);
+    transition: background-color 0.15s ease;
+    font-size: var(--text-sm);
+}
+
+.view-all-btn:hover {
+    background-color: var(--blue-50);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .status-overview {
+        margin-bottom: var(--space-8);
+    }
+
+    .status-card {
+        padding: var(--space-4);
+        margin-bottom: var(--space-4);
+    }
+
+    .status-card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: var(--text-xl);
+        margin-bottom: var(--space-3);
+    }
+
+    .status-value {
+        font-size: var(--text-2xl);
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .health-grid,
+    .notification-services {
+        gap: var(--space-4);
+    }
+
+    .service-item,
+    .health-item {
+        padding: var(--space-4);
+    }
+
+    .test-btn {
+        width: 100%;
+        margin-top: var(--space-2);
+    }
+}

@@ -564,6 +564,99 @@ async def test_notifications():
     logger.info("Notification test completed", results=results)
     return results
 
+@app.post("/api/test/pushover")
+async def test_pushover():
+    """Test Pushover notification service"""
+    pushover_token = os.getenv('PUSHOVER_APP_TOKEN')
+    pushover_user = os.getenv('PUSHOVER_USER_KEY')
+
+    if not pushover_token or not pushover_user:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Pushover credentials not configured"}
+        )
+
+    try:
+        notifier = PushoverNotifier(pushover_token, pushover_user)
+        success = notifier.send_test()
+
+        if success:
+            logger.info("Pushover test notification sent successfully")
+            return {"success": True, "message": "Test notification sent successfully"}
+        else:
+            logger.warning("Pushover test notification failed")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Failed to send test notification"}
+            )
+    except Exception as e:
+        logger.error("Pushover test error", error=str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Test failed: {str(e)}"}
+        )
+
+@app.post("/api/test/discord")
+async def test_discord():
+    """Test Discord notification service"""
+    discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
+
+    if not discord_webhook:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Discord webhook URL not configured"}
+        )
+
+    try:
+        notifier = DiscordWebhookNotifier(discord_webhook)
+        success = notifier.send_test()
+
+        if success:
+            logger.info("Discord test notification sent successfully")
+            return {"success": True, "message": "Test notification sent successfully"}
+        else:
+            logger.warning("Discord test notification failed")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Failed to send test notification"}
+            )
+    except Exception as e:
+        logger.error("Discord test error", error=str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Test failed: {str(e)}"}
+        )
+
+@app.post("/api/test/email")
+async def test_email():
+    """Test Email notification service"""
+    email_sender = os.getenv('EMAIL_SENDER')
+
+    if not email_sender:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Email service not configured"}
+        )
+
+    try:
+        # Email notifier would need to be implemented
+        logger.info("Email test requested but service not implemented")
+        return JSONResponse(
+            status_code=501,
+            content={"error": "Email service not yet implemented"}
+        )
+    except Exception as e:
+        logger.error("Email test error", error=str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Test failed: {str(e)}"}
+        )
+
+@app.post("/api/test/all")
+async def test_all_services():
+    """Test all configured notification services"""
+    return await test_notifications()
+
 # Main UI endpoint
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
@@ -617,7 +710,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "web_server:app",
         host="0.0.0.0",
-        port=8080,
+        port=8000,
         reload=False,
         log_config=None,  # Use our custom logging
         access_log=False  # Disable access log to reduce memory usage

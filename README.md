@@ -124,7 +124,7 @@ python main.py
 python web_server.py
 ```
 
-Access web interface at: http://localhost:8080
+Access web interface at: http://localhost:8000
 
 **Note**: Default drop window is Fridays 12-5 PM ET. Configure via web interface or config.yaml.
 
@@ -136,21 +136,21 @@ Access web interface at: http://localhost:8080
 python web_server.py
 ```
 
-Then access: http://localhost:8080
+Then access: http://localhost:8000
 
-From other devices on network: http://[raspberry-pi-ip]:8080
+From other devices on network: http://[raspberry-pi-ip]:8000
 
 ### Web Interface Features
 
-- **Modern Architecture**: Separated HTML/CSS/JavaScript with clean FastAPI backend
+- **Modern Dashboard**: Professional design system with dark/light mode support
+- **Test Functionality**: Built-in test buttons for all notification services
+- **Live Statistics**: Real-time dashboard with system health monitoring
 - **Input Validation**: All API endpoints use Pydantic validation for security
 - **Health Monitoring**: Health check endpoints at `/health`, `/health/ready`, `/health/live`
-- **Structured Logging**: Automatic log rotation (10MB files, 3 backups max)
 - **Drop Window Configuration**: Set active days, times, and timezone
 - **Stock Monitoring**: Configure website inventory tracking with notifications
 - **Detection Settings**: Customize keywords and confidence thresholds
 - **Notification Management**: Configure and test notification services
-- **Live Statistics**: View drop count, recent detections, stock changes
 - **Mobile Optimized**: Responsive design for phones and tablets
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 
@@ -272,7 +272,6 @@ Pull requests welcome! Please:
 
 ## Future Enhancements
 
-- [ ] Web dashboard
 - [ ] Machine learning for detection
 - [ ] Price tracking
 - [ ] Multi-subreddit support

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>{% block title %}FragDropDetector{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="nav-header">
+                <h1>FragDropDetector</h1>
+                <p>Monitoring Dashboard</p>
+            </div>
+
+            <div class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#configuration" class="nav-item" data-page="configuration">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Configuration</span>
+                </a>
+                <a href="#monitoring" class="nav-item" data-page="monitoring">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Monitoring</span>
+                </a>
+            </div>
+
+            <div class="nav-footer">
+                <div class="status-indicator">
+                    <div class="status-dot active" id="system-status"></div>
+                    <span class="status-text">System Active</span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div id="alert" class="alert"></div>
+
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/router.js"></script>
+    <script src="/static/js/app.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

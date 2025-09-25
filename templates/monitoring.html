@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoring - FragDropDetector{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/monitoring.css">
+{% endblock %}
+
+{% block content %}
+<div class="monitoring-page hidden" id="monitoring-content">
+    <div class="page-header">
+        <h1 class="page-title">Monitoring & Data</h1>
+        <p class="page-subtitle">View recent drops, stock changes, and system activity</p>
+    </div>
+
+    <!-- Data Tabs -->
+    <div class="data-tabs">
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="drops">Recent Drops</button>
+            <button class="tab-btn" data-tab="stock">Stock Changes</button>
+            <button class="tab-btn" data-tab="fragrances">Tracked Fragrances</button>
+        </div>
+
+        <!-- Recent Drops -->
+        <div class="tab-content active" id="drops-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Drops</h2>
+                    <div class="card-actions">
+                        <button class="btn secondary small" onclick="refreshDrops()">Refresh</button>
+                        <select id="drops-limit" onchange="refreshDrops()">
+                            <option value="10">Last 10</option>
+                            <option value="25">Last 25</option>
+                            <option value="50">Last 50</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="data-list" id="drops-list">
+                    <div class="data-placeholder">
+                        <div class="placeholder-icon">🎯</div>
+                        <div class="placeholder-text">Loading recent drops...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Changes -->
+        <div class="tab-content" id="stock-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Stock Changes</h2>
+                    <div class="card-actions">
+                        <button class="btn secondary small" onclick="refreshStockChanges()">Refresh</button>
+                        <select id="stock-limit" onchange="refreshStockChanges()">
+                            <option value="10">Last 10</option>
+                            <option value="25">Last 25</option>
+                            <option value="50">Last 50</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="data-list" id="stock-changes-list">
+                    <div class="data-placeholder">
+                        <div class="placeholder-icon">📈</div>
+                        <div class="placeholder-text">Loading stock changes...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tracked Fragrances -->
+        <div class="tab-content" id="fragrances-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Tracked Fragrances</h2>
+                    <div class="card-actions">
+                        <button class="btn secondary small" onclick="refreshFragrances()">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="fragrance-filters">
+                    <div class="filter-group">
+                        <label>Filter by availability:</label>
+                        <select id="availability-filter" onchange="filterFragrances()">
+                            <option value="all">All Items</option>
+                            <option value="in_stock">In Stock</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Sort by:</label>
+                        <select id="sort-filter" onchange="sortFragrances()">
+                            <option value="name">Name (A-Z)</option>
+                            <option value="price_asc">Price (Low to High)</option>
+                            <option value="price_desc">Price (High to Low)</option>
+                            <option value="updated">Recently Updated</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="fragrance-grid" id="fragrances-grid">
+                    <div class="data-placeholder">
+                        <div class="placeholder-icon">🧴</div>
+                        <div class="placeholder-text">Loading tracked fragrances...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/monitoring.js"></script>
+{% endblock %}

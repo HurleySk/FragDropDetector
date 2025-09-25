@@ -3,251 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>FragDropDetector Configuration</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <title>FragDropDetector</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <link rel="stylesheet" href="/static/css/toast.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/configuration.css">
+    <link rel="stylesheet" href="/static/css/monitoring.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>FragDropDetector</h1>
-            <p>Configuration & Monitoring Dashboard</p>
-        </div>
+    <div class="app-container">
+        <header class="top-bar">
+            <button class="mobile-menu-toggle">Menu</button>
+            <h1 class="app-title">FragDropDetector</h1>
+        </header>
 
-        <div id="alert" class="alert"></div>
+        <nav class="sidebar">
+            <div class="nav-header">
+                <h1>FragDropDetector</h1>
+                <p>Monitoring Dashboard</p>
+            </div>
 
-        <div class="status-bar">
-            <div class="status-grid">
-                <div class="status-item">
-                    <div class="status-value" id="status-drops">0</div>
-                    <div class="status-label">Drops Detected</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-value" id="status-posts">0</div>
-                    <div class="status-label">Posts Processed</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-value" id="status-fragrances">0</div>
-                    <div class="status-label">Fragrances Tracked</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-value" id="status-stock-changes">0</div>
-                    <div class="status-label">Recent Stock Changes</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-value" id="status-next">--</div>
-                    <div class="status-label">Next Window</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-value" id="status-notifications">
-                        <span id="notification-badges"></span>
-                    </div>
-                    <div class="status-label">Notifications</div>
+            <div class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#configuration" class="nav-item" data-page="configuration">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Configuration</span>
+                </a>
+                <a href="#monitoring" class="nav-item" data-page="monitoring">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Monitoring</span>
+                </a>
+            </div>
+
+            <div class="nav-footer">
+                <div class="status-indicator">
+                    <div class="status-dot active" id="system-status"></div>
+                    <span class="status-text">System Active</span>
                 </div>
             </div>
-        </div>
+        </nav>
 
-        <div class="config-section">
-            <h2 class="section-header">Reddit Configuration</h2>
-            <form id="reddit-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Client ID</label>
-                        <input type="text" id="reddit-client-id" placeholder="Your Reddit App Client ID">
-                    </div>
-                    <div class="form-group">
-                        <label>Client Secret</label>
-                        <input type="password" id="reddit-client-secret" placeholder="Your Reddit App Client Secret">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Subreddit</label>
-                        <input type="text" id="reddit-subreddit" value="MontagneParfums">
-                    </div>
-                    <div class="form-group">
-                        <label>Check Interval (seconds)</label>
-                        <input type="number" id="reddit-interval" value="300" min="60">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                        <button type="button" class="btn" onclick="testRedditConnection()">Test Connection</button>
-                        <button type="submit" class="btn btn-secondary">Save Reddit Settings</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+        <main class="main-content">
+            <div id="alert" class="alert"></div>
 
-        <div class="config-section">
-            <h2 class="section-header">Notification Services</h2>
-            <form id="notification-form">
-                <h3 style="margin-bottom: 15px; color: #4a5568;">Pushover (iOS)</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>App Token</label>
-                        <input type="text" id="pushover-app-token" placeholder="Your Pushover App Token">
+            <!-- Dashboard Page -->
+            <div class="page-content dashboard-page" id="dashboard-content">
+                <div class="page-header">
+                    <h1 class="page-title">System Dashboard</h1>
+                    <p class="page-subtitle">Real-time monitoring overview and system status</p>
+                </div>
+
+                <!-- Status Overview -->
+                <div class="status-overview grid grid-responsive-4">
+                    <div class="status-card card">
+                        <div class="status-card-icon">🎯</div>
+                        <div class="status-value" id="drops-count">0</div>
+                        <div class="status-label">Drops Detected</div>
                     </div>
-                    <div class="form-group">
-                        <label>User Key</label>
-                        <input type="text" id="pushover-user-key" placeholder="Your Pushover User Key">
+
+                    <div class="status-card card">
+                        <div class="status-card-icon">🧴</div>
+                        <div class="status-value" id="fragrances-count">0</div>
+                        <div class="status-label">Fragrances Tracked</div>
+                    </div>
+
+                    <div class="status-card card">
+                        <div class="status-card-icon">📈</div>
+                        <div class="status-value" id="stock-changes-count">0</div>
+                        <div class="status-label">Stock Changes</div>
+                    </div>
+
+                    <div class="status-card card">
+                        <div class="status-card-icon">⏰</div>
+                        <div class="status-value" id="next-window">--</div>
+                        <div class="status-label">Next Window</div>
                     </div>
                 </div>
 
-                <h3 style="margin: 20px 0 15px; color: #4a5568;">Discord Webhook</h3>
-                <div class="form-group">
-                    <label>Webhook URL</label>
-                    <input type="text" id="discord-webhook" placeholder="https://discord.com/api/webhooks/...">
-                </div>
+                <!-- System Health -->
+                <div class="grid grid-responsive-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">System Health</h2>
+                            <p class="card-subtitle">Current system status and services</p>
+                        </div>
 
-                <div class="form-group">
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                        <button type="button" class="btn" onclick="testNotifications()">Test Notifications</button>
-                        <button type="submit" class="btn btn-secondary">Save Notification Settings</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+                        <div class="health-grid">
+                            <div class="health-item">
+                                <div class="health-indicator healthy" id="reddit-health"></div>
+                                <div class="health-info">
+                                    <div class="health-name">Reddit API</div>
+                                    <div class="health-status" id="reddit-status">Connected and monitoring</div>
+                                </div>
+                            </div>
 
-        <div class="config-section">
-            <h2 class="section-header">Drop Window Schedule</h2>
-            <form id="window-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Window Checking</label>
-                        <select id="window-enabled">
-                            <option value="true">Enabled (Check during specific times)</option>
-                            <option value="false">Disabled (Check 24/7)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Timezone</label>
-                        <select id="window-timezone">
-                            <option value="America/New_York">Eastern Time (ET)</option>
-                            <option value="America/Chicago">Central Time (CT)</option>
-                            <option value="America/Denver">Mountain Time (MT)</option>
-                            <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                            <option value="UTC">UTC</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Days of Week</label>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-0" value="0" style="margin-right: 8px;"> Monday</label>
-                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-1" value="1" style="margin-right: 8px;"> Tuesday</label>
-                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-2" value="2" style="margin-right: 8px;"> Wednesday</label>
-                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-3" value="3" style="margin-right: 8px;"> Thursday</label>
-                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-4" value="4" checked style="margin-right: 8px;"> Friday</label>
-                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-5" value="5" style="margin-right: 8px;"> Saturday</label>
-                        <label style="font-weight: normal; padding: 8px; display: block; cursor: pointer;"><input type="checkbox" id="day-6" value="6" style="margin-right: 8px;"> Sunday</label>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Start Time</label>
-                        <input type="time" id="window-start-time" value="12:00">
-                    </div>
-                    <div class="form-group">
-                        <label>End Time</label>
-                        <input type="time" id="window-end-time" value="17:00">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-secondary">Save Drop Window Settings</button>
-                </div>
-            </form>
-        </div>
+                            <div class="health-item">
+                                <div class="health-indicator healthy" id="database-health"></div>
+                                <div class="health-info">
+                                    <div class="health-name">Database</div>
+                                    <div class="health-status" id="database-status">SQLite operational</div>
+                                </div>
+                            </div>
 
-        <div class="config-section">
-            <h2 class="section-header">Detection Keywords</h2>
-            <form id="detection-form">
-                <div class="form-group">
-                    <label>Primary Keywords (one per line)</label>
-                    <textarea id="primary-keywords" rows="5">drop
-dropped
-release
-available
-launch</textarea>
-                </div>
-                <div class="form-group">
-                    <label>Secondary Keywords (one per line)</label>
-                    <textarea id="secondary-keywords" rows="5">limited
-exclusive
-sale
-batch
-decant</textarea>
-                </div>
-                <div class="form-group">
-                    <label>Confidence Threshold</label>
-                    <input type="number" id="confidence-threshold" value="0.4" min="0" max="1" step="0.1">
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-secondary">Save Detection Settings</button>
-                </div>
-            </form>
-        </div>
+                            <div class="health-item">
+                                <div class="health-indicator warning" id="notifications-health"></div>
+                                <div class="health-info">
+                                    <div class="health-name">Notifications</div>
+                                    <div class="health-status" id="notifications-status">2 services configured</div>
+                                </div>
+                            </div>
 
-        <div class="config-section">
-            <h2 class="section-header">Stock Monitoring</h2>
-            <p class="info-text">Stock monitoring runs during the same drop window schedule as Reddit monitoring for simplicity.</p>
-            <form id="stock-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="stock-enabled" name="enabled">
-                            <span class="checkmark"></span>
-                            Enable Stock Monitoring
-                        </label>
+                            <div class="health-item">
+                                <div class="health-indicator healthy" id="monitoring-health"></div>
+                                <div class="health-info">
+                                    <div class="health-name">Stock Monitor</div>
+                                    <div class="health-status" id="monitoring-status">Active monitoring</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Notify on:</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="notify-new-products" name="new_products">
-                                <span class="checkmark"></span>
-                                New Products
-                            </label>
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="notify-restocked" name="restocked_products">
-                                <span class="checkmark"></span>
-                                Restocked Products
-                            </label>
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="notify-price-changes" name="price_changes">
-                                <span class="checkmark"></span>
-                                Price Changes
-                            </label>
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="notify-out-of-stock" name="out_of_stock">
-                                <span class="checkmark"></span>
-                                Out of Stock
-                            </label>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Notification Services</h2>
+                            <p class="card-subtitle">Active notification channels</p>
+                        </div>
+
+                        <div class="notification-services">
+                            <div class="service-item" id="pushover-service">
+                                <div class="service-icon">📱</div>
+                                <div class="service-info">
+                                    <div class="service-name">Pushover</div>
+                                    <div class="service-status active">iOS notifications active</div>
+                                </div>
+                                <button class="test-btn" onclick="testService('pushover')">Test</button>
+                            </div>
+
+                            <div class="service-item" id="discord-service">
+                                <div class="service-icon">💬</div>
+                                <div class="service-info">
+                                    <div class="service-name">Discord</div>
+                                    <div class="service-status active">Webhook configured</div>
+                                </div>
+                                <button class="test-btn" onclick="testService('discord')">Test</button>
+                            </div>
+
+                            <div class="service-item" id="email-service">
+                                <div class="service-icon">✉️</div>
+                                <div class="service-info">
+                                    <div class="service-name">Email</div>
+                                    <div class="service-status disabled">Not configured</div>
+                                </div>
+                                <button class="test-btn" disabled onclick="testService('email')">Test</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-secondary">Save Stock Monitoring Settings</button>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Quick Actions</h2>
+                        <p class="card-subtitle">Common tasks and controls</p>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button class="action-btn primary" onclick="refreshStatus()">
+                            <span class="btn-icon">REFRESH</span>
+                            Refresh Status
+                        </button>
+
+                        <button class="action-btn secondary" onclick="testAllNotifications()">
+                            <span class="btn-icon">TEST</span>
+                            Test All Notifications
+                        </button>
+
+                        <button class="action-btn secondary" onclick="navigateToPage('configuration')">
+                            <span class="btn-icon">SETTINGS</span>
+                            Open Settings
+                        </button>
+
+                        <button class="action-btn secondary" onclick="navigateToPage('monitoring')">
+                            <span class="btn-icon">VIEW</span>
+                            View Data
+                        </button>
+                    </div>
                 </div>
-            </form>
-        </div>
 
-        <div class="config-section">
-            <h2 class="section-header">Stock Changes</h2>
-            <div class="drops-list" id="stock-changes-list">
-                <p style="color: #718096;">Loading recent stock changes...</p>
-            </div>
-        </div>
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Recent Activity</h2>
+                        <p class="card-subtitle">Latest drops and stock changes</p>
+                    </div>
 
-        <div class="config-section">
-            <h2 class="section-header">Recent Drops</h2>
-            <div class="drops-list" id="drops-list">
-                <p style="color: #718096;">Loading recent drops...</p>
+                    <div class="recent-activity">
+                        <div class="activity-list" id="recent-activity-list">
+                            <div class="activity-placeholder">
+                                Loading recent activity...
+                            </div>
+                        </div>
+
+                        <div class="activity-footer">
+                            <button class="view-all-btn" onclick="navigateToPage('monitoring')">
+                                View All Activity →
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <!-- Configuration Page -->
+            <div class="page-content configuration-page hidden" id="configuration-content">
+                <div class="page-header">
+                    <h1 class="page-title">Configuration</h1>
+                    <p class="page-subtitle">Configure monitoring settings and notification services</p>
+                </div>
+
+                <!-- Configuration Tabs -->
+                <div class="config-tabs">
+                    <div class="tab-nav">
+                        <button class="tab-btn active" data-tab="reddit">Reddit API</button>
+                        <button class="tab-btn" data-tab="notifications">Notifications</button>
+                        <button class="tab-btn" data-tab="detection">Detection</button>
+                        <button class="tab-btn" data-tab="schedule">Schedule</button>
+                        <button class="tab-btn" data-tab="stock">Stock Monitoring</button>
+                    </div>
+
+                    <!-- Reddit Configuration -->
+                    <div class="tab-content active" id="reddit-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Reddit API Settings</h2>
+                                <p class="card-subtitle">Configure Reddit API access and monitoring parameters</p>
+                            </div>
+
+                            <form id="reddit-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Client ID</label>
+                                        <input type="text" id="reddit-client-id" placeholder="Your Reddit App Client ID" required>
+                                        <small>Get this from https://www.reddit.com/prefs/apps</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Client Secret</label>
+                                        <input type="password" id="reddit-client-secret" placeholder="Your Reddit App Client Secret" required>
+                                        <small>Keep this secret and secure</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Subreddit</label>
+                                        <input type="text" id="reddit-subreddit" value="MontagneParfums">
+                                        <small>Subreddit to monitor (without r/)</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Check Interval (seconds)</label>
+                                        <input type="number" id="reddit-interval" value="300" min="60" max="3600">
+                                        <small>How often to check for new posts (60-3600 seconds)</small>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn secondary" onclick="testRedditConnection()">Test Connection</button>
+                                    <button type="submit" class="btn primary">Save Reddit Settings</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Other tabs content would be here... -->
+                </div>
+            </div>
+
+            <!-- Monitoring Page -->
+            <div class="page-content monitoring-page hidden" id="monitoring-content">
+                <div class="page-header">
+                    <h1 class="page-title">Monitoring & Data</h1>
+                    <p class="page-subtitle">View recent drops, stock changes, and system activity</p>
+                </div>
+
+                <!-- Data Tabs -->
+                <div class="data-tabs">
+                    <div class="tab-nav">
+                        <button class="tab-btn active" data-tab="drops">Recent Drops</button>
+                        <button class="tab-btn" data-tab="stock">Stock Changes</button>
+                        <button class="tab-btn" data-tab="fragrances">Tracked Fragrances</button>
+                    </div>
+
+                    <!-- Recent Drops -->
+                    <div class="tab-content active" id="drops-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Recent Drops</h2>
+                                <div class="card-actions">
+                                    <button class="btn secondary small" onclick="refreshDrops()">Refresh</button>
+                                    <select id="drops-limit" onchange="refreshDrops()">
+                                        <option value="10">Last 10</option>
+                                        <option value="25">Last 25</option>
+                                        <option value="50">Last 50</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="data-list" id="drops-list">
+                                <div class="data-placeholder">
+                                    <div class="placeholder-icon">DROPS</div>
+                                    <div class="placeholder-text">Loading recent drops...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other monitoring tabs content would be here... -->
+                </div>
+            </div>
+        </main>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script src="/static/js/theme-config.js"></script>
+    <script src="/static/js/dashboard-functions.js"></script>
+    <script src="/static/js/toast.js"></script>
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/router.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/configuration.js"></script>
+    <script src="/static/js/monitoring.js"></script>
 </body>
 </html>
