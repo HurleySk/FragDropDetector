@@ -388,6 +388,25 @@ class FragDropMonitor:
         """Process stock changes and send notifications"""
         notifications_to_send = []
 
+        # Watchlist restocks (always notify regardless of settings)
+        if changes.get('watchlist_changes'):
+            for change_type, product_or_info in changes['watchlist_changes']:
+                if change_type == 'restocked':
+                    product = product_or_info
+                    self.db.save_stock_change({
+                        'fragrance_slug': product.slug,
+                        'change_type': 'restocked',
+                        'new_value': 'In Stock (Watchlist)'
+                    })
+                    notifications_to_send.append({
+                        'title': f'Watchlist Item Back in Stock!',
+                        'url': product.url,
+                        'price': product.price,
+                        'change_type': 'watchlist_restock',
+                        'message': f'{product.name} is now available'
+                    })
+                    self.logger.info(f"Watchlist item restocked: {product.name}")
+
         # New products
         if changes['new_products'] and self.stock_notifications.get('new_products', True):
             for product in changes['new_products']:

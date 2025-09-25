@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="/static/css/base.css?v=3">
     <link rel="stylesheet" href="/static/css/theme.css?v=3">
     <link rel="stylesheet" href="/static/css/toast.css?v=3">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=3">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=4">
     <link rel="stylesheet" href="/static/css/configuration.css?v=3">
-    <link rel="stylesheet" href="/static/css/inventory.css?v=3">
+    <link rel="stylesheet" href="/static/css/inventory.css?v=4">
 </head>
 <body>
     <div class="app-container">
@@ -84,8 +84,34 @@
                     </div>
                 </div>
 
-                <!-- System Health -->
-                <div class="grid grid-responsive-2">
+                <!-- Watchlist Widget and System Health -->
+                <div class="grid grid-responsive-3">
+                    <div class="card watchlist-widget">
+                        <div class="card-header">
+                            <h2 class="card-title">Watchlist</h2>
+                            <p class="card-subtitle">Products you're tracking</p>
+                        </div>
+
+                        <div class="watchlist-summary">
+                            <div class="watchlist-stat">
+                                <div class="watchlist-stat-value" id="watchlist-total">0</div>
+                                <div class="watchlist-stat-label">Total Items</div>
+                            </div>
+                            <div class="watchlist-stat">
+                                <div class="watchlist-stat-value" id="watchlist-in-stock">0</div>
+                                <div class="watchlist-stat-label">In Stock</div>
+                            </div>
+                        </div>
+
+                        <div class="watchlist-items" id="watchlist-items">
+                            <!-- Items will be populated by JavaScript -->
+                        </div>
+
+                        <a class="watchlist-view-all" onclick="navigateToPage('inventory'); InventoryManager.watchlistOnly = true;">
+                            View All Watchlist Items
+                        </a>
+                    </div>
+
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">System Health</h2>
@@ -227,8 +253,11 @@
                 <!-- Search and Filters Bar -->
                 <div class="inventory-controls">
                     <div class="controls-row">
-                        <div class="search-container">
-                            <input type="text" id="inventory-search" class="search-input" placeholder="Search fragrances...">
+                        <div class="search-container" style="display: flex; gap: var(--space-3);">
+                            <input type="text" id="inventory-search" class="search-input" placeholder="Search fragrances..." style="flex: 1;">
+                            <button id="watchlist-toggle" class="watchlist-toggle">
+                                <span>Watchlist Only</span>
+                            </button>
                         </div>
 
                         <div class="filter-container">
@@ -238,10 +267,6 @@
                                 <option value="false">Out of Stock</option>
                             </select>
 
-                            <select id="watchlist-filter" class="filter-select">
-                                <option value="">All</option>
-                                <option value="true">Watchlist Only</option>
-                            </select>
 
                             <select id="sort-select" class="filter-select">
                                 <option value="name">Sort by Name</option>
@@ -256,6 +281,19 @@
                         <span class="stat-item">In Stock: <strong id="in-stock-count">0</strong></span>
                         <span class="stat-item">Out of Stock: <strong id="out-stock-count">0</strong></span>
                         <span class="stat-item">Watchlist: <strong id="watchlist-count">0</strong></span>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions Bar -->
+                <div id="bulk-actions" class="bulk-actions">
+                    <span class="bulk-actions-count">
+                        <span id="selected-count">0</span> items selected
+                    </span>
+                    <div class="bulk-actions-buttons">
+                        <button class="bulk-action-btn" onclick="InventoryManager.selectAll()">Select All</button>
+                        <button class="bulk-action-btn" onclick="InventoryManager.clearSelection()">Clear</button>
+                        <button class="bulk-action-btn" onclick="InventoryManager.bulkAddToWatchlist()">Add to Watchlist</button>
+                        <button class="bulk-action-btn" onclick="InventoryManager.bulkRemoveFromWatchlist()">Remove from Watchlist</button>
                     </div>
                 </div>
 
@@ -360,8 +398,8 @@
     <script src="/static/js/theme.js?v=3"></script>
     <script src="/static/js/router.js?v=5"></script>
     <script src="/static/js/app.js?v=3"></script>
-    <script src="/static/js/dashboard.js?v=4"></script>
+    <script src="/static/js/dashboard.js?v=5"></script>
     <script src="/static/js/configuration.js?v=3"></script>
-    <script src="/static/js/inventory.js?v=4"></script>
+    <script src="/static/js/inventory.js?v=5"></script>
 </body>
 </html>

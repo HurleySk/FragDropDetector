@@ -8,6 +8,8 @@ const InventoryManager = {
     searchTimeout: null,
     sortBy: 'name',
     sortOrder: 'asc',
+    selectedItems: new Set(),
+    watchlistOnly: false,
 
     init() {
         this.bindEvents();
@@ -26,9 +28,18 @@ const InventoryManager = {
             });
         }
 
-        // Filter dropdowns
+        // Watchlist toggle button
+        const watchlistToggle = document.getElementById('watchlist-toggle');
+        if (watchlistToggle) {
+            watchlistToggle.addEventListener('click', () => {
+                this.watchlistOnly = !this.watchlistOnly;
+                watchlistToggle.classList.toggle('active', this.watchlistOnly);
+                this.applyFilters();
+            });
+        }
+
+        // Filter dropdown
         document.getElementById('stock-filter')?.addEventListener('change', () => this.applyFilters());
-        document.getElementById('watchlist-filter')?.addEventListener('change', () => this.applyFilters());
 
         // Sort dropdown
         document.getElementById('sort-select')?.addEventListener('change', (e) => {
@@ -72,7 +83,6 @@ const InventoryManager = {
         // Get filter values
         const searchTerm = document.getElementById('inventory-search')?.value.toLowerCase() || '';
         const stockFilter = document.getElementById('stock-filter')?.value;
-        const watchlistFilter = document.getElementById('watchlist-filter')?.value;
 
         // Filter items
         this.filteredItems = this.allItems.filter(item => {
@@ -89,8 +99,8 @@ const InventoryManager = {
                 if (item.in_stock !== inStock) return false;
             }
 
-            // Watchlist filter
-            if (watchlistFilter === 'true' && !item.is_watchlisted) {
+            // Watchlist filter (from toggle button only)
+            if (this.watchlistOnly && !item.is_watchlisted) {
                 return false;
             }
 
@@ -167,13 +177,14 @@ const InventoryManager = {
     renderItem(item) {
         const stockClass = item.in_stock ? 'in-stock' : 'out-of-stock';
         const stockText = item.in_stock ? 'In Stock' : 'Out of Stock';
-        const watchlistBadge = item.is_watchlisted ? '<span class="watchlist-badge">Watching</span>' : '';
-        const watchlistBtnText = item.is_watchlisted ? 'Unwatch' : 'Watch';
-        const watchlistBtnClass = item.is_watchlisted ? 'watching' : '';
+        const watchlistStarClass = item.is_watchlisted ? 'active' : '';
+        const isSelected = this.selectedItems.has(item.slug) ? 'selected' : '';
+        const checkboxChecked = this.selectedItems.has(item.slug) ? 'checked' : '';
 
         return `
-            <div class="inventory-item ${stockClass}" data-slug="${item.slug}">
-                ${watchlistBadge}
+            <div class="inventory-item ${stockClass} ${isSelected}" data-slug="${item.slug}">
+                <input type="checkbox" class="item-checkbox" data-slug="${item.slug}" ${checkboxChecked}>
+                <div class="watchlist-star ${watchlistStarClass}" data-slug="${item.slug}"></div>
                 <div class="item-header">
                     <div>
                         <div class="item-name">${item.name}</div>
@@ -187,19 +198,17 @@ const InventoryManager = {
                     <span class="item-price">${item.price || 'N/A'}</span>
                 </div>
                 <div class="item-actions">
-                    <button class="watchlist-btn ${watchlistBtnClass}" data-slug="${item.slug}">
-                        ${watchlistBtnText}
-                    </button>
-                    <a href="${item.url}" target="_blank" class="view-btn">View</a>
+                    <a href="${item.url}" target="_blank" class="view-btn">View Product</a>
                 </div>
             </div>
         `;
     },
 
     bindItemEvents() {
-        // Watchlist buttons
-        document.querySelectorAll('.watchlist-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+        // Watchlist stars
+        document.querySelectorAll('.watchlist-star').forEach(star => {
+            star.addEventListener('click', async (e) => {
+                e.stopPropagation();
                 const slug = e.target.dataset.slug;
                 const item = this.allItems.find(i => i.slug === slug);
 
@@ -208,6 +217,36 @@ const InventoryManager = {
                 }
             });
         });
+
+        // Selection checkboxes
+        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const slug = e.target.dataset.slug;
+                const itemElement = document.querySelector(`.inventory-item[data-slug="${slug}"]`);
+
+                if (e.target.checked) {
+                    this.selectedItems.add(slug);
+                    itemElement?.classList.add('selected');
+                } else {
+                    this.selectedItems.delete(slug);
+                    itemElement?.classList.remove('selected');
+                }
+
+                this.updateBulkActionsBar();
+            });
+        });
+    },
+
+    updateBulkActionsBar() {
+        const bulkActions = document.getElementById('bulk-actions');
+        const selectedCount = document.getElementById('selected-count');
+
+        if (this.selectedItems.size > 0) {
+            bulkActions?.classList.add('show');
+            if (selectedCount) selectedCount.textContent = this.selectedItems.size;
+        } else {
+            bulkActions?.classList.remove('show');
+        }
     },
 
     async toggleWatchlist(slug, isWatched) {
@@ -297,6 +336,100 @@ const InventoryManager = {
 
     refresh() {
         this.loadInventory();
+    },
+
+    selectAll() {
+        const currentPageItems = this.filteredItems.slice(
+            (this.currentPage - 1) * this.itemsPerPage,
+            this.currentPage * this.itemsPerPage
+        );
+
+        currentPageItems.forEach(item => {
+            this.selectedItems.add(item.slug);
+            const checkbox = document.querySelector(`.item-checkbox[data-slug="${item.slug}"]`);
+            const itemElement = document.querySelector(`.inventory-item[data-slug="${item.slug}"]`);
+            if (checkbox) checkbox.checked = true;
+            itemElement?.classList.add('selected');
+        });
+
+        this.updateBulkActionsBar();
+    },
+
+    clearSelection() {
+        this.selectedItems.clear();
+        document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.inventory-item').forEach(item => item.classList.remove('selected'));
+        this.updateBulkActionsBar();
+    },
+
+    async bulkAddToWatchlist() {
+        if (this.selectedItems.size === 0) return;
+
+        try {
+            const response = await fetch('/api/watchlist/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slugs: Array.from(this.selectedItems) })
+            });
+
+            if (!response.ok) throw new Error('Failed to add to watchlist');
+
+            const result = await response.json();
+
+            // Update local data
+            this.selectedItems.forEach(slug => {
+                const item = this.allItems.find(i => i.slug === slug);
+                if (item) item.is_watchlisted = true;
+            });
+
+            // Re-render and clear selection
+            this.clearSelection();
+            this.applyFilters();
+
+            if (window.showAlert) {
+                showAlert(result.message, 'success');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            if (window.showAlert) {
+                showAlert('Failed to add items to watchlist', 'error');
+            }
+        }
+    },
+
+    async bulkRemoveFromWatchlist() {
+        if (this.selectedItems.size === 0) return;
+
+        try {
+            const response = await fetch('/api/watchlist/bulk', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slugs: Array.from(this.selectedItems) })
+            });
+
+            if (!response.ok) throw new Error('Failed to remove from watchlist');
+
+            const result = await response.json();
+
+            // Update local data
+            this.selectedItems.forEach(slug => {
+                const item = this.allItems.find(i => i.slug === slug);
+                if (item) item.is_watchlisted = false;
+            });
+
+            // Re-render and clear selection
+            this.clearSelection();
+            this.applyFilters();
+
+            if (window.showAlert) {
+                showAlert(result.message, 'success');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            if (window.showAlert) {
+                showAlert('Failed to remove items from watchlist', 'error');
+            }
+        }
     }
 };
 

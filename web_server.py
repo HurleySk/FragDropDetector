@@ -637,6 +637,78 @@ async def remove_from_watchlist(slug: str):
         logger.error("Failed to remove from watchlist", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/watchlist/bulk")
+async def bulk_add_to_watchlist(request: dict):
+    """Add multiple products to watchlist"""
+    try:
+        slugs = request.get('slugs', [])
+        if not slugs:
+            raise HTTPException(status_code=400, detail="No slugs provided")
+
+        yaml_config = load_yaml_config()
+        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+
+        added = []
+        for slug in slugs:
+            if slug not in watchlist:
+                watchlist.append(slug)
+                added.append(slug)
+
+        if 'stock_monitoring' not in yaml_config:
+            yaml_config['stock_monitoring'] = {}
+        yaml_config['stock_monitoring']['watchlist'] = watchlist
+
+        if not save_yaml_config(yaml_config):
+            raise HTTPException(status_code=500, detail="Failed to save watchlist")
+
+        logger.info(f"Added {len(added)} items to watchlist")
+        return {
+            "success": True,
+            "message": f"Added {len(added)} items to watchlist",
+            "added": added,
+            "watchlist": watchlist
+        }
+
+    except Exception as e:
+        logger.error("Failed to bulk add to watchlist", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/watchlist/bulk")
+async def bulk_remove_from_watchlist(request: dict):
+    """Remove multiple products from watchlist"""
+    try:
+        slugs = request.get('slugs', [])
+        if not slugs:
+            raise HTTPException(status_code=400, detail="No slugs provided")
+
+        yaml_config = load_yaml_config()
+        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+
+        removed = []
+        for slug in slugs:
+            if slug in watchlist:
+                watchlist.remove(slug)
+                removed.append(slug)
+
+        if 'stock_monitoring' not in yaml_config:
+            yaml_config['stock_monitoring'] = {}
+        yaml_config['stock_monitoring']['watchlist'] = watchlist
+
+        if not save_yaml_config(yaml_config):
+            raise HTTPException(status_code=500, detail="Failed to save watchlist")
+
+        logger.info(f"Removed {len(removed)} items from watchlist")
+        return {
+            "success": True,
+            "message": f"Removed {len(removed)} items from watchlist",
+            "removed": removed,
+            "watchlist": watchlist
+        }
+
+    except Exception as e:
+        logger.error("Failed to bulk remove from watchlist", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/test/reddit")
 async def test_reddit_connection(config: RedditConfig):
     """Test Reddit connection with validation"""

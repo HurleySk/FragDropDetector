@@ -15,6 +15,37 @@
     margin-bottom: var(--space-6);
 }
 
+/* Watchlist Toggle Button */
+.watchlist-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--rounded-lg);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.watchlist-toggle:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+}
+
+.watchlist-toggle.active {
+    background: var(--amber-50);
+    border-color: var(--amber-600);
+    color: var(--amber-700);
+}
+
+.watchlist-toggle.active:hover {
+    background: var(--amber-100);
+}
+
 .controls-row {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -88,6 +119,51 @@
     border-top: 1px solid var(--gray-200);
 }
 
+/* Bulk Actions Bar */
+.bulk-actions {
+    display: none;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: var(--blue-50);
+    border: 1px solid var(--blue-200);
+    border-radius: var(--rounded-lg);
+    margin-bottom: var(--space-4);
+}
+
+.bulk-actions.show {
+    display: flex;
+}
+
+.bulk-actions-count {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--blue-700);
+}
+
+.bulk-actions-buttons {
+    display: flex;
+    gap: var(--space-2);
+    margin-left: auto;
+}
+
+.bulk-action-btn {
+    padding: var(--space-2) var(--space-3);
+    background: var(--white);
+    border: 1px solid var(--blue-600);
+    border-radius: var(--rounded);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--blue-600);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bulk-action-btn:hover {
+    background: var(--blue-600);
+    color: var(--white);
+}
+
 .stat-item {
     font-size: var(--text-sm);
     color: var(--gray-500);
@@ -122,6 +198,56 @@
     transition: all 0.15s ease;
     position: relative;
     overflow: hidden;
+}
+
+.inventory-item.selected {
+    background: var(--blue-50);
+    border-color: var(--blue-600);
+}
+
+/* Selection Checkbox */
+.item-checkbox {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    width: 18px;
+    height: 18px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.inventory-item:hover .item-checkbox,
+.inventory-item.selected .item-checkbox {
+    opacity: 1;
+}
+
+/* Watchlist Star Icon */
+.watchlist-star {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: 2px solid var(--gray-400);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.watchlist-star:hover {
+    border-color: var(--amber-500);
+    background: var(--amber-100);
+}
+
+.watchlist-star.active {
+    background: var(--amber-600);
+    border-color: var(--amber-600);
+}
+
+.watchlist-star.active:hover {
+    background: var(--amber-700);
+    border-color: var(--amber-700);
 }
 
 .inventory-item:hover {
