@@ -39,7 +39,7 @@ async function loadDashboardData() {
 
 async function fetchWatchlistData() {
     try {
-        const response = await apiCall('/api/stock/fragrances');
+        const response = await apiCall(`/api/stock/fragrances?t=${Date.now()}`);
         if (!response) return;
 
         const watchlistItems = response.items.filter(item => item.is_watchlisted);
@@ -87,16 +87,21 @@ async function fetchWatchlistData() {
 
 async function removeFromWatchlist(slug) {
     try {
-        const response = await fetch(`/api/stock/watchlist/remove/${slug}`, {
-            method: 'POST'
+        console.log('Removing from watchlist:', slug);
+        const response = await fetch(`/api/stock/watchlist/remove/${slug}?t=${Date.now()}`, {
+            method: 'POST',
+            cache: 'no-cache'
         });
 
         if (response.ok) {
-            // Refresh the watchlist display
-            fetchWatchlistData();
+            console.log('Successfully removed from watchlist');
+            // Force refresh the watchlist display
+            setTimeout(() => fetchWatchlistData(), 100);
             if (window.showAlert) {
                 showAlert('Removed from watchlist', 'success');
             }
+        } else {
+            console.error('Failed to remove from watchlist, response not ok:', response.status);
         }
     } catch (error) {
         console.error('Failed to remove from watchlist:', error);
@@ -105,6 +110,9 @@ async function removeFromWatchlist(slug) {
         }
     }
 }
+
+// Make function globally accessible
+window.removeFromWatchlist = removeFromWatchlist;
 
 function updateDashboardStatus(status) {
     // Update status cards

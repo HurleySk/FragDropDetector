@@ -277,7 +277,7 @@ async function testRedditConnection() {
         client_id: document.getElementById('reddit-client-id').value,
         client_secret: document.getElementById('reddit-client-secret').value,
         user_agent: 'FragDropDetector/1.0',
-        subreddit: document.getElementById('reddit-subreddit').value,
+        subreddit: 'MontagneParfums',
         check_interval: parseInt(document.getElementById('reddit-interval').value),
         post_limit: 50
     };

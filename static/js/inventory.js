@@ -68,7 +68,7 @@ const InventoryManager = {
         try {
             this.showLoading(true);
 
-            const response = await fetch('/api/stock/fragrances');
+            const response = await fetch(`/api/stock/fragrances?t=${Date.now()}`);
             if (!response.ok) throw new Error('Failed to load inventory');
 
             const data = await response.json();
@@ -261,19 +261,23 @@ const InventoryManager = {
 
     async toggleWatchlist(slug, isWatched) {
         try {
+            console.log(`Toggling watchlist for ${slug}, currently watched: ${isWatched}`);
             const endpoint = isWatched ? '/api/stock/watchlist/remove' : '/api/stock/watchlist/add';
-            const response = await fetch(`${endpoint}/${slug}`, {
-                method: 'POST'
+            const response = await fetch(`${endpoint}/${slug}?t=${Date.now()}`, {
+                method: 'POST',
+                cache: 'no-cache'
             });
 
             if (!response.ok) throw new Error('Failed to update watchlist');
 
             const result = await response.json();
+            console.log('Watchlist update result:', result);
 
             // Update local data
             const item = this.allItems.find(i => i.slug === slug);
             if (item) {
                 item.is_watchlisted = !isWatched;
+                console.log(`Updated local item ${slug}, is_watchlisted now: ${item.is_watchlisted}`);
             }
 
             // Re-render

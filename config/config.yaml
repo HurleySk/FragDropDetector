@@ -51,8 +51,10 @@ stock_monitoring:
     new_products: true
     out_of_stock: false
     price_changes: false
-    restocked_products: true
-  watchlist: []
+    restocked_products: false
+  watchlist:
+  - u5r9io7pjobrurk43byiz5eojzswz0
+  - gentle-silver-inspired-by-mfk-gentle-fluidity-silver
 stock_schedule:
   check_interval: 900
   days_of_week: []

@@ -69,7 +69,9 @@ class FragDropMonitor:
         # Initialize components
         self.reddit_client = None
         self.reddit_enabled = False  # Track if Reddit monitoring is active
-        self.detector = DropDetector()
+        # Initialize drop detector with configuration
+        detection_config = self.config.get('detection', {})
+        self.detector = DropDetector(detection_config)
         self.db = Database()
         self.notification_manager = NotificationManager()
         self.stock_monitor = None  # Will be initialized asynchronously

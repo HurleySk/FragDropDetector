@@ -86,9 +86,11 @@ function populateNotificationConfig(config) {
 function populateDetectionConfig(config) {
     const primaryKeywords = config.primary_keywords || ['drop', 'dropped', 'release', 'available', 'launch'];
     const secondaryKeywords = config.secondary_keywords || ['limited', 'exclusive', 'sale', 'batch', 'decant'];
+    const exclusionKeywords = config.exclusion_keywords || ['looking for', 'where to buy', 'wtb', 'wts', 'iso', 'recommendation', 'review'];
 
     document.getElementById('primary-keywords').value = primaryKeywords.join('\n');
     document.getElementById('secondary-keywords').value = secondaryKeywords.join('\n');
+    document.getElementById('exclusion-keywords').value = exclusionKeywords.join('\n');
 
     const threshold = config.confidence_threshold || 0.4;
     document.getElementById('confidence-threshold').value = threshold;
@@ -318,11 +320,17 @@ async function handleDetectionConfigSubmit(e) {
         .map(k => k.trim())
         .filter(k => k);
 
+    const exclusionKeywords = document.getElementById('exclusion-keywords').value
+        .split('\n')
+        .map(k => k.trim())
+        .filter(k => k);
+
     const config = {
         primary_keywords: primaryKeywords,
         secondary_keywords: secondaryKeywords,
         confidence_threshold: parseFloat(document.getElementById('confidence-threshold').value),
-        known_vendors: ['montagneparfums', 'montagne_parfums']
+        known_vendors: ['montagneparfums', 'montagne_parfums'],
+        exclusion_keywords: exclusionKeywords
     };
 
     if (primaryKeywords.length === 0) {

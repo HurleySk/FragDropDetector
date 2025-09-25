@@ -469,26 +469,27 @@
 }
 
 /* Dark mode overrides */
+[data-theme="dark"] .sidebar {
+    background-color: var(--surface);
+    border-right-color: var(--border);
+}
+
+[data-theme="dark"] .nav-header {
+    border-bottom-color: var(--border);
+}
+
+[data-theme="dark"] .nav-footer {
+    border-top-color: var(--border);
+}
+
 [data-theme="dark"] .top-bar {
     background-color: var(--surface);
     border-bottom-color: var(--border);
 }
 
-[data-theme="dark"] .app-title {
-    color: var(--text-primary);
-}
-
 [data-theme="dark"] .page-header {
     background-color: var(--surface);
     border-bottom-color: var(--border);
-}
-
-[data-theme="dark"] .page-title {
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .page-subtitle {
-    color: var(--text-secondary);
 }
 
 

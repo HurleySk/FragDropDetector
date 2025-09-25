@@ -14,11 +14,19 @@ logger = logging.getLogger(__name__)
 class DropDetector:
     """Detects potential fragrance drops from Reddit posts"""
 
-    def __init__(self):
-        """Initialize the drop detector with keywords and patterns"""
+    def __init__(self, config: Optional[Dict] = None):
+        """Initialize the drop detector with keywords and patterns
 
-        # Primary keywords that strongly indicate a drop
-        self.primary_keywords = [
+        Args:
+            config: Optional detection configuration with keys:
+                - primary_keywords: List of primary keywords
+                - secondary_keywords: List of secondary keywords
+                - confidence_threshold: Float threshold for drop detection
+                - exclusion_keywords: List of exclusion keywords/patterns
+        """
+
+        # Default primary keywords that strongly indicate a drop
+        default_primary = [
             'restock',  # Most common!
             'restocked', 'restocking',
             'drop', 'dropped', 'dropping', 'drops',
@@ -31,8 +39,8 @@ class DropDetector:
             'new cologne', 'new scent'
         ]
 
-        # Secondary keywords that support drop detection
-        self.secondary_keywords = [
+        # Default secondary keywords that support drop detection
+        default_secondary = [
             'limited', 'exclusive', 'special',
             'pre-order', 'preorder',
             'sale', 'discount',
@@ -43,6 +51,18 @@ class DropDetector:
             'order', 'ordering',
             'link', 'website'
         ]
+
+        # Use config values or defaults
+        if config:
+            self.primary_keywords = config.get('primary_keywords', default_primary)
+            self.secondary_keywords = config.get('secondary_keywords', default_secondary)
+            self.confidence_threshold = config.get('confidence_threshold', 0.4)
+            exclusion_keywords = config.get('exclusion_keywords', [])
+        else:
+            self.primary_keywords = default_primary
+            self.secondary_keywords = default_secondary
+            self.confidence_threshold = 0.4
+            exclusion_keywords = []
 
         # Known vendor/brand patterns
         self.vendor_patterns = [
@@ -71,8 +91,8 @@ class DropDetector:
             'mpofficial'
         ]
 
-        # Exclusion patterns (false positives)
-        self.exclusion_patterns = [
+        # Default exclusion patterns (false positives)
+        default_exclusion_patterns = [
             r'looking\s+for',
             r'where\s+to\s+buy',
             r'anyone\s+have',
@@ -85,6 +105,21 @@ class DropDetector:
             r'\[wtb\]',
             r'\[wts\]'  # Exclude personal sales
         ]
+
+        # Build exclusion patterns from config or use defaults
+        if exclusion_keywords:
+            # Convert simple keywords to regex patterns (escape special regex chars)
+            self.exclusion_patterns = []
+            for keyword in exclusion_keywords:
+                # If it's already a regex pattern (contains regex chars), use as-is
+                if any(char in keyword for char in ['\\', '[', ']', '(', ')', '+', '*', '?', '^', '$']):
+                    self.exclusion_patterns.append(keyword)
+                else:
+                    # Convert simple keyword to word boundary pattern
+                    escaped = re.escape(keyword)
+                    self.exclusion_patterns.append(rf'\b{escaped}\b')
+        else:
+            self.exclusion_patterns = default_exclusion_patterns
 
     def detect_drop(self, post: Dict) -> Tuple[bool, float, Dict]:
         """
@@ -182,8 +217,8 @@ class DropDetector:
         # Normalize score to 0-1 range
         confidence = min(score, 1.0)
 
-        # Determine if it's a drop (threshold of 0.4)
-        is_drop = confidence >= 0.4
+        # Determine if it's a drop using configured threshold
+        is_drop = confidence >= self.confidence_threshold
 
         if is_drop:
             logger.info(f"Drop detected: {title[:50]}... (confidence: {confidence:.2f})")

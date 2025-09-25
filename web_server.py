@@ -147,6 +147,7 @@ class DetectionConfig(BaseModel):
     secondary_keywords: List[str] = Field(default_factory=list)
     confidence_threshold: float = Field(default=0.4, ge=0.0, le=1.0)
     known_vendors: List[str] = Field(default_factory=list)
+    exclusion_keywords: List[str] = Field(default_factory=list)
 
 class DropWindowConfig(BaseModel):
     enabled: bool = Field(default=True)
@@ -363,7 +364,8 @@ async def get_config():
             "detection": yaml_config.get('detection', {
                 "primary_keywords": ["drop", "dropped", "release", "available", "launch"],
                 "secondary_keywords": ["limited", "exclusive", "sale", "batch", "decant"],
-                "confidence_threshold": 0.4
+                "confidence_threshold": 0.4,
+                "exclusion_keywords": []
             }),
             "drop_window": yaml_config.get('drop_window', {
                 "enabled": True,
@@ -459,7 +461,8 @@ async def update_detection_config(config: DetectionConfig):
             "primary_keywords": config.primary_keywords,
             "secondary_keywords": config.secondary_keywords,
             "confidence_threshold": config.confidence_threshold,
-            "known_vendors": config.known_vendors
+            "known_vendors": config.known_vendors,
+            "exclusion_keywords": config.exclusion_keywords
         }
 
         if not save_yaml_config(yaml_config):
@@ -603,9 +606,10 @@ async def get_fragrances(
         db = get_database()
         fragrances = db.get_all_fragrances()
 
-        # Load watchlist from config
+        # Load watchlist from config - always reload for fresh data
         yaml_config = load_yaml_config()
         watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+        logger.info(f"Loaded watchlist with {len(watchlist)} items: {watchlist}")
 
         # Convert to list for filtering
         result = []
@@ -684,7 +688,7 @@ async def add_to_watchlist(slug: str):
             if not save_yaml_config(yaml_config):
                 raise HTTPException(status_code=500, detail="Failed to save watchlist")
 
-            logger.info(f"Added {slug} to watchlist")
+            logger.info(f"Added {slug} to watchlist. New watchlist: {watchlist}")
             return {"success": True, "message": f"Added {slug} to watchlist", "watchlist": watchlist}
         else:
             return {"success": True, "message": f"{slug} already in watchlist", "watchlist": watchlist}
@@ -710,7 +714,7 @@ async def remove_from_watchlist(slug: str):
             if not save_yaml_config(yaml_config):
                 raise HTTPException(status_code=500, detail="Failed to save watchlist")
 
-            logger.info(f"Removed {slug} from watchlist")
+            logger.info(f"Removed {slug} from watchlist. New watchlist: {watchlist}")
             return {"success": True, "message": f"Removed {slug} from watchlist", "watchlist": watchlist}
         else:
             return {"success": True, "message": f"{slug} not in watchlist", "watchlist": watchlist}

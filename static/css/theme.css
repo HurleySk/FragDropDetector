@@ -4,13 +4,6 @@
     --primary: #667eea;
     --primary-hover: #5a67d8;
     --secondary: #764ba2;
-    --surface: #ffffff;
-    --surface-2: #f7fafc;
-    --surface-3: #edf2f7;
-    --border: #e2e8f0;
-    --text-primary: #1a202c;
-    --text-secondary: #718096;
-    --text-muted: #a0aec0;
     --success: #48bb78;
     --warning: #ed8936;
     --error: #f56565;
@@ -20,22 +13,7 @@
     --radius-lg: 12px;
 }
 
-[data-theme="dark"] {
-    /* Use proper surface layering for visual hierarchy */
-    --surface: #1a1a1a;      /* Cards and elevated surfaces */
-    --surface-2: #262626;    /* Slightly elevated elements */
-    --surface-3: #333333;    /* Hover and interactive states */
-    --border: #404040;       /* Subtle borders with good contrast */
-
-    /* High contrast text for accessibility */
-    --text-primary: #ffffff;    /* Pure white for primary text */
-    --text-secondary: #e5e5e5;  /* Light gray for secondary text */
-    --text-muted: #a3a3a3;      /* Muted text ensuring 4.5:1 contrast */
-
-    /* Enhanced shadows for depth */
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.6);
-}
+/* Dark mode color definitions handled by design-system.css */
 
 /* Theme Toggle Button */
 .theme-toggle {
