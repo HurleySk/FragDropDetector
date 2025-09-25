@@ -118,7 +118,13 @@ class Router {
                 break;
             case 'configuration':
                 if (typeof initializeConfiguration === 'function') {
-                    initializeConfiguration();
+                    // Call the function and handle async if it returns a promise
+                    const result = initializeConfiguration();
+                    if (result && typeof result.catch === 'function') {
+                        result.catch(err => {
+                            console.error('Failed to initialize configuration:', err);
+                        });
+                    }
                 }
                 break;
         }

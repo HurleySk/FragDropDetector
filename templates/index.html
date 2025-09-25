@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>FragDropDetector</title>
+    <link rel="stylesheet" href="/static/css/design-system.css?v=1">
     <link rel="stylesheet" href="/static/css/base.css?v=3">
     <link rel="stylesheet" href="/static/css/theme.css?v=3">
     <link rel="stylesheet" href="/static/css/toast.css?v=3">
@@ -385,14 +386,246 @@
                         </div>
                     </div>
 
-                    <!-- Other tabs content would be here... -->
+                    <!-- Notifications Configuration -->
+                    <div class="tab-content" id="notifications-tab">
+                        <div class="grid grid-2">
+                            <!-- Pushover -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Pushover (iOS/Android)</h2>
+                                    <p class="card-subtitle">Real-time push notifications</p>
+                                </div>
+
+                                <div class="notification-config">
+                                    <div class="form-group">
+                                        <label>App Token</label>
+                                        <input type="text" id="pushover-app-token" placeholder="Your Pushover App Token">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>User Key</label>
+                                        <input type="text" id="pushover-user-key" placeholder="Your Pushover User Key">
+                                    </div>
+
+                                    <div class="service-status" id="pushover-status">
+                                        <span class="status-indicator disabled"></span>
+                                        <span class="status-text">Not configured</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Discord -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Discord Webhook</h2>
+                                    <p class="card-subtitle">Discord server notifications</p>
+                                </div>
+
+                                <div class="notification-config">
+                                    <div class="form-group">
+                                        <label>Webhook URL</label>
+                                        <input type="text" id="discord-webhook" placeholder="https://discord.com/api/webhooks/...">
+                                    </div>
+
+                                    <div class="service-status" id="discord-status">
+                                        <span class="status-indicator disabled"></span>
+                                        <span class="status-text">Not configured</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="form-actions">
+                                <button type="button" class="btn secondary" onclick="testAllNotifications()">Test All Services</button>
+                                <button type="button" class="btn primary" onclick="handleNotificationConfigSubmit()">Save Notification Settings</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detection Configuration -->
+                    <div class="tab-content" id="detection-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Drop Detection Settings</h2>
+                                <p class="card-subtitle">Configure keywords and detection parameters</p>
+                            </div>
+
+                            <form id="detection-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Primary Keywords</label>
+                                        <textarea id="primary-keywords" rows="6" placeholder="Enter keywords, one per line">drop
+dropped
+release
+available
+launch
+restock
+in stock</textarea>
+                                        <small>High-priority keywords that strongly indicate drops</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Secondary Keywords</label>
+                                        <textarea id="secondary-keywords" rows="6" placeholder="Enter keywords, one per line">limited
+exclusive
+sale
+batch
+decant
+split</textarea>
+                                        <small>Supporting keywords that provide additional context</small>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Confidence Threshold</label>
+                                    <div class="range-input">
+                                        <input type="range" id="confidence-threshold" min="0" max="1" step="0.1" value="0.4">
+                                        <span class="range-value" id="confidence-value">0.4</span>
+                                    </div>
+                                    <small>Minimum confidence score required to trigger notifications (0.0 - 1.0)</small>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary">Save Detection Settings</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Configuration -->
+                    <div class="tab-content" id="schedule-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Drop Window Schedule</h2>
+                                <p class="card-subtitle">Configure when to actively monitor for drops</p>
+                            </div>
+
+                            <form id="window-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Window Checking</label>
+                                        <select id="window-enabled">
+                                            <option value="true">Enabled (Monitor during specific times)</option>
+                                            <option value="false">Disabled (Monitor 24/7)</option>
+                                        </select>
+                                        <small>Enable to save resources by monitoring only during likely drop times</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Timezone</label>
+                                        <select id="window-timezone">
+                                            <option value="America/New_York">Eastern Time (ET)</option>
+                                            <option value="America/Chicago">Central Time (CT)</option>
+                                            <option value="America/Denver">Mountain Time (MT)</option>
+                                            <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                            <option value="UTC">UTC</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Active Days</label>
+                                    <div class="days-selector">
+                                        <label class="day-checkbox"><input type="checkbox" id="day-0" value="0"> Monday</label>
+                                        <label class="day-checkbox"><input type="checkbox" id="day-1" value="1"> Tuesday</label>
+                                        <label class="day-checkbox"><input type="checkbox" id="day-2" value="2"> Wednesday</label>
+                                        <label class="day-checkbox"><input type="checkbox" id="day-3" value="3"> Thursday</label>
+                                        <label class="day-checkbox"><input type="checkbox" id="day-4" value="4" checked> Friday</label>
+                                        <label class="day-checkbox"><input type="checkbox" id="day-5" value="5"> Saturday</label>
+                                        <label class="day-checkbox"><input type="checkbox" id="day-6" value="6"> Sunday</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Start Time</label>
+                                        <input type="time" id="window-start-time" value="12:00">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>End Time</label>
+                                        <input type="time" id="window-end-time" value="17:00">
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary">Save Schedule Settings</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Stock Monitoring Configuration -->
+                    <div class="tab-content" id="stock-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Stock Monitoring</h2>
+                                <p class="card-subtitle">Configure website inventory tracking and notifications</p>
+                            </div>
+
+                            <form id="stock-form">
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="stock-enabled">
+                                        <span class="toggle-slider"></span>
+                                        Enable Stock Monitoring
+                                    </label>
+                                    <small>Monitor Montagne Parfums website for inventory changes</small>
+                                </div>
+
+                                <div class="notification-types">
+                                    <h3>Notification Types</h3>
+
+                                    <label class="checkbox-option">
+                                        <input type="checkbox" id="notify-new-products" checked>
+                                        <span class="checkbox-custom"></span>
+                                        <div class="option-info">
+                                            <div class="option-title">New Products</div>
+                                            <div class="option-description">Notify when new fragrances are added</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="checkbox-option">
+                                        <input type="checkbox" id="notify-restocked" checked>
+                                        <span class="checkbox-custom"></span>
+                                        <div class="option-info">
+                                            <div class="option-title">Restocked Items</div>
+                                            <div class="option-description">Notify when out-of-stock items become available</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="checkbox-option">
+                                        <input type="checkbox" id="notify-price-changes">
+                                        <span class="checkbox-custom"></span>
+                                        <div class="option-info">
+                                            <div class="option-title">Price Changes</div>
+                                            <div class="option-description">Notify when prices increase or decrease</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="checkbox-option">
+                                        <input type="checkbox" id="notify-out-of-stock">
+                                        <span class="checkbox-custom"></span>
+                                        <div class="option-info">
+                                            <div class="option-title">Out of Stock</div>
+                                            <div class="option-description">Notify when items go out of stock</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary">Save Stock Monitoring Settings</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
         </main>
     </div>
 
-    <script src="/static/js/theme-config.js?v=3"></script>
     <script src="/static/js/dashboard-functions.js?v=3"></script>
     <script src="/static/js/toast.js?v=3"></script>
     <script src="/static/js/theme.js?v=3"></script>

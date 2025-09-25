@@ -175,11 +175,11 @@
 }
 
 .status-indicator.enabled {
-    background-color: var(--success-color);
+    background-color: var(--green-600);
 }
 
 .status-indicator.disabled {
-    background-color: var(--text-secondary);
+    background-color: var(--gray-400);
 }
 
 /* Range Input */

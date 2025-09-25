@@ -1,9 +1,10 @@
 // Configuration page functionality
 
-function initializeConfiguration() {
+async function initializeConfiguration() {
     setupConfigurationTabs();
-    loadAllConfiguration();
     bindConfigurationForms();
+    // Ensure configuration loads after DOM is ready
+    await loadAllConfiguration();
 }
 
 function cleanupConfiguration() {
@@ -32,7 +33,14 @@ function setupConfigurationTabs() {
 
 async function loadAllConfiguration() {
     try {
-        const config = AppState.config || await loadConfig();
+        // Always fetch fresh config when loading the configuration page
+        const config = await loadConfig();
+
+        if (!config) {
+            console.error('No configuration data received');
+            return;
+        }
+
         populateRedditConfig(config.reddit || {});
         populateNotificationConfig(config.notifications || {});
         populateDetectionConfig(config.detection || {});
@@ -45,20 +53,33 @@ async function loadAllConfiguration() {
 }
 
 function populateRedditConfig(config) {
-    document.getElementById('reddit-client-id').value = config.client_id || '';
-    document.getElementById('reddit-client-secret').value = config.client_secret || '';
-    document.getElementById('reddit-subreddit').value = config.subreddit || 'MontagneParfums';
-    document.getElementById('reddit-interval').value = config.check_interval || 300;
+    const clientIdEl = document.getElementById('reddit-client-id');
+    const clientSecretEl = document.getElementById('reddit-client-secret');
+    const subredditEl = document.getElementById('reddit-subreddit');
+    const intervalEl = document.getElementById('reddit-interval');
+
+    if (clientIdEl) clientIdEl.value = config.client_id || '';
+    if (clientSecretEl) clientSecretEl.value = config.client_secret || '';
+    if (subredditEl) subredditEl.value = config.subreddit || 'MontagneParfums';
+    if (intervalEl) intervalEl.value = config.check_interval || 300;
 }
 
 function populateNotificationConfig(config) {
-    document.getElementById('pushover-app-token').value = config.pushover_app_token || '';
-    document.getElementById('pushover-user-key').value = config.pushover_user_key || '';
-    document.getElementById('discord-webhook').value = config.discord_webhook_url || '';
+    const pushoverToken = config.pushover_app_token || '';
+    const pushoverKey = config.pushover_user_key || '';
+    const discordWebhook = config.discord_webhook_url || '';
 
-    // Update status indicators
-    updateNotificationStatus('pushover', config.pushover_app_token && config.pushover_user_key);
-    updateNotificationStatus('discord', config.discord_webhook_url);
+    const pushoverTokenEl = document.getElementById('pushover-app-token');
+    const pushoverKeyEl = document.getElementById('pushover-user-key');
+    const discordWebhookEl = document.getElementById('discord-webhook');
+
+    if (pushoverTokenEl) pushoverTokenEl.value = pushoverToken;
+    if (pushoverKeyEl) pushoverKeyEl.value = pushoverKey;
+    if (discordWebhookEl) discordWebhookEl.value = discordWebhook;
+
+    // Update status indicators - check for non-empty strings
+    updateNotificationStatus('pushover', pushoverToken.length > 0 && pushoverKey.length > 0);
+    updateNotificationStatus('discord', discordWebhook.length > 0);
 }
 
 function populateDetectionConfig(config) {
@@ -169,8 +190,8 @@ function updateNotificationStatuses() {
     const pushoverUser = document.getElementById('pushover-user-key').value;
     const discordWebhook = document.getElementById('discord-webhook').value;
 
-    updateNotificationStatus('pushover', pushoverToken && pushoverUser);
-    updateNotificationStatus('discord', discordWebhook);
+    updateNotificationStatus('pushover', pushoverToken.length > 0 && pushoverUser.length > 0);
+    updateNotificationStatus('discord', discordWebhook.length > 0);
 }
 
 async function handleRedditConfigSubmit(e) {
@@ -298,7 +319,7 @@ async function handleStockConfigSubmit(e) {
     }
 }
 
-async function saveNotificationConfig() {
+async function handleNotificationConfigSubmit() {
     const config = {
         pushover_app_token: document.getElementById('pushover-app-token').value || null,
         pushover_user_key: document.getElementById('pushover-user-key').value || null,
