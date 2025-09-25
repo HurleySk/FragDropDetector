@@ -121,13 +121,15 @@ class FragDropMonitor:
         client_id = os.getenv('REDDIT_CLIENT_ID')
         client_secret = os.getenv('REDDIT_CLIENT_SECRET')
         user_agent = os.getenv('REDDIT_USER_AGENT', 'FragDropDetector/1.0')
+        refresh_token = os.getenv('REDDIT_REFRESH_TOKEN')
 
         if not client_id or not client_secret:
             self.logger.error("Reddit credentials not found in environment variables!")
             self.logger.error("Please set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET")
             sys.exit(1)
 
-        self.reddit_client = RedditClient(client_id, client_secret, user_agent)
+        # Pass refresh token if available for user authentication
+        self.reddit_client = RedditClient(client_id, client_secret, user_agent, refresh_token)
 
         # Test connection
         if not self.reddit_client.test_connection():

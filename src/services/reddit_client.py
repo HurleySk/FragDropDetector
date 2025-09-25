@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class RedditClient:
     """Client for interacting with Reddit API using PRAW"""
 
-    def __init__(self, client_id: str, client_secret: str, user_agent: str):
+    def __init__(self, client_id: str, client_secret: str, user_agent: str, refresh_token: Optional[str] = None):
         """
         Initialize Reddit client
 
@@ -22,14 +22,42 @@ class RedditClient:
             client_id: Reddit app client ID
             client_secret: Reddit app client secret
             user_agent: User agent string for Reddit API
+            refresh_token: Optional refresh token for user authentication
         """
-        self.reddit = praw.Reddit(
-            client_id=client_id,
-            client_secret=client_secret,
-            user_agent=user_agent
-        )
-        self.reddit.read_only = True
-        logger.info(f"Reddit client initialized with user agent: {user_agent}")
+        if refresh_token:
+            # User authentication with refresh token
+            self.reddit = praw.Reddit(
+                client_id=client_id,
+                client_secret=client_secret,
+                refresh_token=refresh_token,
+                user_agent=user_agent
+            )
+            self.authenticated_user = None
+            try:
+                # Test user authentication
+                user = self.reddit.user.me()
+                self.authenticated_user = user.name
+                logger.info(f"Reddit client initialized with user authentication as u/{user.name}")
+            except Exception as e:
+                logger.warning(f"Failed to authenticate with refresh token: {e}")
+                logger.info("Falling back to app-only authentication")
+                # Fall back to app-only auth
+                self.reddit = praw.Reddit(
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    user_agent=user_agent
+                )
+                self.reddit.read_only = True
+        else:
+            # App-only authentication (read-only)
+            self.reddit = praw.Reddit(
+                client_id=client_id,
+                client_secret=client_secret,
+                user_agent=user_agent
+            )
+            self.reddit.read_only = True
+            self.authenticated_user = None
+            logger.info(f"Reddit client initialized with app-only authentication")
 
     def get_subreddit_posts(
         self,
@@ -144,7 +172,28 @@ class RedditClient:
             # Try to access the subreddit
             subreddit = self.reddit.subreddit('MontagneParfums')
             _ = subreddit.display_name
-            logger.info("Reddit API connection test successful")
+
+            # Log authentication status
+            if self.authenticated_user:
+                logger.info(f"Reddit API connection successful - Authenticated as u/{self.authenticated_user}")
+
+                # Check if subscribed to the subreddit
+                try:
+                    is_subscribed = False
+                    for sub in self.reddit.user.subreddits(limit=None):
+                        if sub.display_name.lower() == 'montagneparfums':
+                            is_subscribed = True
+                            break
+                    if is_subscribed:
+                        logger.info("✓ User is subscribed to r/MontagneParfums - will see member-only content")
+                    else:
+                        logger.warning("User is not subscribed to r/MontagneParfums - may miss some content")
+                except:
+                    pass
+            else:
+                logger.info("Reddit API connection successful - Using app-only authentication")
+                logger.warning("App-only auth may not see member-only posts in r/MontagneParfums")
+
             return True
         except Exception as e:
             logger.error(f"Reddit API connection test failed: {e}")
