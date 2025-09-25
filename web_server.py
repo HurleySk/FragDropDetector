@@ -171,6 +171,24 @@ class StockMonitoringConfig(BaseModel):
     price_changes: bool = Field(default=False)
     out_of_stock: bool = Field(default=False)
 
+class StockScheduleConfig(BaseModel):
+    enabled: bool = Field(default=True, description="Enable stock schedule monitoring")
+    check_interval: int = Field(default=1800, ge=60, le=86400, description="Check interval in seconds (1 min - 24 hours)")
+    window_enabled: bool = Field(default=False, description="Enable time window restrictions")
+    timezone: str = Field(default="America/New_York", description="Timezone for window checking")
+    days_of_week: List[int] = Field(default_factory=list, description="Days of week (0=Monday, 6=Sunday), empty=all days")
+    start_hour: int = Field(default=9, ge=0, le=23, description="Start hour (24h format)")
+    start_minute: int = Field(default=0, ge=0, le=59, description="Start minute")
+    end_hour: int = Field(default=18, ge=0, le=23, description="End hour (24h format)")
+    end_minute: int = Field(default=0, ge=0, le=59, description="End minute")
+
+    @field_validator('days_of_week')
+    @classmethod
+    def validate_days(cls, v):
+        if not all(0 <= day <= 6 for day in v):
+            raise ValueError('Days of week must be between 0-6 (Monday-Sunday)')
+        return list(set(v))  # Remove duplicates
+
 class StatusResponse(BaseModel):
     running: bool
     last_check: Optional[str] = None
@@ -344,6 +362,17 @@ async def get_config():
                     "price_changes": False,
                     "out_of_stock": False
                 }
+            }),
+            "stock_schedule": yaml_config.get('stock_schedule', {
+                "enabled": True,
+                "check_interval": 1800,
+                "window_enabled": False,
+                "timezone": "America/New_York",
+                "days_of_week": [],
+                "start_hour": 9,
+                "start_minute": 0,
+                "end_hour": 18,
+                "end_minute": 0
             })
         }
 
@@ -478,6 +507,37 @@ async def update_stock_monitoring_config(config: StockMonitoringConfig):
 
     except Exception as e:
         logger.error("Failed to update stock monitoring config", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/config/stock-schedule")
+async def update_stock_schedule_config(config: StockScheduleConfig):
+    """Update stock schedule configuration with validation"""
+    try:
+        yaml_config = load_yaml_config()
+
+        yaml_config["stock_schedule"] = {
+            "enabled": config.enabled,
+            "check_interval": config.check_interval,
+            "window_enabled": config.window_enabled,
+            "timezone": config.timezone,
+            "days_of_week": config.days_of_week,
+            "start_hour": config.start_hour,
+            "start_minute": config.start_minute,
+            "end_hour": config.end_hour,
+            "end_minute": config.end_minute
+        }
+
+        if not save_yaml_config(yaml_config):
+            raise HTTPException(status_code=500, detail="Failed to save configuration")
+
+        logger.info("Stock schedule configuration updated",
+                   enabled=config.enabled,
+                   interval=config.check_interval,
+                   window_enabled=config.window_enabled)
+        return {"success": True, "message": "Stock schedule configuration updated successfully"}
+
+    except Exception as e:
+        logger.error("Failed to update stock schedule config", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/drops")

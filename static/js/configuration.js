@@ -46,6 +46,7 @@ async function loadAllConfiguration() {
         populateDetectionConfig(config.detection || {});
         populateDropWindowConfig(config.drop_window || {});
         populateStockMonitoringConfig(config.stock_monitoring || {});
+        populateStockScheduleConfig(config.stock_schedule || {});
     } catch (error) {
         console.error('Failed to load configuration:', error);
         showAlert('Failed to load configuration', 'error');
@@ -129,6 +130,49 @@ function populateStockMonitoringConfig(config) {
     if (outOfStockEl) outOfStockEl.checked = notifications.out_of_stock === true;
 }
 
+function populateStockScheduleConfig(config) {
+    const scheduleConfig = config || {};
+
+    // Main settings
+    const scheduleEnabledEl = document.getElementById('stock-schedule-enabled');
+    const checkIntervalEl = document.getElementById('stock-check-interval');
+    const windowEnabledEl = document.getElementById('stock-window-enabled');
+    const windowConfigEl = document.getElementById('stock-window-config');
+
+    if (scheduleEnabledEl) scheduleEnabledEl.checked = scheduleConfig.enabled !== false;
+    if (checkIntervalEl) checkIntervalEl.value = scheduleConfig.check_interval || 1800;
+    if (windowEnabledEl) {
+        windowEnabledEl.checked = scheduleConfig.window_enabled === true;
+        // Show/hide window config based on toggle state
+        if (windowConfigEl) {
+            windowConfigEl.style.display = scheduleConfig.window_enabled ? 'block' : 'none';
+        }
+    }
+
+    // Window configuration
+    const timezoneEl = document.getElementById('stock-window-timezone');
+    const startTimeEl = document.getElementById('stock-window-start-time');
+    const endTimeEl = document.getElementById('stock-window-end-time');
+
+    if (timezoneEl) timezoneEl.value = scheduleConfig.timezone || 'America/New_York';
+
+    // Format time values
+    const startTime = `${String(scheduleConfig.start_hour || 9).padStart(2, '0')}:${String(scheduleConfig.start_minute || 0).padStart(2, '0')}`;
+    const endTime = `${String(scheduleConfig.end_hour || 18).padStart(2, '0')}:${String(scheduleConfig.end_minute || 0).padStart(2, '0')}`;
+
+    if (startTimeEl) startTimeEl.value = startTime;
+    if (endTimeEl) endTimeEl.value = endTime;
+
+    // Set active days (empty array means all days)
+    const activeDays = scheduleConfig.days_of_week || [];
+    for (let i = 0; i <= 6; i++) {
+        const checkbox = document.getElementById(`stock-day-${i}`);
+        if (checkbox) {
+            checkbox.checked = activeDays.includes(i);
+        }
+    }
+}
+
 function updateNotificationStatus(service, enabled) {
     const statusElement = document.getElementById(`${service}-status`);
     const indicator = statusElement?.querySelector('.status-indicator');
@@ -166,6 +210,21 @@ function bindConfigurationForms() {
     const stockForm = document.getElementById('stock-form');
     if (stockForm) {
         stockForm.addEventListener('submit', handleStockConfigSubmit);
+    }
+
+    // Stock schedule form
+    const stockScheduleForm = document.getElementById('stock-schedule-form');
+    if (stockScheduleForm) {
+        stockScheduleForm.addEventListener('submit', handleStockScheduleConfigSubmit);
+    }
+
+    // Stock window toggle
+    const stockWindowToggle = document.getElementById('stock-window-enabled');
+    const stockWindowConfig = document.getElementById('stock-window-config');
+    if (stockWindowToggle && stockWindowConfig) {
+        stockWindowToggle.addEventListener('change', () => {
+            stockWindowConfig.style.display = stockWindowToggle.checked ? 'block' : 'none';
+        });
     }
 
     // Confidence threshold slider
@@ -320,6 +379,44 @@ async function handleStockConfigSubmit(e) {
         // Error already shown in saveStockMonitoringConfig
     } finally {
         setLoading('stock-form', false);
+    }
+}
+
+async function handleStockScheduleConfigSubmit(e) {
+    e.preventDefault();
+
+    const windowEnabled = document.getElementById('stock-window-enabled').checked;
+    const startTime = document.getElementById('stock-window-start-time').value.split(':');
+    const endTime = document.getElementById('stock-window-end-time').value.split(':');
+
+    // Get selected days
+    const days = [];
+    for (let i = 0; i <= 6; i++) {
+        const checkbox = document.getElementById(`stock-day-${i}`);
+        if (checkbox && checkbox.checked) {
+            days.push(i);
+        }
+    }
+
+    const config = {
+        enabled: document.getElementById('stock-schedule-enabled').checked,
+        check_interval: parseInt(document.getElementById('stock-check-interval').value),
+        window_enabled: windowEnabled,
+        timezone: document.getElementById('stock-window-timezone').value,
+        days_of_week: days,
+        start_hour: parseInt(startTime[0]),
+        start_minute: parseInt(startTime[1]),
+        end_hour: parseInt(endTime[0]),
+        end_minute: parseInt(endTime[1])
+    };
+
+    try {
+        setLoading('stock-schedule-form', true);
+        await saveStockScheduleConfig(config);
+    } catch (error) {
+        // Error already shown in saveStockScheduleConfig
+    } finally {
+        setLoading('stock-schedule-form', false);
     }
 }
 

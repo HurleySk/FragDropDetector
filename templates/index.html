@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/static/css/theme.css?v=3">
     <link rel="stylesheet" href="/static/css/toast.css?v=3">
     <link rel="stylesheet" href="/static/css/dashboard.css?v=4">
-    <link rel="stylesheet" href="/static/css/configuration.css?v=3">
+    <link rel="stylesheet" href="/static/css/configuration.css?v=4">
     <link rel="stylesheet" href="/static/css/inventory.css?v=4">
 </head>
 <body>
@@ -50,6 +50,7 @@
 
         <main class="main-content">
             <div id="alert" class="alert"></div>
+            <div id="toast-container" class="toast-container"></div>
 
             <!-- Dashboard Page -->
             <div class="page-content dashboard-page" id="dashboard-content">
@@ -341,6 +342,7 @@
                         <button class="tab-btn" data-tab="detection">Detection</button>
                         <button class="tab-btn" data-tab="schedule">Schedule</button>
                         <button class="tab-btn" data-tab="stock">Stock Monitoring</button>
+                        <button class="tab-btn" data-tab="stock-schedule">Stock Schedule</button>
                     </div>
 
                     <!-- Reddit Configuration -->
@@ -614,6 +616,122 @@ split</textarea>
                             </form>
                         </div>
                     </div>
+
+                    <!-- Stock Schedule Configuration -->
+                    <div class="tab-content" id="stock-schedule-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Stock Monitoring Schedule</h2>
+                                <p class="card-subtitle">Configure when and how often to check for stock changes</p>
+                            </div>
+
+                            <form id="stock-schedule-form">
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="stock-schedule-enabled">
+                                        <span class="toggle-slider"></span>
+                                        Enable Stock Schedule
+                                    </label>
+                                    <small>Enable independent stock monitoring schedule (separate from Reddit drops)</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="stock-check-interval">Check Interval</label>
+                                    <select id="stock-check-interval" class="form-input">
+                                        <option value="300">5 minutes</option>
+                                        <option value="900">15 minutes</option>
+                                        <option value="1800" selected>30 minutes</option>
+                                        <option value="3600">1 hour</option>
+                                        <option value="7200">2 hours</option>
+                                        <option value="14400">4 hours</option>
+                                        <option value="21600">6 hours</option>
+                                        <option value="43200">12 hours</option>
+                                        <option value="86400">24 hours</option>
+                                    </select>
+                                    <small>How often to check for stock changes</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="stock-window-enabled">
+                                        <span class="toggle-slider"></span>
+                                        Enable Time Window
+                                    </label>
+                                    <small>Restrict stock monitoring to specific days/times (leave off to monitor 24/7)</small>
+                                </div>
+
+                                <div class="window-config" id="stock-window-config" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="stock-window-timezone">Timezone</label>
+                                        <select id="stock-window-timezone" class="form-input">
+                                            <option value="America/New_York">Eastern Time</option>
+                                            <option value="America/Chicago">Central Time</option>
+                                            <option value="America/Denver">Mountain Time</option>
+                                            <option value="America/Los_Angeles">Pacific Time</option>
+                                            <option value="UTC">UTC</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Active Days</label>
+                                        <div class="days-grid">
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="stock-day-0" value="0">
+                                                <span class="checkbox-custom"></span>
+                                                Monday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="stock-day-1" value="1">
+                                                <span class="checkbox-custom"></span>
+                                                Tuesday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="stock-day-2" value="2">
+                                                <span class="checkbox-custom"></span>
+                                                Wednesday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="stock-day-3" value="3">
+                                                <span class="checkbox-custom"></span>
+                                                Thursday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="stock-day-4" value="4">
+                                                <span class="checkbox-custom"></span>
+                                                Friday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="stock-day-5" value="5">
+                                                <span class="checkbox-custom"></span>
+                                                Saturday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="stock-day-6" value="6">
+                                                <span class="checkbox-custom"></span>
+                                                Sunday
+                                            </label>
+                                        </div>
+                                        <small>Leave all unchecked to monitor every day</small>
+                                    </div>
+
+                                    <div class="time-range">
+                                        <div class="form-group">
+                                            <label for="stock-window-start-time">Start Time</label>
+                                            <input type="time" id="stock-window-start-time" class="form-input" value="09:00">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="stock-window-end-time">End Time</label>
+                                            <input type="time" id="stock-window-end-time" class="form-input" value="18:00">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary">Save Stock Schedule</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -624,9 +742,9 @@ split</textarea>
     <script src="/static/js/toast.js?v=3"></script>
     <script src="/static/js/theme.js?v=3"></script>
     <script src="/static/js/router.js?v=5"></script>
-    <script src="/static/js/app.js?v=3"></script>
+    <script src="/static/js/app.js?v=4"></script>
     <script src="/static/js/dashboard.js?v=5"></script>
-    <script src="/static/js/configuration.js?v=3"></script>
+    <script src="/static/js/configuration.js?v=5"></script>
     <script src="/static/js/inventory.js?v=5"></script>
 </body>
 </html>

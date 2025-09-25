@@ -253,6 +253,21 @@ async function saveStockMonitoringConfig(config) {
     }
 }
 
+async function saveStockScheduleConfig(config) {
+    try {
+        const result = await apiCall('/api/config/stock-schedule', {
+            method: 'POST',
+            body: JSON.stringify(config)
+        });
+        showAlert('Stock schedule configuration saved successfully', 'success');
+        AppState.cache.clear();
+        return result;
+    } catch (error) {
+        showAlert(`Failed to save stock schedule config: ${error.message}`, 'error');
+        throw error;
+    }
+}
+
 // Test Functions
 async function testRedditConnection() {
     const form = document.getElementById('reddit-form');

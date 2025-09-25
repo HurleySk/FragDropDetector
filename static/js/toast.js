@@ -35,8 +35,11 @@ class ToastManager {
         if (!persistent && duration > 0) {
             const progressBar = toast.querySelector('.toast-progress');
             if (progressBar) {
-                progressBar.style.width = '0%';
-                progressBar.style.transitionDuration = `${duration}ms`;
+                // Start animation after a brief delay to ensure the toast is shown
+                requestAnimationFrame(() => {
+                    progressBar.style.width = '0%';
+                    progressBar.style.transitionDuration = `${duration}ms`;
+                });
             }
 
             setTimeout(() => this.dismiss(toastId), duration);

@@ -76,3 +76,13 @@ stock_monitoring:
     price_changes: false
     restocked_products: true
   watchlist: []
+stock_schedule:
+  check_interval: 900
+  days_of_week: []
+  enabled: true
+  end_hour: 18
+  end_minute: 0
+  start_hour: 9
+  start_minute: 0
+  timezone: America/New_York
+  window_enabled: false

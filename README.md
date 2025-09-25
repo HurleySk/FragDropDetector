@@ -6,14 +6,15 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
 
 ### Core Monitoring
 - **Reddit Scanner**: Monitors r/MontagneParfums for drop announcements during configured windows
-- **Stock Tracker**: Scrapes Montagne Parfums website for inventory changes using Playwright
+- **Stock Tracker**: Independent website monitoring with customizable scheduling (separate from Reddit)
 - **Smart Detection**: Pattern-based drop detection with confidence scoring
 - **Watchlist**: Track specific fragrances with priority restock notifications
 
 ### Web Interface
 - **Dashboard**: System health, recent activity, watchlist widget
 - **Inventory**: Browse all 158+ products with search, filters, and bulk operations
-- **Configuration**: Manage Reddit API, notifications, and monitoring settings
+- **Configuration**: Manage Reddit API, notifications, monitoring settings, and stock schedule
+- Enhanced toast notifications for instant feedback
 - Clean, responsive design with dark mode support
 
 ### Notifications
@@ -79,6 +80,18 @@ drop_window:
   timezone: America/New_York
 ```
 
+### Stock Schedule (Independent)
+Default: Every 30 minutes, 24/7
+```yaml
+# config/config.yaml
+stock_schedule:
+  enabled: true
+  check_interval: 1800  # 30 minutes
+  window_enabled: false  # Monitor 24/7
+  timezone: America/New_York
+  days_of_week: []  # Empty = all days
+```
+
 ### Notifications
 - **Pushover**: Best for mobile, requires $5 app
 - **Discord**: Free, create webhook in server settings
@@ -141,16 +154,20 @@ FragDropDetector/
 
 ## Monitoring Logic
 
-1. **Drop Window Check**: Only monitors during configured hours
+### Reddit Monitoring
+1. **Drop Window Check**: Only monitors during configured hours (Fridays 12-5 PM ET by default)
 2. **Reddit Scan**: Checks new posts every 5 minutes (configurable)
 3. **Pattern Detection**:
    - Primary keywords: drop, release, available, restock
    - Vendor matching: montagneparfums variations
    - Confidence scoring (threshold: 0.4)
-4. **Stock Monitoring**:
-   - Full inventory scan during drop windows
-   - Compares with previous scan for changes
-   - 15-minute cache to reduce load
+
+### Stock Monitoring (Independent)
+1. **Flexible Scheduling**: Runs on separate schedule (30 minutes by default)
+2. **Optional Time Windows**: Can restrict to specific days/hours or monitor 24/7
+3. **Full Inventory Scan**: Scrapes entire product catalog using Playwright
+4. **Change Detection**: Compares with previous scan for new/restocked/price changes
+5. **Smart Caching**: 15-minute cache to reduce server load
 
 ## Troubleshooting
 

@@ -93,6 +93,18 @@ class FragDropMonitor:
         self.stock_enabled = self.stock_config.get('enabled', True)
         self.stock_notifications = self.stock_config.get('notifications', {})
 
+        # Stock schedule configuration (separate from Reddit drop window)
+        self.stock_schedule_config = self.config.get('stock_schedule', {})
+        self.stock_schedule_enabled = self.stock_schedule_config.get('enabled', True)
+        self.stock_check_interval = self.stock_schedule_config.get('check_interval', 1800)  # 30 minutes default
+        self.stock_window_enabled = self.stock_schedule_config.get('window_enabled', False)
+        self.stock_window_timezone = self.stock_schedule_config.get('timezone', 'America/New_York')
+        self.stock_window_days = self.stock_schedule_config.get('days_of_week', [])  # Empty = all days
+        self.stock_window_start_hour = self.stock_schedule_config.get('start_hour', 9)
+        self.stock_window_start_minute = self.stock_schedule_config.get('start_minute', 0)
+        self.stock_window_end_hour = self.stock_schedule_config.get('end_hour', 18)
+        self.stock_window_end_minute = self.stock_schedule_config.get('end_minute', 0)
+
         self._setup_reddit_client()
         self._setup_notifications()
 
@@ -184,6 +196,41 @@ class FragDropMonitor:
         end_time = datetime.now().replace(
             hour=self.drop_window_end_hour,
             minute=self.drop_window_end_minute,
+            second=0,
+            microsecond=0
+        ).time()
+
+        # Check if current time is within window
+        return start_time <= current_time < end_time
+
+    def is_stock_window(self):
+        """Check if current time is within configured stock monitoring window"""
+        # If stock schedule is disabled, don't check
+        if not self.stock_schedule_enabled or not self.stock_enabled:
+            return False
+
+        # If window checking is disabled, always return True
+        if not self.stock_window_enabled:
+            return True
+
+        tz = pytz.timezone(self.stock_window_timezone)
+        now = datetime.now(tz)
+
+        # Check if it's one of the configured days (empty list means all days)
+        if self.stock_window_days and now.weekday() not in self.stock_window_days:
+            return False
+
+        # Create time objects for comparison
+        current_time = now.time()
+        start_time = datetime.now().replace(
+            hour=self.stock_window_start_hour,
+            minute=self.stock_window_start_minute,
+            second=0,
+            microsecond=0
+        ).time()
+        end_time = datetime.now().replace(
+            hour=self.stock_window_end_hour,
+            minute=self.stock_window_end_minute,
             second=0,
             microsecond=0
         ).time()
@@ -314,15 +361,31 @@ class FragDropMonitor:
 
     async def check_stock_changes(self):
         """Check for stock changes on Montagne Parfums website"""
-        if not self.stock_enabled:
+        if not self.stock_enabled or not self.stock_schedule_enabled:
             return
 
-        # Check if we're in the drop window (same as Reddit monitoring)
-        if not self.is_drop_window():
+        # Check if we're in the stock monitoring window (independent of Reddit drop window)
+        if not self.is_stock_window():
+            if self.stock_window_enabled:
+                tz = pytz.timezone(self.stock_window_timezone)
+                now = datetime.now(tz)
+
+                # Format the days for display
+                if self.stock_window_days:
+                    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    configured_days = ', '.join([day_names[d] for d in sorted(self.stock_window_days)])
+                else:
+                    configured_days = 'Daily'
+
+                window_time = f"{self.stock_window_start_hour:02d}:{self.stock_window_start_minute:02d}-{self.stock_window_end_hour:02d}:{self.stock_window_end_minute:02d}"
+                self.logger.info(f"Outside stock monitoring window ({configured_days} {window_time} {self.stock_window_timezone}). Current time: {now.strftime('%A %I:%M %p %Z')}")
             return
 
         try:
-            self.logger.info("DROP WINDOW ACTIVE - Checking Montagne Parfums stock...")
+            if self.stock_window_enabled:
+                self.logger.info("STOCK WINDOW ACTIVE - Checking Montagne Parfums stock...")
+            else:
+                self.logger.info("Checking Montagne Parfums stock...")
 
             # Initialize stock monitor if needed
             if not self.stock_monitor:
@@ -473,7 +536,9 @@ class FragDropMonitor:
         """Run the monitor"""
         self.logger.info("Starting FragDropMonitor...")
         self.logger.info(f"Monitoring r/{self.subreddit}")
-        self.logger.info(f"Check interval: {self.check_interval} seconds")
+        self.logger.info(f"Reddit check interval: {self.check_interval} seconds")
+        if self.stock_schedule_enabled:
+            self.logger.info(f"Stock check interval: {self.stock_check_interval} seconds")
 
         # Send test notification if requested
         if os.getenv('SEND_TEST_NOTIFICATION', '').lower() == 'true':
@@ -487,14 +552,28 @@ class FragDropMonitor:
             import asyncio
             loop = asyncio.new_event_loop()
 
+            # Track last execution times for independent scheduling
+            last_reddit_check = 0
+            last_stock_check = 0
+
+            # Use minimum interval for main loop to ensure proper timing
+            main_loop_interval = min(self.check_interval, self.stock_check_interval if self.stock_schedule_enabled else self.check_interval)
+
             while True:
-                self.check_for_drops()
+                current_time = time.time()
 
-                # Run async stock check
-                loop.run_until_complete(self.check_stock_changes())
+                # Check Reddit based on its interval
+                if current_time - last_reddit_check >= self.check_interval:
+                    self.check_for_drops()
+                    last_reddit_check = current_time
 
-                self.logger.info(f"Next check in {self.check_interval} seconds...")
-                time.sleep(self.check_interval)
+                # Check stock based on its interval (if enabled)
+                if self.stock_schedule_enabled and current_time - last_stock_check >= self.stock_check_interval:
+                    loop.run_until_complete(self.check_stock_changes())
+                    last_stock_check = current_time
+
+                # Sleep for the main loop interval
+                time.sleep(main_loop_interval)
 
         except KeyboardInterrupt:
             self.logger.info("Shutting down FragDropMonitor...")

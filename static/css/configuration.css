@@ -122,12 +122,12 @@
 }
 
 .btn.primary {
-    background-color: var(--primary-color);
+    background-color: var(--blue-600);
     color: white;
 }
 
 .btn.primary:hover {
-    background-color: var(--secondary-color);
+    background-color: var(--blue-700);
     transform: translateY(-1px);
 }
 
