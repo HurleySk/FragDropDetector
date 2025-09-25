@@ -258,10 +258,19 @@ function setupDashboardRefresh() {
 
 async function updateHealthChecks() {
     try {
-        // Check Reddit API health (via config endpoint)
+        // Check Reddit API health and authentication status
         try {
-            await apiCall('/api/config');
-            updateHealthIndicator('reddit', 'healthy', 'Connected');
+            const status = await apiCall('/api/status');
+            const redditStatus = status.reddit_status || {};
+
+            if (!status.reddit_status) {
+                // Old API version or missing reddit_status
+                updateHealthIndicator('reddit', 'warning', 'Restart web server for auth status');
+            } else if (redditStatus.authenticated) {
+                updateHealthIndicator('reddit', 'healthy', `Authenticated as u/${redditStatus.username}`);
+            } else {
+                updateHealthIndicator('reddit', 'warning', 'Authentication required - monitoring disabled');
+            }
         } catch (error) {
             updateHealthIndicator('reddit', 'unhealthy', 'Connection Failed');
         }

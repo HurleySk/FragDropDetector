@@ -352,6 +352,26 @@
 
                     <!-- Reddit Monitor -->
                     <div class="tab-content active" id="reddit-tab">
+                        <!-- Authentication Status Banner -->
+                        <div class="auth-status-banner warning" id="reddit-auth-banner" style="display: none;">
+                            <div class="banner-icon">⚠️</div>
+                            <div class="banner-content">
+                                <h3>Reddit Authentication Required</h3>
+                                <p>User authentication is required to monitor r/MontagneParfums. Without it, you'll miss member-only posts and notification links may not work.</p>
+                                <div class="banner-actions">
+                                    <button class="btn primary" onclick="showAuthSetupModal()">Setup Authentication</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="auth-status-banner success" id="reddit-auth-success" style="display: none;">
+                            <div class="banner-icon">✅</div>
+                            <div class="banner-content">
+                                <h3>Reddit Authentication Active</h3>
+                                <p id="auth-user-info">Authenticated as u/username</p>
+                            </div>
+                        </div>
+
                         <div class="card">
                             <div class="card-header">
                                 <h2 class="card-title">Reddit Monitoring Configuration</h2>

@@ -69,6 +69,28 @@ python web_server.py
 2. Create app (script type)
 3. Add Client ID and Secret to `.env`
 
+### Reddit User Authentication (REQUIRED)
+User authentication is **required** for Reddit monitoring. Without it, the system will skip Reddit checks and you'll miss member-only posts.
+
+#### SSH Tunnel Method (For Headless Systems)
+```bash
+# 1. SSH with port forwarding from your local machine:
+ssh -L 8080:localhost:8080 pi@YOUR_PI_IP
+
+# 2. Run authentication script on Pi:
+python generate_token_headless.py
+
+# 3. Follow browser instructions on your local machine
+# Token is automatically saved and persists indefinitely
+```
+
+**Why Authentication is Required:**
+- r/MontagneParfums has member-only posts invisible to anonymous users
+- Notification links won't work without proper authentication
+- Stock monitoring continues to work independently
+
+**Note**: Reddit intentionally blocks automated headless authentication for security. SSH tunnel is the only reliable method for headless systems.
+
 ### Drop Windows
 Default: Fridays 12-5 PM ET
 ```yaml

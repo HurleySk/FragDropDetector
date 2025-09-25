@@ -198,6 +198,7 @@ class StatusResponse(BaseModel):
     recent_stock_changes: int = 0
     next_window: Optional[str] = None
     notifications_enabled: Dict[str, bool] = Field(default_factory=dict)
+    reddit_status: Dict[str, Any] = Field(default_factory=dict)
 
 # Utility functions
 def load_yaml_config() -> Dict[str, Any]:
@@ -308,13 +309,25 @@ async def get_status():
             "email": bool(os.getenv('EMAIL_SENDER'))
         }
 
+        # Check Reddit authentication status
+        refresh_token = os.getenv('REDDIT_REFRESH_TOKEN')
+        username = os.getenv('REDDIT_USERNAME')
+
+        reddit_status = {
+            "authenticated": bool(refresh_token),
+            "username": username,
+            "enabled": bool(refresh_token),
+            "message": f"Authenticated as u/{username}" if refresh_token else "Authentication required - monitoring disabled"
+        }
+
         return StatusResponse(
             running=True,
             drops_detected=drops_count,
             posts_processed=posts_processed,
             fragrances_tracked=fragrances_tracked,
             recent_stock_changes=recent_stock_changes,
-            notifications_enabled=notifications_enabled
+            notifications_enabled=notifications_enabled,
+            reddit_status=reddit_status
         )
 
     except Exception as e:
@@ -328,12 +341,19 @@ async def get_config():
         load_dotenv()  # Reload environment variables
         yaml_config = load_yaml_config()
 
+        # Reddit authentication status
+        refresh_token = os.getenv('REDDIT_REFRESH_TOKEN')
+        username = os.getenv('REDDIT_USERNAME')
+
         return {
             "reddit": {
                 "client_id": os.getenv('REDDIT_CLIENT_ID', ''),
                 "client_secret": os.getenv('REDDIT_CLIENT_SECRET', ''),
                 "subreddit": yaml_config.get('reddit', {}).get('subreddit', 'MontagneParfums'),
-                "check_interval": yaml_config.get('reddit', {}).get('check_interval', 300)
+                "check_interval": yaml_config.get('reddit', {}).get('check_interval', 300),
+                "authenticated": bool(refresh_token),
+                "username": username,
+                "auth_required": not bool(refresh_token)
             },
             "notifications": {
                 "pushover_app_token": os.getenv('PUSHOVER_APP_TOKEN', ''),

@@ -5,6 +5,8 @@ async function initializeConfiguration() {
     bindConfigurationForms();
     // Ensure configuration loads after DOM is ready
     await loadAllConfiguration();
+    // Update Reddit authentication status
+    await updateRedditAuthStatus();
 }
 
 function cleanupConfiguration() {
@@ -454,4 +456,100 @@ async function handleNotificationConfigSubmit() {
     } finally {
         setLoading('notifications-tab', false);
     }
+}
+
+// Reddit Authentication Functions
+async function updateRedditAuthStatus() {
+    try {
+        const config = await loadConfig();
+        const redditConfig = config.reddit || {};
+
+        const authBanner = document.getElementById('reddit-auth-banner');
+        const authSuccess = document.getElementById('reddit-auth-success');
+        const authUserInfo = document.getElementById('auth-user-info');
+
+        if (redditConfig.authenticated && redditConfig.username) {
+            // Show success banner
+            authBanner.style.display = 'none';
+            authSuccess.style.display = 'flex';
+            authUserInfo.textContent = `Authenticated as u/${redditConfig.username}`;
+        } else {
+            // Show warning banner
+            authBanner.style.display = 'flex';
+            authSuccess.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Failed to update Reddit auth status:', error);
+    }
+}
+
+function showAuthSetupModal() {
+    // Create and show modal with setup instructions
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal auth-setup-modal">
+            <div class="modal-header">
+                <h2>Reddit Authentication Setup</h2>
+                <button class="modal-close" onclick="closeAuthSetupModal()">&times;</button>
+            </div>
+            <div class="modal-content">
+                <p>User authentication is required to monitor r/MontagneParfums and access member-only posts.</p>
+
+                <div class="setup-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>SSH with Port Forwarding</h4>
+                            <p>Connect to your Pi with port forwarding:</p>
+                            <div class="code-block">
+                                <code>ssh -L 8080:localhost:8080 pi@${window.location.hostname}</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Run Authentication Script</h4>
+                            <p>In your SSH session, run:</p>
+                            <div class="code-block">
+                                <code>python generate_token_headless.py</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Authorize in Browser</h4>
+                            <p>Follow the script instructions to authorize in your local browser.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" onclick="closeAuthSetupModal()">Close</button>
+                <button class="btn primary" onclick="checkAuthStatus()">Check Status</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeAuthSetupModal();
+    });
+}
+
+function closeAuthSetupModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function checkAuthStatus() {
+    await updateRedditAuthStatus();
+    closeAuthSetupModal();
+    showToast('Authentication status updated', 'success');
 }

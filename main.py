@@ -68,6 +68,7 @@ class FragDropMonitor:
 
         # Initialize components
         self.reddit_client = None
+        self.reddit_enabled = False  # Track if Reddit monitoring is active
         self.detector = DropDetector()
         self.db = Database()
         self.notification_manager = NotificationManager()
@@ -122,21 +123,45 @@ class FragDropMonitor:
         client_secret = os.getenv('REDDIT_CLIENT_SECRET')
         user_agent = os.getenv('REDDIT_USER_AGENT', 'FragDropDetector/1.0')
         refresh_token = os.getenv('REDDIT_REFRESH_TOKEN')
+        username = os.getenv('REDDIT_USERNAME')
 
         if not client_id or not client_secret:
             self.logger.error("Reddit credentials not found in environment variables!")
             self.logger.error("Please set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET")
             sys.exit(1)
 
-        # Pass refresh token if available for user authentication
+        # Check for user authentication - REQUIRED for Reddit monitoring
+        if not refresh_token:
+            self.logger.warning("=" * 70)
+            self.logger.warning("REDDIT MONITORING DISABLED - Authentication Required")
+            self.logger.warning("")
+            self.logger.warning("r/MontagneParfums requires user authentication to see all posts.")
+            self.logger.warning("Without authentication, you'll miss member-only content and")
+            self.logger.warning("notification links may not work properly.")
+            self.logger.warning("")
+            self.logger.warning("To enable Reddit monitoring:")
+            self.logger.warning("  1. SSH with port forwarding: ssh -L 8080:localhost:8080 pi@YOUR_IP")
+            self.logger.warning("  2. Run: python generate_token_headless.py")
+            self.logger.warning("  3. Follow the browser authentication steps")
+            self.logger.warning("")
+            self.logger.warning("Stock monitoring will continue to work normally.")
+            self.logger.warning("=" * 70)
+            self.reddit_client = None
+            self.reddit_enabled = False
+            return
+
+        # Initialize with user authentication
         self.reddit_client = RedditClient(client_id, client_secret, user_agent, refresh_token)
 
         # Test connection
         if not self.reddit_client.test_connection():
             self.logger.error("Failed to connect to Reddit API!")
+            self.logger.error("Your refresh token may have expired. Run: python generate_token_headless.py")
             sys.exit(1)
 
-        self.logger.info("Reddit client connected successfully")
+        self.reddit_enabled = True
+        self.logger.info(f"Reddit monitoring ENABLED - Authenticated as u/{username}")
+        self.logger.info("Full access to r/MontagneParfums including member-only posts")
 
     def _setup_notifications(self):
         """Setup notification services"""
@@ -288,6 +313,10 @@ class FragDropMonitor:
 
     def check_for_drops(self):
         """Check for new drops"""
+        # Skip if Reddit monitoring is disabled
+        if not self.reddit_enabled:
+            return
+
         # Check if we're in the drop window
         if not self.is_drop_window():
             tz = pytz.timezone(self.drop_window_timezone)
