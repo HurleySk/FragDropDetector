@@ -188,7 +188,6 @@ const InventoryManager = {
                 <div class="item-header">
                     <div>
                         <div class="item-name">${item.name}</div>
-                        <div class="item-slug">${item.slug}</div>
                     </div>
                 </div>
                 <div class="item-details">
