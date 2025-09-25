@@ -195,7 +195,7 @@
     border: 1px solid var(--gray-200);
     border-radius: var(--rounded-lg);
     padding: var(--space-5);
-    padding-top: calc(var(--space-4) + 18px); /* Reduced space for checkbox/star */
+    padding-top: calc(var(--space-3) + 16px); /* Minimal space for checkbox/star */
     transition: all 0.15s ease;
     position: relative;
     overflow: hidden;
