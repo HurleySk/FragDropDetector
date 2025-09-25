@@ -195,9 +195,13 @@
     border: 1px solid var(--gray-200);
     border-radius: var(--rounded-lg);
     padding: var(--space-5);
+    padding-top: calc(var(--space-5) + 24px); /* Extra space for checkbox/star */
     transition: all 0.15s ease;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
 }
 
 .inventory-item.selected {
@@ -208,12 +212,13 @@
 /* Selection Checkbox */
 .item-checkbox {
     position: absolute;
-    top: var(--space-3);
-    left: var(--space-3);
+    top: var(--space-2);
+    left: var(--space-2);
     width: 18px;
     height: 18px;
     opacity: 0;
     transition: opacity 0.15s ease;
+    z-index: 2;
 }
 
 .inventory-item:hover .item-checkbox,
@@ -224,8 +229,8 @@
 /* Watchlist Star Icon */
 .watchlist-star {
     position: absolute;
-    top: var(--space-3);
-    right: var(--space-3);
+    top: var(--space-2);
+    right: var(--space-2);
     width: 24px;
     height: 24px;
     background: transparent;
@@ -288,6 +293,7 @@
 /* Product Content */
 .item-header {
     margin-bottom: var(--space-3);
+    flex: 0 0 auto;
 }
 
 .item-name {
@@ -312,6 +318,7 @@
     padding-top: var(--space-3);
     margin-top: var(--space-3);
     border-top: 1px solid var(--gray-100);
+    flex: 1 1 auto;
 }
 
 /* Stock Status Badge */
@@ -357,7 +364,8 @@
 .item-actions {
     display: flex;
     gap: var(--space-2);
-    margin-top: var(--space-4);
+    margin-top: auto; /* Push to bottom */
+    padding-top: var(--space-4);
 }
 
 .watchlist-btn,
