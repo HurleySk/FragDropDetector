@@ -165,8 +165,31 @@
 /* Quick actions */
 .quick-actions {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: var(--space-4);
+}
+
+.quick-actions .btn {
+    min-height: 56px !important;
+    width: 100%;
+    padding: var(--space-4) var(--space-5);
+    text-align: center;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.quick-actions .btn-icon {
+    display: block;
+    font-size: 10px;
+    font-weight: var(--font-bold);
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+    margin: 0;
+    margin-bottom: var(--space-1);
 }
 
 /* Use unified .btn styles - action-btn class is deprecated */
@@ -304,7 +327,14 @@
     }
 
     .quick-actions {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-3);
+    }
+
+    .quick-actions .btn {
+        min-height: 64px;
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-sm);
     }
 
     .health-grid,
@@ -466,11 +496,139 @@
     background: var(--blue-50);
 }
 
-[data-theme="dark"] .watchlist-widget {
-    background: var(--gray-800);
-    border-color: var(--gray-700);
-}
+/* Dark mode overrides */
+[data-theme="dark"] {
+    /* Status cards */
+    .status-value {
+        color: var(--text-primary);
+    }
 
-[data-theme="dark"] .watchlist-item:hover {
-    background: var(--gray-700);
+    .status-label {
+        color: var(--text-secondary);
+    }
+
+    .status-card-icon {
+        background-color: var(--surface-2);
+        color: var(--text-primary);
+    }
+
+    /* Health items */
+    .health-item {
+        background-color: var(--surface-2);
+    }
+
+    .health-item:hover {
+        background-color: var(--surface-3);
+    }
+
+    .health-name {
+        color: var(--text-primary);
+    }
+
+    .health-status {
+        color: var(--text-secondary);
+    }
+
+    /* Service items */
+    .service-item {
+        background-color: var(--surface-2);
+    }
+
+    .service-item:hover {
+        background-color: var(--surface-3);
+    }
+
+    .service-icon {
+        background-color: var(--surface-3);
+        color: var(--text-primary);
+    }
+
+    .service-name {
+        color: var(--text-primary);
+    }
+
+    .service-status {
+        color: var(--text-secondary);
+    }
+
+    /* Activity items */
+    .activity-item {
+        background-color: var(--surface-2);
+    }
+
+    .activity-item:hover {
+        background-color: var(--surface-3);
+    }
+
+    .activity-icon {
+        background-color: var(--surface-3);
+        color: var(--text-primary);
+    }
+
+    .activity-title {
+        color: var(--text-primary);
+    }
+
+    .activity-meta {
+        color: var(--text-secondary);
+    }
+
+    .activity-placeholder {
+        color: var(--text-secondary);
+    }
+
+    .activity-footer {
+        border-top-color: var(--border);
+    }
+
+    .view-all-btn:hover {
+        background-color: var(--surface-2);
+    }
+
+    /* Watchlist widget */
+    .watchlist-widget {
+        background: var(--surface);
+        border-color: var(--border);
+    }
+
+    .watchlist-summary {
+        border-bottom-color: var(--border);
+    }
+
+    .watchlist-stat-value {
+        color: var(--text-primary);
+    }
+
+    .watchlist-stat-label {
+        color: var(--text-secondary);
+    }
+
+    .watchlist-item {
+        border-bottom-color: var(--border);
+    }
+
+    .watchlist-item:hover {
+        background: var(--surface-2);
+    }
+
+    .watchlist-item-name {
+        color: var(--text-primary);
+    }
+
+    .watchlist-item-remove {
+        border-color: var(--border);
+        color: var(--text-secondary);
+    }
+
+    .watchlist-empty {
+        color: var(--text-muted);
+    }
+
+    .watchlist-view-all {
+        border-top-color: var(--border);
+    }
+
+    .watchlist-view-all:hover {
+        background: var(--surface-2);
+    }
 }

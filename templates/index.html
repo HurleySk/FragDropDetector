@@ -4,18 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>FragDropDetector</title>
-    <link rel="stylesheet" href="/static/css/design-system.css?v=1">
-    <link rel="stylesheet" href="/static/css/base.css?v=3">
-    <link rel="stylesheet" href="/static/css/theme.css?v=3">
-    <link rel="stylesheet" href="/static/css/toast.css?v=3">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=4">
-    <link rel="stylesheet" href="/static/css/configuration.css?v=4">
-    <link rel="stylesheet" href="/static/css/inventory.css?v=4">
+    <link rel="stylesheet" href="/static/css/design-system.css?v=4">
+    <link rel="stylesheet" href="/static/css/base.css?v=7">
+    <link rel="stylesheet" href="/static/css/theme.css?v=5">
+    <link rel="stylesheet" href="/static/css/toast.css?v=4">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=8">
+    <link rel="stylesheet" href="/static/css/configuration.css?v=5">
+    <link rel="stylesheet" href="/static/css/inventory.css?v=8">
 </head>
 <body>
     <div class="app-container">
         <header class="top-bar">
-            <button class="mobile-menu-toggle">Menu</button>
             <h1 class="app-title">FragDropDetector</h1>
         </header>
 
@@ -27,15 +26,15 @@
 
             <div class="nav-menu">
                 <a href="#dashboard" class="nav-item active" data-page="dashboard">
-                    <span class="nav-icon">📊</span>
+                    <span class="nav-icon icon-dashboard"></span>
                     <span class="nav-text">Dashboard</span>
                 </a>
                 <a href="#inventory" class="nav-item" data-page="inventory">
-                    <span class="nav-icon">🧴</span>
+                    <span class="nav-icon icon-inventory"></span>
                     <span class="nav-text">Inventory</span>
                 </a>
                 <a href="#configuration" class="nav-item" data-page="configuration">
-                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-icon icon-settings"></span>
                     <span class="nav-text">Configuration</span>
                 </a>
             </div>
@@ -62,25 +61,25 @@
                 <!-- Status Overview -->
                 <div class="status-overview grid grid-responsive-4">
                     <div class="status-card card">
-                        <div class="status-card-icon">🎯</div>
+                        <div class="status-card-icon icon-target"></div>
                         <div class="status-value" id="drops-count">0</div>
                         <div class="status-label">Drops Detected</div>
                     </div>
 
                     <div class="status-card card">
-                        <div class="status-card-icon">🧴</div>
+                        <div class="status-card-icon icon-bottle"></div>
                         <div class="status-value" id="fragrances-count">0</div>
                         <div class="status-label">Fragrances Tracked</div>
                     </div>
 
                     <div class="status-card card">
-                        <div class="status-card-icon">📈</div>
+                        <div class="status-card-icon icon-chart"></div>
                         <div class="status-value" id="stock-changes-count">0</div>
                         <div class="status-label">Stock Changes</div>
                     </div>
 
                     <div class="status-card card">
-                        <div class="status-card-icon">⏰</div>
+                        <div class="status-card-icon icon-clock"></div>
                         <div class="status-value" id="next-window">--</div>
                         <div class="status-label">Next Window</div>
                     </div>
@@ -200,22 +199,22 @@
                     </div>
 
                     <div class="quick-actions">
-                        <button class="action-btn primary" onclick="refreshStatus()">
+                        <button class="btn primary" onclick="refreshStatus()">
                             <span class="btn-icon">REFRESH</span>
                             Refresh Status
                         </button>
 
-                        <button class="action-btn secondary" onclick="testAllNotifications()">
+                        <button class="btn secondary" onclick="testAllNotifications()">
                             <span class="btn-icon">TEST</span>
                             Test All Notifications
                         </button>
 
-                        <button class="action-btn secondary" onclick="navigateToPage('configuration')">
+                        <button class="btn secondary" onclick="navigateToPage('configuration')">
                             <span class="btn-icon">SETTINGS</span>
                             Open Settings
                         </button>
 
-                        <button class="action-btn secondary" onclick="navigateToPage('inventory')">
+                        <button class="btn secondary" onclick="navigateToPage('inventory')">
                             <span class="btn-icon">VIEW</span>
                             View Inventory
                         </button>
@@ -259,6 +258,9 @@
                             <input type="text" id="inventory-search" class="search-input" placeholder="Search fragrances..." style="flex: 1;">
                             <button id="watchlist-toggle" class="watchlist-toggle">
                                 <span>Watchlist Only</span>
+                            </button>
+                            <button id="density-toggle" class="density-toggle" title="Toggle view density">
+                                <span class="density-icon">▦</span>
                             </button>
                         </div>
 
@@ -325,6 +327,11 @@
                     </span>
                     <button id="next-page" class="pagination-btn">Next</button>
                 </div>
+
+                <!-- Floating Action Button for Mobile -->
+                <button class="inventory-fab" id="inventory-fab" title="Quick Filters">
+                    ⚡
+                </button>
             </div>
 
             <!-- Configuration Page -->
@@ -736,12 +743,30 @@ split</textarea>
             </div>
 
         </main>
+
+        <!-- Bottom Navigation for Mobile -->
+        <nav class="bottom-nav">
+            <div class="bottom-nav-container">
+                <a href="#dashboard" class="bottom-nav-item active" data-page="dashboard">
+                    <div class="bottom-nav-icon icon-dashboard"></div>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#inventory" class="bottom-nav-item" data-page="inventory">
+                    <div class="bottom-nav-icon icon-inventory"></div>
+                    <span>Inventory</span>
+                </a>
+                <a href="#configuration" class="bottom-nav-item" data-page="configuration">
+                    <div class="bottom-nav-icon icon-settings"></div>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </nav>
     </div>
 
     <script src="/static/js/dashboard-functions.js?v=3"></script>
     <script src="/static/js/toast.js?v=3"></script>
     <script src="/static/js/theme.js?v=3"></script>
-    <script src="/static/js/router.js?v=5"></script>
+    <script src="/static/js/router.js?v=6"></script>
     <script src="/static/js/app.js?v=4"></script>
     <script src="/static/js/dashboard.js?v=5"></script>
     <script src="/static/js/configuration.js?v=5"></script>

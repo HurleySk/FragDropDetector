@@ -47,7 +47,9 @@ class ThemeManager {
     updateToggleButton() {
         const button = document.getElementById('theme-toggle');
         if (button) {
-            button.innerHTML = this.currentTheme === 'dark' ? '☀️' : '🌙';
+            // Use reliable text-based icons
+            button.innerHTML = this.currentTheme === 'dark' ? '◯' : '●';
+            button.title = this.currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
         }
     }
 

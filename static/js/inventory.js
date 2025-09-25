@@ -10,6 +10,7 @@ const InventoryManager = {
     sortOrder: 'asc',
     selectedItems: new Set(),
     watchlistOnly: false,
+    compactMode: false,
 
     init() {
         this.bindEvents();
@@ -35,6 +36,16 @@ const InventoryManager = {
                 this.watchlistOnly = !this.watchlistOnly;
                 watchlistToggle.classList.toggle('active', this.watchlistOnly);
                 this.applyFilters();
+            });
+        }
+
+        // Density toggle button
+        const densityToggle = document.getElementById('density-toggle');
+        if (densityToggle) {
+            densityToggle.addEventListener('click', () => {
+                this.compactMode = !this.compactMode;
+                densityToggle.classList.toggle('compact', this.compactMode);
+                this.updateGridDensity();
             });
         }
 
@@ -197,7 +208,7 @@ const InventoryManager = {
                     <span class="item-price">${item.price || 'N/A'}</span>
                 </div>
                 <div class="item-actions">
-                    <a href="${item.url}" target="_blank" class="view-btn">View Product</a>
+                    <a href="${item.url}" target="_blank" class="btn btn-primary">View Product</a>
                 </div>
             </div>
         `;
@@ -318,6 +329,13 @@ const InventoryManager = {
         document.getElementById('in-stock-count').textContent = inStock;
         document.getElementById('out-stock-count').textContent = outOfStock;
         document.getElementById('watchlist-count').textContent = watchlist;
+    },
+
+    updateGridDensity() {
+        const grid = document.getElementById('inventory-grid');
+        if (grid) {
+            grid.classList.toggle('compact', this.compactMode);
+        }
     },
 
     showLoading(show) {

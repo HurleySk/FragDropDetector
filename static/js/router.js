@@ -11,8 +11,8 @@ class Router {
     }
 
     bindNavigation() {
-        // Handle navigation clicks
-        document.querySelectorAll('.nav-item').forEach(item => {
+        // Handle navigation clicks (both sidebar and bottom nav)
+        document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const page = item.getAttribute('data-page');
@@ -26,37 +26,6 @@ class Router {
             this.showPage(page);
         });
 
-        // Handle mobile menu toggle
-        this.setupMobileMenu();
-    }
-
-    setupMobileMenu() {
-        // Find existing mobile menu toggle
-        const toggle = document.querySelector('.mobile-menu-toggle');
-        if (toggle) {
-            toggle.addEventListener('click', () => {
-                const sidebar = document.querySelector('.sidebar');
-                const isOpen = sidebar.classList.contains('open');
-
-                sidebar.classList.toggle('open');
-                toggle.classList.toggle('menu-open', !isOpen);
-            });
-        }
-
-        // Close menu when clicking nav items on mobile
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    const sidebar = document.querySelector('.sidebar');
-                    const toggle = document.querySelector('.mobile-menu-toggle');
-
-                    sidebar.classList.remove('open');
-                    if (toggle) {
-                        toggle.classList.remove('menu-open');
-                    }
-                }
-            });
-        });
     }
 
     handleInitialRoute() {
@@ -81,8 +50,8 @@ class Router {
     showPage(page) {
         if (this.currentPage === page) return;
 
-        // Update navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
+        // Update navigation (both sidebar and bottom nav)
+        document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(item => {
             item.classList.toggle('active', item.getAttribute('data-page') === page);
         });
 

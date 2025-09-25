@@ -108,6 +108,7 @@
     --z-dropdown: 1000;
     --z-sticky: 1020;
     --z-fixed: 1030;
+    --z-floating: 1035;
     --z-modal-backdrop: 1040;
     --z-modal: 1050;
     --z-popover: 1060;
@@ -128,41 +129,65 @@ body {
 
 /* Dark mode support */
 [data-theme="dark"] {
-    /* Keep color values consistent, update semantic tokens for dark theme */
-    --white: #1a202c;     /* Dark card background */
+    /* Inverted gray scale for dark mode - fixes contrast issues */
+    --gray-900: #f9fafb;  /* Was darkest, now lightest for text */
+    --gray-800: #f3f4f6;
+    --gray-700: #e5e7eb;
+    --gray-600: #d1d5db;
+    --gray-500: #9ca3af;
+    --gray-400: #6b7280;
+    --gray-300: #4b5563;
+    --gray-200: #374151;
+    --gray-100: #1f2937;
+    --gray-50: #111827;   /* Was lightest, now darkest for backgrounds */
+    --white: #ffffff;     /* Pure white for cards/surfaces */
+
+    /* Updated color mappings */
     --blue-50: #1e3a8a;   /* Darker blue tint */
 
-    /* Semantic tokens for dark mode - these map to appropriate colors */
-    --surface: var(--gray-800);           /* Dark surface for cards */
-    --surface-2: var(--gray-700);         /* Slightly lighter dark surface */
-    --surface-3: var(--gray-600);         /* Medium dark surface */
-    --background: var(--gray-900);        /* Darkest background */
-    --background-color: var(--gray-900);  /* Page background */
-    --border: var(--gray-600);            /* Dark borders */
-    --border-color: var(--gray-600);      /* Border color */
-    --text-primary: var(--gray-50);       /* Light text */
-    --text-secondary: var(--gray-300);    /* Medium light text */
-    --text-muted: var(--gray-500);        /* Muted text */
-    --primary-light: #1e40af;             /* Darker blue background */
+    /* Semantic tokens for dark mode - proper contrast with inverted grays */
+    --surface: #1a1a1a;                  /* Dark surface for cards - lighter than background */
+    --surface-2: #262626;                /* Slightly lighter for layered elements */
+    --surface-3: #333333;                /* Lighter still for hover states */
+    --background: #0f0f0f;               /* Deep dark background */
+    --background-color: #0f0f0f;         /* Page background */
+    --border: var(--gray-200);           /* Now properly dark for borders */
+    --border-color: var(--gray-200);     /* Border color */
+    --text-primary: var(--gray-900);     /* Now white for text */
+    --text-secondary: var(--gray-700);   /* Light gray for secondary text */
+    --text-muted: var(--gray-600);       /* Medium gray for muted text */
+    --primary-light: #1e40af;            /* Darker blue background */
 }
 
 /* System preference dark mode support */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {
         /* Apply same dark mode styles when system preference is dark */
-        --white: #1a202c;
+        /* Inverted gray scale for system dark mode */
+        --gray-900: #f9fafb;
+        --gray-800: #f3f4f6;
+        --gray-700: #e5e7eb;
+        --gray-600: #d1d5db;
+        --gray-500: #9ca3af;
+        --gray-400: #6b7280;
+        --gray-300: #4b5563;
+        --gray-200: #374151;
+        --gray-100: #1f2937;
+        --gray-50: #111827;
+        --white: #ffffff;
         --blue-50: #1e3a8a;
 
-        --surface: var(--gray-800);
-        --surface-2: var(--gray-700);
-        --surface-3: var(--gray-600);
-        --background: var(--gray-900);
-        --background-color: var(--gray-900);
-        --border: var(--gray-600);
-        --border-color: var(--gray-600);
-        --text-primary: var(--gray-50);
-        --text-secondary: var(--gray-300);
-        --text-muted: var(--gray-500);
+        /* Same semantic tokens as manual dark mode */
+        --surface: #1a1a1a;
+        --surface-2: #262626;
+        --surface-3: #333333;
+        --background: #0f0f0f;
+        --background-color: #0f0f0f;
+        --border: var(--gray-200);
+        --border-color: var(--gray-200);
+        --text-primary: var(--gray-900);
+        --text-secondary: var(--gray-700);
+        --text-muted: var(--gray-600);
         --primary-light: #1e40af;
     }
 }
@@ -509,7 +534,7 @@ textarea:focus-visible {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-3) var(--space-5);
     border: none;
     border-radius: var(--rounded-lg);
     font-size: var(--text-sm);
@@ -519,7 +544,7 @@ textarea:focus-visible {
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     user-select: none;
     white-space: nowrap;
-    min-height: 40px;
+    min-height: 44px;
 }
 
 .btn:focus-visible {
@@ -587,15 +612,30 @@ textarea:focus-visible {
 
 /* Button sizes */
 .btn.small {
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-4);
     font-size: var(--text-xs);
-    min-height: 32px;
+    min-height: 36px;
 }
 
 .btn.large {
     padding: var(--space-4) var(--space-6);
     font-size: var(--text-base);
     min-height: 48px;
+}
+
+/* Mobile button improvements */
+@media (max-width: 768px) {
+    .btn {
+        font-size: var(--text-base);
+        min-height: 48px;
+        padding: var(--space-3) var(--space-6);
+    }
+
+    .btn.small {
+        font-size: var(--text-sm);
+        min-height: 40px;
+        padding: var(--space-2) var(--space-5);
+    }
 }
 
 /* Button with icons */
@@ -609,16 +649,58 @@ textarea:focus-visible {
     margin-right: 0;
 }
 
+/* Dark mode card overrides */
+[data-theme="dark"] .card-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .card-subtitle {
+    color: var(--text-secondary);
+}
+
 /* Dark mode button styles */
 [data-theme="dark"] .btn.secondary {
     background-color: var(--surface-2);
     color: var(--text-primary);
-    border-color: var(--border-color);
+    border: 1px solid var(--border);
 }
 
 [data-theme="dark"] .btn.secondary:hover:not(:disabled) {
     background-color: var(--surface-3);
     border-color: var(--primary);
+}
+
+[data-theme="dark"] .btn.primary {
+    background-color: var(--primary);
+    color: white;
+    border: 1px solid var(--primary);
+}
+
+[data-theme="dark"] .btn.primary:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+[data-theme="dark"] .btn.success {
+    background-color: #22c55e;
+    color: white;
+    border: 1px solid #22c55e;
+}
+
+[data-theme="dark"] .btn.success:hover:not(:disabled) {
+    background-color: #16a34a;
+    border-color: #16a34a;
+}
+
+[data-theme="dark"] .btn.danger {
+    background-color: #ef4444;
+    color: white;
+    border: 1px solid #ef4444;
+}
+
+[data-theme="dark"] .btn.danger:hover:not(:disabled) {
+    background-color: #dc2626;
+    border-color: #dc2626;
 }
 
 /* Enhanced Loading Skeleton System */
@@ -743,4 +825,83 @@ textarea:focus-visible {
 
 [data-theme="dark"] .empty-state-icon {
     background: var(--surface-3);
+}
+
+/* Professional Icon System */
+.icon-dashboard::before { content: "◧"; }
+.icon-inventory::before { content: "▦"; }
+.icon-settings::before { content: "⚙"; }
+.icon-target::before { content: "◎"; }
+.icon-bottle::before { content: "◐"; }
+.icon-chart::before { content: "△"; }
+.icon-clock::before { content: "◷"; }
+
+.status-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--primary);
+}
+
+.nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.bottom-nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+/* Smooth Animations and Polish */
+.inventory-grid .inventory-item {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.inventory-grid .inventory-item:nth-child(odd) {
+    animation-delay: 0.1s;
+}
+
+.inventory-grid .inventory-item:nth-child(even) {
+    animation-delay: 0.2s;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Improved focus states */
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: var(--rounded);
+}
+
+/* Loading state improvements */
+.loading-indicator {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Hover effects */
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    transition: transform 0.2s ease;
 }
