@@ -191,7 +191,3 @@ MIT - See LICENSE file
 ## Contributing
 
 Pull requests welcome. For major changes, open an issue first.
-
-## Credits
-
-Built with Claude Code assistance. Monitors public data only.
