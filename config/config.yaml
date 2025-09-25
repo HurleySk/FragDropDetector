@@ -75,5 +75,4 @@ stock_monitoring:
     out_of_stock: false
     price_changes: false
     restocked_products: true
-  watchlist:
-  - pineappleroyale
+  watchlist: []
