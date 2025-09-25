@@ -23,13 +23,13 @@ async function testService(serviceType) {
         const result = await response.json();
 
         if (response.ok) {
-            showAlert('success', `${serviceType} test notification sent successfully!`);
+            showAlert(`${serviceType} test notification sent successfully!`, 'success');
         } else {
-            showAlert('error', `${serviceType} test failed: ${result.error || 'Unknown error'}`);
+            showAlert(`${serviceType} test failed: ${result.error || 'Unknown error'}`, 'error');
         }
     } catch (error) {
         console.error('Test service error:', error);
-        showAlert('error', `Failed to test ${serviceType}: Network error`);
+        showAlert(`Failed to test ${serviceType}: Network error`, 'error');
     } finally {
         // Restore button state
         button.disabled = false;
@@ -57,13 +57,13 @@ async function testAllNotifications() {
         const result = await response.json();
 
         if (response.ok) {
-            showAlert('success', 'Test notifications sent to all configured services!');
+            showAlert('Test notifications sent to all configured services!', 'success');
         } else {
-            showAlert('error', `Test failed: ${result.error || 'Unknown error'}`);
+            showAlert(`Test failed: ${result.error || 'Unknown error'}`, 'error');
         }
     } catch (error) {
         console.error('Test all notifications error:', error);
-        showAlert('error', 'Failed to test notifications: Network error');
+        showAlert('Failed to test notifications: Network error', 'error');
     } finally {
         // Restore button state
         button.disabled = false;
@@ -92,13 +92,13 @@ async function refreshStatus() {
 
         if (response.ok) {
             updateDashboardStats(status);
-            showAlert('success', 'Status refreshed successfully!');
+            showAlert('Status refreshed successfully!', 'success');
         } else {
-            showAlert('error', `Failed to refresh status: ${status.error || 'Unknown error'}`);
+            showAlert(`Failed to refresh status: ${status.error || 'Unknown error'}`, 'error');
         }
     } catch (error) {
         console.error('Refresh status error:', error);
-        showAlert('error', 'Failed to refresh status: Network error');
+        showAlert('Failed to refresh status: Network error', 'error');
     } finally {
         // Restore button state
         button.disabled = false;
@@ -174,20 +174,7 @@ function updateHealthIndicators(health) {
     });
 }
 
-// Show alert messages
-function showAlert(type, message) {
-    const alertElement = document.getElementById('alert');
-    if (alertElement) {
-        alertElement.className = `alert ${type}`;
-        alertElement.textContent = message;
-        alertElement.style.display = 'block';
-
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            alertElement.style.display = 'none';
-        }, 5000);
-    }
-}
+// Note: showAlert function is provided by app.js
 
 // Load dashboard data on page load
 document.addEventListener('DOMContentLoaded', function() {
