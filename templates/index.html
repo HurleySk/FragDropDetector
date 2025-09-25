@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>FragDropDetector</title>
-    <link rel="stylesheet" href="/static/css/base.css">
-    <link rel="stylesheet" href="/static/css/theme.css">
-    <link rel="stylesheet" href="/static/css/toast.css">
-    <link rel="stylesheet" href="/static/css/dashboard.css">
-    <link rel="stylesheet" href="/static/css/configuration.css">
-    <link rel="stylesheet" href="/static/css/monitoring.css">
+    <link rel="stylesheet" href="/static/css/base.css?v=3">
+    <link rel="stylesheet" href="/static/css/theme.css?v=3">
+    <link rel="stylesheet" href="/static/css/toast.css?v=3">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=3">
+    <link rel="stylesheet" href="/static/css/configuration.css?v=3">
+    <link rel="stylesheet" href="/static/css/inventory.css?v=3">
 </head>
 <body>
     <div class="app-container">
@@ -29,13 +29,13 @@
                     <span class="nav-icon">📊</span>
                     <span class="nav-text">Dashboard</span>
                 </a>
+                <a href="#inventory" class="nav-item" data-page="inventory">
+                    <span class="nav-icon">🧴</span>
+                    <span class="nav-text">Inventory</span>
+                </a>
                 <a href="#configuration" class="nav-item" data-page="configuration">
                     <span class="nav-icon">⚙️</span>
                     <span class="nav-text">Configuration</span>
-                </a>
-                <a href="#monitoring" class="nav-item" data-page="monitoring">
-                    <span class="nav-icon">📈</span>
-                    <span class="nav-text">Monitoring</span>
                 </a>
             </div>
 
@@ -187,9 +187,9 @@
                             Open Settings
                         </button>
 
-                        <button class="action-btn secondary" onclick="navigateToPage('monitoring')">
+                        <button class="action-btn secondary" onclick="navigateToPage('inventory')">
                             <span class="btn-icon">VIEW</span>
-                            View Data
+                            View Inventory
                         </button>
                     </div>
                 </div>
@@ -209,11 +209,81 @@
                         </div>
 
                         <div class="activity-footer">
-                            <button class="view-all-btn" onclick="navigateToPage('monitoring')">
-                                View All Activity →
+                            <button class="view-all-btn" onclick="navigateToPage('inventory')">
+                                View All Products →
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Inventory Page -->
+            <div class="page-content inventory-page hidden" id="inventory-content">
+                <div class="page-header">
+                    <h1 class="page-title">Fragrance Inventory</h1>
+                    <p class="page-subtitle">Browse and manage all tracked fragrances</p>
+                </div>
+
+                <!-- Search and Filters Bar -->
+                <div class="inventory-controls">
+                    <div class="controls-row">
+                        <div class="search-container">
+                            <input type="text" id="inventory-search" class="search-input" placeholder="Search fragrances...">
+                        </div>
+
+                        <div class="filter-container">
+                            <select id="stock-filter" class="filter-select">
+                                <option value="">All Products</option>
+                                <option value="true">In Stock</option>
+                                <option value="false">Out of Stock</option>
+                            </select>
+
+                            <select id="watchlist-filter" class="filter-select">
+                                <option value="">All</option>
+                                <option value="true">Watchlist Only</option>
+                            </select>
+
+                            <select id="sort-select" class="filter-select">
+                                <option value="name">Sort by Name</option>
+                                <option value="price">Sort by Price</option>
+                                <option value="in_stock">Sort by Stock</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="stats-row">
+                        <span class="stat-item">Total: <strong id="total-count">0</strong></span>
+                        <span class="stat-item">In Stock: <strong id="in-stock-count">0</strong></span>
+                        <span class="stat-item">Out of Stock: <strong id="out-stock-count">0</strong></span>
+                        <span class="stat-item">Watchlist: <strong id="watchlist-count">0</strong></span>
+                    </div>
+                </div>
+
+                <!-- Inventory Grid -->
+                <div class="inventory-grid-container">
+                    <div id="inventory-grid" class="inventory-grid">
+                        <!-- Grid items will be dynamically added here -->
+                    </div>
+
+                    <!-- Loading indicator -->
+                    <div id="inventory-loading" class="loading-indicator">
+                        <div class="spinner"></div>
+                        <p>Loading inventory...</p>
+                    </div>
+
+                    <!-- No results message -->
+                    <div id="no-results" class="no-results hidden">
+                        <p>No fragrances match your search criteria</p>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container">
+                    <button id="prev-page" class="pagination-btn" disabled>Previous</button>
+                    <span class="pagination-info">
+                        Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                    </span>
+                    <button id="next-page" class="pagination-btn">Next</button>
                 </div>
             </div>
 
@@ -281,59 +351,17 @@
                 </div>
             </div>
 
-            <!-- Monitoring Page -->
-            <div class="page-content monitoring-page hidden" id="monitoring-content">
-                <div class="page-header">
-                    <h1 class="page-title">Monitoring & Data</h1>
-                    <p class="page-subtitle">View recent drops, stock changes, and system activity</p>
-                </div>
-
-                <!-- Data Tabs -->
-                <div class="data-tabs">
-                    <div class="tab-nav">
-                        <button class="tab-btn active" data-tab="drops">Recent Drops</button>
-                        <button class="tab-btn" data-tab="stock">Stock Changes</button>
-                        <button class="tab-btn" data-tab="fragrances">Tracked Fragrances</button>
-                    </div>
-
-                    <!-- Recent Drops -->
-                    <div class="tab-content active" id="drops-tab">
-                        <div class="card">
-                            <div class="card-header">
-                                <h2 class="card-title">Recent Drops</h2>
-                                <div class="card-actions">
-                                    <button class="btn secondary small" onclick="refreshDrops()">Refresh</button>
-                                    <select id="drops-limit" onchange="refreshDrops()">
-                                        <option value="10">Last 10</option>
-                                        <option value="25">Last 25</option>
-                                        <option value="50">Last 50</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="data-list" id="drops-list">
-                                <div class="data-placeholder">
-                                    <div class="placeholder-icon">DROPS</div>
-                                    <div class="placeholder-text">Loading recent drops...</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Other monitoring tabs content would be here... -->
-                </div>
-            </div>
         </main>
     </div>
 
-    <script src="/static/js/theme-config.js"></script>
-    <script src="/static/js/dashboard-functions.js"></script>
-    <script src="/static/js/toast.js"></script>
-    <script src="/static/js/theme.js"></script>
-    <script src="/static/js/router.js"></script>
-    <script src="/static/js/app.js"></script>
-    <script src="/static/js/dashboard.js"></script>
-    <script src="/static/js/configuration.js"></script>
-    <script src="/static/js/monitoring.js"></script>
+    <script src="/static/js/theme-config.js?v=3"></script>
+    <script src="/static/js/dashboard-functions.js?v=3"></script>
+    <script src="/static/js/toast.js?v=3"></script>
+    <script src="/static/js/theme.js?v=3"></script>
+    <script src="/static/js/router.js?v=5"></script>
+    <script src="/static/js/app.js?v=3"></script>
+    <script src="/static/js/dashboard.js?v=4"></script>
+    <script src="/static/js/configuration.js?v=3"></script>
+    <script src="/static/js/inventory.js?v=4"></script>
 </body>
 </html>

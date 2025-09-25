@@ -1,7 +1,7 @@
 class Router {
     constructor() {
         this.currentPage = 'dashboard';
-        this.pages = ['dashboard', 'configuration', 'monitoring'];
+        this.pages = ['dashboard', 'inventory', 'configuration'];
         this.init();
     }
 
@@ -111,14 +111,14 @@ class Router {
                     initializeDashboard();
                 }
                 break;
+            case 'inventory':
+                if (window.InventoryManager) {
+                    window.InventoryManager.init();
+                }
+                break;
             case 'configuration':
                 if (typeof initializeConfiguration === 'function') {
                     initializeConfiguration();
-                }
-                break;
-            case 'monitoring':
-                if (typeof initializeMonitoring === 'function') {
-                    initializeMonitoring();
                 }
                 break;
         }
@@ -126,8 +126,8 @@ class Router {
         // Update page title
         const titles = {
             dashboard: 'Dashboard - FragDropDetector',
-            configuration: 'Configuration - FragDropDetector',
-            monitoring: 'Monitoring - FragDropDetector'
+            inventory: 'Inventory - FragDropDetector',
+            configuration: 'Configuration - FragDropDetector'
         };
         document.title = titles[page] || 'FragDropDetector';
     }
@@ -140,14 +140,12 @@ class Router {
                     cleanupDashboard();
                 }
                 break;
+            case 'inventory':
+                // Inventory cleanup if needed
+                break;
             case 'configuration':
                 if (typeof cleanupConfiguration === 'function') {
                     cleanupConfiguration();
-                }
-                break;
-            case 'monitoring':
-                if (typeof cleanupMonitoring === 'function') {
-                    cleanupMonitoring();
                 }
                 break;
         }

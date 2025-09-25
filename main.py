@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from services.reddit_client import RedditClient
 from services.drop_detector import DropDetector
 from services.notifiers import PushoverNotifier, DiscordWebhookNotifier, EmailNotifier, NotificationManager
-from services.stock_monitor import StockMonitor
+from services.stock_monitor_enhanced import EnhancedStockMonitor, FragranceProduct
 from models.database import Database
 
 
@@ -71,7 +71,7 @@ class FragDropMonitor:
         self.detector = DropDetector()
         self.db = Database()
         self.notification_manager = NotificationManager()
-        self.stock_monitor = StockMonitor()
+        self.stock_monitor = None  # Will be initialized asynchronously
 
         # Configuration
         self.subreddit = os.getenv('SUBREDDIT', 'MontagneParfums')
@@ -312,7 +312,7 @@ class FragDropMonitor:
         except Exception as e:
             self.logger.error(f"Error during drop check: {e}")
 
-    def check_stock_changes(self):
+    async def check_stock_changes(self):
         """Check for stock changes on Montagne Parfums website"""
         if not self.stock_enabled:
             return
@@ -324,8 +324,17 @@ class FragDropMonitor:
         try:
             self.logger.info("DROP WINDOW ACTIVE - Checking Montagne Parfums stock...")
 
+            # Initialize stock monitor if needed
+            if not self.stock_monitor:
+                self.stock_monitor = EnhancedStockMonitor(headless=True, use_cache=True)
+                # Load watchlist from config if available
+                watchlist = self.config.get('stock_monitoring', {}).get('watchlist', [])
+                if watchlist:
+                    self.stock_monitor.add_to_watchlist(watchlist)
+                    self.logger.info(f"Loaded {len(watchlist)} products to watchlist")
+
             # Get current stock from website
-            current_stock = self.stock_monitor.get_current_stock()
+            current_stock = await self.stock_monitor.get_current_stock()
             if not current_stock:
                 self.logger.warning("Failed to retrieve current stock")
                 return
@@ -336,13 +345,13 @@ class FragDropMonitor:
             # Convert database format to stock monitor format for comparison
             previous_stock = {}
             for slug, data in previous_stock_data.items():
-                previous_stock[slug] = type('Product', (), {
-                    'name': data['name'],
-                    'url': data['url'],
-                    'price': data['price'],
-                    'in_stock': data['in_stock'],
-                    'slug': slug
-                })()
+                previous_stock[slug] = FragranceProduct(
+                    name=data['name'],
+                    slug=slug,
+                    url=data['url'],
+                    price=data['price'],
+                    in_stock=data['in_stock']
+                )
 
             # Save current stock to database
             for slug, product in current_stock.items():
@@ -353,7 +362,17 @@ class FragDropMonitor:
                 changes = self.stock_monitor.compare_stock(previous_stock, current_stock)
 
                 if any(changes.values()):
-                    self.logger.info(self.stock_monitor.format_changes_summary(changes))
+                    summary_parts = []
+                    if changes['new_products']:
+                        summary_parts.append(f"{len(changes['new_products'])} new")
+                    if changes['restocked']:
+                        summary_parts.append(f"{len(changes['restocked'])} restocked")
+                    if changes['out_of_stock']:
+                        summary_parts.append(f"{len(changes['out_of_stock'])} out of stock")
+                    if changes['price_changes']:
+                        summary_parts.append(f"{len(changes['price_changes'])} price changes")
+
+                    self.logger.info(f"Stock changes: {', '.join(summary_parts)}")
 
                     # Process and notify about changes
                     self._process_stock_changes(changes)
@@ -445,21 +464,40 @@ class FragDropMonitor:
                     notifier.send_test()
 
         try:
+            # Create async event loop for stock monitoring
+            import asyncio
+            loop = asyncio.new_event_loop()
+
             while True:
                 self.check_for_drops()
-                self.check_stock_changes()
+
+                # Run async stock check
+                loop.run_until_complete(self.check_stock_changes())
+
                 self.logger.info(f"Next check in {self.check_interval} seconds...")
                 time.sleep(self.check_interval)
 
         except KeyboardInterrupt:
             self.logger.info("Shutting down FragDropMonitor...")
+            if self.stock_monitor:
+                loop.run_until_complete(self.stock_monitor.cleanup())
+            loop.close()
             sys.exit(0)
 
     def run_once(self):
         """Run a single check (for testing)"""
         self.logger.info("Running single check...")
         self.check_for_drops()
-        self.check_stock_changes()
+
+        # Run async stock check
+        import asyncio
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.check_stock_changes())
+
+        if self.stock_monitor:
+            loop.run_until_complete(self.stock_monitor.cleanup())
+        loop.close()
+
         self.logger.info("Single check complete")
 
 

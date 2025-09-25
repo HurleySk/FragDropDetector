@@ -17,6 +17,10 @@ requests==2.31.0
 # HTML Parsing (for stock monitoring)
 beautifulsoup4==4.13.5
 
+# Enhanced stock monitoring with JavaScript support
+playwright==1.55.0
+aiohttp==3.12.15
+
 # Environment Variables
 python-dotenv==1.0.0
 

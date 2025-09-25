@@ -507,15 +507,135 @@ async def get_stock_changes(limit: int = 10):
         raise HTTPException(status_code=500, detail="Failed to retrieve stock changes")
 
 @app.get("/api/stock/fragrances")
-async def get_fragrances():
-    """Get all tracked fragrances"""
+async def get_fragrances(
+    search: Optional[str] = None,
+    in_stock: Optional[bool] = None,
+    sort_by: Optional[str] = "name",
+    sort_order: Optional[str] = "asc",
+    limit: Optional[int] = None,
+    offset: Optional[int] = 0,
+    watchlist_only: Optional[bool] = False
+):
+    """Get all tracked fragrances with search and filter support"""
     try:
         db = get_database()
         fragrances = db.get_all_fragrances()
-        return fragrances
+
+        # Load watchlist from config
+        yaml_config = load_yaml_config()
+        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+
+        # Convert to list for filtering
+        result = []
+        for slug, data in fragrances.items():
+            item = {
+                **data,
+                'slug': slug,
+                'is_watchlisted': slug in watchlist
+            }
+            result.append(item)
+
+        # Apply search filter
+        if search:
+            search_lower = search.lower()
+            result = [f for f in result if
+                     search_lower in f['name'].lower() or
+                     search_lower in f['slug'].lower()]
+
+        # Apply stock filter
+        if in_stock is not None:
+            result = [f for f in result if f['in_stock'] == in_stock]
+
+        # Apply watchlist filter
+        if watchlist_only:
+            result = [f for f in result if f['is_watchlisted']]
+
+        # Apply sorting
+        if sort_by in ['name', 'slug', 'price', 'in_stock']:
+            reverse = sort_order == 'desc'
+            if sort_by == 'price':
+                # Special handling for price sorting
+                def price_key(item):
+                    price = item['price']
+                    if price == 'N/A' or not price:
+                        return float('inf') if not reverse else float('-inf')
+                    try:
+                        return float(price.replace('$', '').replace(',', ''))
+                    except:
+                        return float('inf') if not reverse else float('-inf')
+                result.sort(key=price_key, reverse=reverse)
+            else:
+                result.sort(key=lambda x: x[sort_by], reverse=reverse)
+
+        # Get total count before pagination
+        total = len(result)
+
+        # Apply pagination
+        if limit:
+            result = result[offset:offset + limit]
+
+        return {
+            "items": result,
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "watchlist_slugs": watchlist
+        }
     except Exception as e:
         logger.error("Failed to get fragrances", error=str(e))
         raise HTTPException(status_code=500, detail="Failed to retrieve fragrances")
+
+@app.post("/api/stock/watchlist/add/{slug}")
+async def add_to_watchlist(slug: str):
+    """Add a product to the watchlist"""
+    try:
+        yaml_config = load_yaml_config()
+        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+
+        if slug not in watchlist:
+            watchlist.append(slug)
+
+            if 'stock_monitoring' not in yaml_config:
+                yaml_config['stock_monitoring'] = {}
+            yaml_config['stock_monitoring']['watchlist'] = watchlist
+
+            if not save_yaml_config(yaml_config):
+                raise HTTPException(status_code=500, detail="Failed to save watchlist")
+
+            logger.info(f"Added {slug} to watchlist")
+            return {"success": True, "message": f"Added {slug} to watchlist", "watchlist": watchlist}
+        else:
+            return {"success": True, "message": f"{slug} already in watchlist", "watchlist": watchlist}
+
+    except Exception as e:
+        logger.error("Failed to add to watchlist", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/stock/watchlist/remove/{slug}")
+async def remove_from_watchlist(slug: str):
+    """Remove a product from the watchlist"""
+    try:
+        yaml_config = load_yaml_config()
+        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+
+        if slug in watchlist:
+            watchlist.remove(slug)
+
+            if 'stock_monitoring' not in yaml_config:
+                yaml_config['stock_monitoring'] = {}
+            yaml_config['stock_monitoring']['watchlist'] = watchlist
+
+            if not save_yaml_config(yaml_config):
+                raise HTTPException(status_code=500, detail="Failed to save watchlist")
+
+            logger.info(f"Removed {slug} from watchlist")
+            return {"success": True, "message": f"Removed {slug} from watchlist", "watchlist": watchlist}
+        else:
+            return {"success": True, "message": f"{slug} not in watchlist", "watchlist": watchlist}
+
+    except Exception as e:
+        logger.error("Failed to remove from watchlist", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/test/reddit")
 async def test_reddit_connection(config: RedditConfig):

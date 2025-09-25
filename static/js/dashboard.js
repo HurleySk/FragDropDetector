@@ -220,12 +220,16 @@ async function updateHealthChecks() {
 
         // Check stock monitoring health
         try {
-            const fragrances = await apiCall('/api/stock/fragrances');
-            const count = Object.keys(fragrances || {}).length;
+            const response = await apiCall('/api/stock/fragrances');
+            const count = response?.total || 0;
+            const watchlistCount = response?.watchlist_slugs?.length || 0;
             if (count > 0) {
-                updateHealthIndicator('monitoring', 'healthy', `Tracking ${count} items`);
+                const statusText = watchlistCount > 0
+                    ? `${count} products (${watchlistCount} watched)`
+                    : `${count} products tracked`;
+                updateHealthIndicator('monitoring', 'healthy', statusText);
             } else {
-                updateHealthIndicator('monitoring', 'warning', 'No items tracked');
+                updateHealthIndicator('monitoring', 'warning', 'No products tracked');
             }
         } catch (error) {
             updateHealthIndicator('monitoring', 'unhealthy', 'Service Error');

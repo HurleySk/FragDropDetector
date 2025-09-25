@@ -291,38 +291,6 @@ async function testRedditConnection() {
     }
 }
 
-async function testAllNotifications() {
-    try {
-        setLoading('notifications-test', true);
-        const results = await apiCall('/api/test/notifications', {
-            method: 'POST'
-        });
-
-        const messages = [];
-        for (const [service, result] of Object.entries(results)) {
-            if (result.success) {
-                messages.push(`${service}: ✅`);
-            } else {
-                messages.push(`${service}: ❌ ${result.message}`);
-            }
-        }
-
-        if (messages.length > 0) {
-            showAlert(`Notification test results: ${messages.join(', ')}`, 'info');
-        } else {
-            showAlert('No notification services configured', 'warning');
-        }
-    } catch (error) {
-        showAlert(`Notification test failed: ${error.message}`, 'error');
-    } finally {
-        setLoading('notifications-test', false);
-    }
-}
-
-async function testService(service) {
-    // This would test individual services - implementation depends on backend support
-    showAlert(`Testing ${service} service...`, 'info');
-}
 
 // Data Loading Functions
 async function loadRecentDrops(limit = 10) {
@@ -370,6 +338,9 @@ async function refreshStatus() {
 
     showAlert('Status refreshed', 'success');
 }
+
+// Export functions for global access
+window.testRedditConnection = testRedditConnection;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
