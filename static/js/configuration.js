@@ -55,12 +55,10 @@ async function loadAllConfiguration() {
 function populateRedditConfig(config) {
     const clientIdEl = document.getElementById('reddit-client-id');
     const clientSecretEl = document.getElementById('reddit-client-secret');
-    const subredditEl = document.getElementById('reddit-subreddit');
     const intervalEl = document.getElementById('reddit-interval');
 
     if (clientIdEl) clientIdEl.value = config.client_id || '';
     if (clientSecretEl) clientSecretEl.value = config.client_secret || '';
-    if (subredditEl) subredditEl.value = config.subreddit || 'MontagneParfums';
     if (intervalEl) intervalEl.value = config.check_interval || 300;
 }
 
@@ -207,7 +205,7 @@ async function handleRedditConfigSubmit(e) {
         client_id: document.getElementById('reddit-client-id').value,
         client_secret: document.getElementById('reddit-client-secret').value,
         user_agent: 'FragDropDetector/1.0',
-        subreddit: document.getElementById('reddit-subreddit').value,
+        subreddit: 'MontagneParfums', // Fixed value
         check_interval: parseInt(document.getElementById('reddit-interval').value),
         post_limit: 50
     };
