@@ -118,11 +118,17 @@ function populateStockMonitoringConfig(config) {
     const stockConfig = config || {};
     const notifications = stockConfig.notifications || {};
 
-    document.getElementById('stock-enabled').checked = stockConfig.enabled !== false;
-    document.getElementById('notify-new-products').checked = notifications.new_products !== false;
-    document.getElementById('notify-restocked').checked = notifications.restocked_products !== false;
-    document.getElementById('notify-price-changes').checked = notifications.price_changes === true;
-    document.getElementById('notify-out-of-stock').checked = notifications.out_of_stock === true;
+    const stockEnabledEl = document.getElementById('stock-enabled');
+    const newProductsEl = document.getElementById('notify-new-products');
+    const restockedEl = document.getElementById('notify-restocked');
+    const priceChangesEl = document.getElementById('notify-price-changes');
+    const outOfStockEl = document.getElementById('notify-out-of-stock');
+
+    if (stockEnabledEl) stockEnabledEl.checked = stockConfig.enabled !== false;
+    if (newProductsEl) newProductsEl.checked = notifications.new_products !== false;
+    if (restockedEl) restockedEl.checked = notifications.restocked_products !== false;
+    if (priceChangesEl) priceChangesEl.checked = notifications.price_changes === true;
+    if (outOfStockEl) outOfStockEl.checked = notifications.out_of_stock === true;
 }
 
 function updateNotificationStatus(service, enabled) {
