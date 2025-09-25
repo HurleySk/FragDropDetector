@@ -50,7 +50,7 @@
     margin-bottom: var(--space-2);
     font-size: var(--text-sm);
     font-weight: var(--font-medium);
-    transition: all 0.15s ease;
+    transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .nav-item:hover {
@@ -83,24 +83,7 @@
     border-top: 1px solid var(--gray-200);
 }
 
-.status-indicator {
-    display: flex;
-    align-items: center;
-    font-size: var(--text-sm);
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: var(--space-2);
-    background-color: var(--green-600);
-}
-
-.status-text {
-    font-weight: var(--font-medium);
-    color: var(--gray-700);
-}
+/* Status indicators moved to design-system.css for consistency */
 
 /* Main content */
 .main-content {
@@ -201,7 +184,7 @@
     gap: var(--space-3);
     opacity: 0;
     transform: translateX(100%);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: opacity 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55), transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     max-width: 400px;
     word-wrap: break-word;
     position: relative;
@@ -276,7 +259,7 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--rounded);
-    transition: all 0.15s ease;
+    transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .toast-close:hover {
@@ -380,7 +363,7 @@
     border-radius: var(--rounded);
     font-size: var(--text-sm);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease;
 }
 
 .mobile-menu-toggle:hover {
@@ -406,15 +389,56 @@
         width: 280px;
         top: 60px;
         height: calc(100vh - 60px);
+        box-shadow: var(--shadow-lg);
+        backdrop-filter: blur(8px);
+        transition: transform 0.3s ease;
     }
 
     .sidebar.open {
         transform: translateX(0);
     }
 
+    /* Add backdrop overlay */
+    .sidebar-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: calc(var(--z-fixed) - 1);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .sidebar-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
     .main-content {
         margin-left: 0;
         margin-top: 60px;
+    }
+
+    /* Improved mobile menu button */
+    .mobile-menu-toggle {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--rounded-lg);
+        background-color: var(--surface);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+
+    .mobile-menu-toggle:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
     }
 
     /* Toast mobile adjustments */

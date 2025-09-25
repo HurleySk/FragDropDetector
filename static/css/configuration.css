@@ -28,7 +28,7 @@
     color: var(--text-secondary);
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
     border-bottom: 3px solid transparent;
 }
 
@@ -101,56 +101,11 @@
     font-family: inherit;
 }
 
-/* Buttons */
+/* Form Actions */
 .form-actions {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
-}
-
-.btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn.primary {
-    background-color: var(--blue-600);
-    color: white;
-}
-
-.btn.primary:hover {
-    background-color: var(--blue-700);
-    transform: translateY(-1px);
-}
-
-.btn.secondary {
-    background-color: white;
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-
-.btn.secondary:hover {
-    background-color: var(--background-color);
-    border-color: var(--primary-color);
-}
-
-.btn.small {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
 }
 
 /* Notification Config */
@@ -239,7 +194,7 @@
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
     font-weight: 500;
 }
 
@@ -319,7 +274,7 @@
     border-radius: 0.5rem;
     margin-bottom: 0.75rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .checkbox-option:hover {
@@ -340,7 +295,7 @@
     margin-right: 0.75rem;
     margin-top: 0.1rem;
     flex-shrink: 0;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .checkbox-custom::after {
@@ -379,6 +334,91 @@
 .option-description {
     font-size: 0.875rem;
     color: var(--text-secondary);
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .config-tabs {
+    background: var(--surface);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .tab-nav {
+    background-color: var(--surface-2);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .tab-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .tab-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--surface);
+}
+
+[data-theme="dark"] .tab-btn.active {
+    color: var(--primary);
+    background-color: var(--surface);
+}
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
+    background: var(--surface-2);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+[data-theme="dark"] .btn.secondary {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn.secondary:hover {
+    background-color: var(--surface-3);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .day-checkbox {
+    background-color: var(--surface-2);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .day-checkbox:hover {
+    background-color: var(--surface);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .checkbox-option {
+    background-color: var(--surface-2);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .checkbox-option:hover {
+    background-color: var(--surface);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .range-input input[type="range"] {
+    background: var(--border-color);
+}
+
+[data-theme="dark"] .toggle-slider {
+    background-color: var(--surface-3);
+}
+
+[data-theme="dark"] .toggle-slider::before {
+    background-color: var(--surface);
 }
 
 /* Responsive Design */
