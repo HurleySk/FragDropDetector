@@ -509,8 +509,7 @@ textarea:focus-visible {
 
     /* Increase tap targets for small interactive elements */
     .status-dot,
-    .checkbox-custom,
-    .toggle-slider {
+    .checkbox-custom {
         min-height: 44px;
         min-width: 44px;
         display: flex;

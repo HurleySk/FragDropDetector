@@ -94,7 +94,17 @@ function populateDetectionConfig(config) {
 }
 
 function populateDropWindowConfig(config) {
-    document.getElementById('window-enabled').value = String(config.enabled !== false);
+    const windowToggle = document.getElementById('window-enabled');
+    const windowConfig = document.getElementById('reddit-window-config');
+
+    // Set toggle state
+    if (windowToggle) {
+        windowToggle.checked = config.enabled !== false;
+        // Show/hide config based on toggle state
+        if (windowConfig) {
+            windowConfig.style.display = config.enabled !== false ? 'block' : 'none';
+        }
+    }
     document.getElementById('window-timezone').value = config.timezone || 'America/New_York';
 
     const startTime = `${String(config.start_hour || 12).padStart(2, '0')}:${String(config.start_minute || 0).padStart(2, '0')}`;
@@ -218,6 +228,15 @@ function bindConfigurationForms() {
         stockScheduleForm.addEventListener('submit', handleStockScheduleConfigSubmit);
     }
 
+    // Reddit window toggle
+    const redditWindowToggle = document.getElementById('window-enabled');
+    const redditWindowConfig = document.getElementById('reddit-window-config');
+    if (redditWindowToggle && redditWindowConfig) {
+        redditWindowToggle.addEventListener('change', () => {
+            redditWindowConfig.style.display = redditWindowToggle.checked ? 'block' : 'none';
+        });
+    }
+
     // Stock window toggle
     const stockWindowToggle = document.getElementById('stock-window-enabled');
     const stockWindowConfig = document.getElementById('stock-window-config');
@@ -322,7 +341,7 @@ async function handleDetectionConfigSubmit(e) {
 async function handleWindowConfigSubmit(e) {
     e.preventDefault();
 
-    const enabled = document.getElementById('window-enabled').value === 'true';
+    const enabled = document.getElementById('window-enabled').checked;
     const timezone = document.getElementById('window-timezone').value;
     const startTime = document.getElementById('window-start-time').value.split(':');
     const endTime = document.getElementById('window-end-time').value.split(':');

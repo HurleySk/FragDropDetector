@@ -4,8 +4,9 @@ Drop detection engine for identifying fragrance drops in Reddit posts
 
 import re
 import logging
-from typing import Dict, List, Tuple
-from datetime import datetime
+from typing import Dict, List, Tuple, Optional
+from datetime import datetime, timedelta
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +117,15 @@ class DropDetector:
             'vendor_match': False,
             'author_reputation': False,
             'time_match': False,
-            'flair_match': None
+            'flair_match': None,
+            'drop_time': None  # Will be populated if time is found
         }
+
+        # Extract drop time if present
+        drop_time = self.extract_drop_time(post)
+        if drop_time:
+            metadata['drop_time'] = drop_time
+            logger.info(f"Extracted drop time: {drop_time['time_string']}")
 
         # HIGHEST PRIORITY: Check if author is trusted
         if author in self.trusted_authors:
@@ -276,8 +284,18 @@ class DropDetector:
 
         metadata = drop.get('detection_metadata', {})
         primary = metadata.get('primary_matches', [])
+        drop_time = metadata.get('drop_time', None)
 
         summary = f"**{title}**\n"
+
+        # Add drop time if extracted
+        if drop_time:
+            time_str = f"{drop_time['hour']:02d}:{drop_time['minute']:02d}"
+            if drop_time['is_today']:
+                summary += f"🕐 **Drop Time: TODAY at {time_str} EST**\n"
+            else:
+                summary += f"🕐 **Drop Time: {drop_time['time_string'].upper()}**\n"
+
         summary += f"Author: {author}\n"
         summary += f"Confidence: {confidence:.0%}\n"
 
@@ -288,3 +306,60 @@ class DropDetector:
             summary += f"Link: {url}"
 
         return summary
+
+    def extract_drop_time(self, post: Dict) -> Optional[Dict]:
+        """
+        Extract drop time from post title and text
+
+        Args:
+            post: Post dictionary from Reddit
+
+        Returns:
+            Dictionary with extracted time info or None
+        """
+        title = post.get('title', '')
+        text = post.get('selftext', '')
+        combined = f"{title} {text}"
+
+        # Time patterns to look for
+        patterns = [
+            (r'(\d{1,2}):(\d{2})\s*(am|pm)\s*est', 'specific'),  # "5:00 PM EST"
+            (r'(\d{1,2})\s*(am|pm)\s*est', 'hour'),              # "5 PM EST"
+            (r'at\s*(\d{1,2}):(\d{2})\s*(am|pm)', 'specific'),   # "at 5:00 PM"
+            (r'at\s*(\d{1,2})\s*(am|pm)', 'hour'),               # "at 5 PM"
+            (r'@\s*(\d{1,2}):(\d{2})\s*(am|pm)', 'specific'),    # "@ 5:00 PM"
+            (r'@\s*(\d{1,2})\s*(am|pm)', 'hour'),                # "@ 5 PM"
+        ]
+
+        for pattern, time_type in patterns:
+            match = re.search(pattern, combined, re.IGNORECASE)
+            if match:
+                groups = match.groups()
+                if time_type == 'specific':
+                    hour = int(groups[0])
+                    minute = int(groups[1])
+                    period = groups[2].lower()
+                else:  # hour only
+                    hour = int(groups[0])
+                    minute = 0
+                    period = groups[1].lower()
+
+                # Convert to 24-hour format
+                if period == 'pm' and hour != 12:
+                    hour += 12
+                elif period == 'am' and hour == 12:
+                    hour = 0
+
+                # Check for "today" indicator
+                today_indicators = ['today', 'tonight', 'this afternoon', 'this morning']
+                is_today = any(indicator in combined.lower() for indicator in today_indicators)
+
+                return {
+                    'hour': hour,
+                    'minute': minute,
+                    'time_string': match.group(),
+                    'is_today': is_today,
+                    'original_text': combined[:200]
+                }
+
+        return None

@@ -7,41 +7,18 @@ database:
   path: data/fragdrop.db
   retention_days: 30
 detection:
-  confidence_threshold: 0.4
+  confidence_threshold: 0.5
   known_vendors:
   - montagneparfums
-  - montagne_parfums
   primary_keywords:
   - drop
-  - dropped
-  - dropping
-  - release
-  - released
-  - available
-  - launch
   - restock
-  - in stock
-  - now live
-  - new fragrance
-  - new perfume
   secondary_keywords:
   - limited
-  - exclusive
-  - special
-  - pre-order
-  - sale
-  - discount
-  - batch
-  - decant
-  - split
-  - bottle
-  - price
-  - order
-  - link
 drop_window:
   days_of_week:
   - 4
-  enabled: true
+  enabled: false
   end_hour: 18
   end_minute: 0
   start_hour: 12

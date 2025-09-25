@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>FragDropDetector</title>
-    <link rel="stylesheet" href="/static/css/design-system.css?v=4">
+    <link rel="stylesheet" href="/static/css/design-system.css?v=5">
     <link rel="stylesheet" href="/static/css/base.css?v=7">
     <link rel="stylesheet" href="/static/css/theme.css?v=5">
     <link rel="stylesheet" href="/static/css/toast.css?v=4">
     <link rel="stylesheet" href="/static/css/dashboard.css?v=8">
-    <link rel="stylesheet" href="/static/css/configuration.css?v=5">
+    <link rel="stylesheet" href="/static/css/configuration.css?v=6">
     <link rel="stylesheet" href="/static/css/inventory.css?v=8">
 </head>
 <body>
@@ -344,23 +344,22 @@
                 <!-- Configuration Tabs -->
                 <div class="config-tabs">
                     <div class="tab-nav">
-                        <button class="tab-btn active" data-tab="reddit">Reddit API</button>
+                        <button class="tab-btn active" data-tab="reddit">Reddit Monitor</button>
+                        <button class="tab-btn" data-tab="website">Website Monitor</button>
+                        <button class="tab-btn" data-tab="detection">Detection Rules</button>
                         <button class="tab-btn" data-tab="notifications">Notifications</button>
-                        <button class="tab-btn" data-tab="detection">Detection</button>
-                        <button class="tab-btn" data-tab="schedule">Schedule</button>
-                        <button class="tab-btn" data-tab="stock">Stock Monitoring</button>
-                        <button class="tab-btn" data-tab="stock-schedule">Stock Schedule</button>
                     </div>
 
-                    <!-- Reddit Configuration -->
+                    <!-- Reddit Monitor -->
                     <div class="tab-content active" id="reddit-tab">
                         <div class="card">
                             <div class="card-header">
-                                <h2 class="card-title">Reddit API Settings</h2>
-                                <p class="card-subtitle">Configure Reddit API access and monitoring parameters</p>
+                                <h2 class="card-title">Reddit Monitoring Configuration</h2>
+                                <p class="card-subtitle">Monitor r/MontagneParfums for drop announcements</p>
                             </div>
 
                             <form id="reddit-form">
+                                <h3 class="section-title">API Credentials</h3>
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label>Client ID</label>
@@ -373,11 +372,91 @@
                                         <input type="password" id="reddit-client-secret" placeholder="Your Reddit App Client Secret" required>
                                         <small>Keep this secret and secure</small>
                                     </div>
+                                </div>
+
+                                <h3 class="section-title">Monitoring Settings</h3>
+                                <div class="form-group">
+                                    <label>Check Every</label>
+                                    <select id="reddit-interval" class="form-input">
+                                        <option value="60">1 minute</option>
+                                        <option value="120">2 minutes</option>
+                                        <option value="300" selected>5 minutes</option>
+                                        <option value="600">10 minutes</option>
+                                        <option value="900">15 minutes</option>
+                                        <option value="1800">30 minutes</option>
+                                    </select>
+                                    <small>How frequently to check for new Reddit posts</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="window-enabled">
+                                        <span class="toggle-slider"></span>
+                                        Enable Time Restrictions
+                                    </label>
+                                    <small>Only check Reddit during specific days/times (leave off for 24/7 monitoring)</small>
+                                </div>
+
+                                <div class="window-config" id="reddit-window-config" style="display: none;">
+                                    <div class="form-group">
+                                        <label>Timezone</label>
+                                        <select id="window-timezone" class="form-input">
+                                            <option value="America/New_York">Eastern Time</option>
+                                            <option value="America/Chicago">Central Time</option>
+                                            <option value="America/Denver">Mountain Time</option>
+                                            <option value="America/Los_Angeles">Pacific Time</option>
+                                            <option value="UTC">UTC</option>
+                                        </select>
+                                    </div>
 
                                     <div class="form-group">
-                                        <label>Check Interval (seconds)</label>
-                                        <input type="number" id="reddit-interval" value="300" min="60" max="3600">
-                                        <small>How often to check for new posts (60-3600 seconds)</small>
+                                        <label>Days to Monitor</label>
+                                        <div class="days-grid">
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="day-0" value="0">
+                                                <span class="checkbox-custom"></span>
+                                                Monday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="day-1" value="1">
+                                                <span class="checkbox-custom"></span>
+                                                Tuesday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="day-2" value="2">
+                                                <span class="checkbox-custom"></span>
+                                                Wednesday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="day-3" value="3">
+                                                <span class="checkbox-custom"></span>
+                                                Thursday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="day-4" value="4">
+                                                <span class="checkbox-custom"></span>
+                                                Friday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="day-5" value="5">
+                                                <span class="checkbox-custom"></span>
+                                                Saturday
+                                            </label>
+                                            <label class="checkbox-option compact">
+                                                <input type="checkbox" id="day-6" value="6">
+                                                <span class="checkbox-custom"></span>
+                                                Sunday
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Active Hours</label>
+                                        <div class="time-range">
+                                            <input type="time" id="window-start-time" class="form-input" value="12:00">
+                                            <span class="time-separator">to</span>
+                                            <input type="time" id="window-end-time" class="form-input" value="17:00">
+                                        </div>
                                     </div>
                                 </div>
 
@@ -446,12 +525,12 @@
                         </div>
                     </div>
 
-                    <!-- Detection Configuration -->
+                    <!-- Detection Rules -->
                     <div class="tab-content" id="detection-tab">
                         <div class="card">
                             <div class="card-header">
-                                <h2 class="card-title">Drop Detection Settings</h2>
-                                <p class="card-subtitle">Configure keywords and detection parameters</p>
+                                <h2 class="card-title">Detection Rules</h2>
+                                <p class="card-subtitle">Configure keywords and parameters for identifying fragrance drops</p>
                             </div>
 
                             <form id="detection-form">
@@ -490,80 +569,19 @@ split</textarea>
                                 </div>
 
                                 <div class="form-actions">
-                                    <button type="submit" class="btn primary">Save Detection Settings</button>
+                                    <button type="submit" class="btn primary">Save Detection Rules</button>
                                 </div>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Schedule Configuration -->
-                    <div class="tab-content" id="schedule-tab">
+
+                    <!-- Website Monitor Tab -->
+                    <div class="tab-content" id="website-tab">
+                        <!-- Monitoring Settings -->
                         <div class="card">
                             <div class="card-header">
-                                <h2 class="card-title">Drop Window Schedule</h2>
-                                <p class="card-subtitle">Configure when to actively monitor for drops</p>
-                            </div>
-
-                            <form id="window-form">
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label>Window Checking</label>
-                                        <select id="window-enabled">
-                                            <option value="true">Enabled (Monitor during specific times)</option>
-                                            <option value="false">Disabled (Monitor 24/7)</option>
-                                        </select>
-                                        <small>Enable to save resources by monitoring only during likely drop times</small>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Timezone</label>
-                                        <select id="window-timezone">
-                                            <option value="America/New_York">Eastern Time (ET)</option>
-                                            <option value="America/Chicago">Central Time (CT)</option>
-                                            <option value="America/Denver">Mountain Time (MT)</option>
-                                            <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                                            <option value="UTC">UTC</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Active Days</label>
-                                    <div class="days-selector">
-                                        <label class="day-checkbox"><input type="checkbox" id="day-0" value="0"> Monday</label>
-                                        <label class="day-checkbox"><input type="checkbox" id="day-1" value="1"> Tuesday</label>
-                                        <label class="day-checkbox"><input type="checkbox" id="day-2" value="2"> Wednesday</label>
-                                        <label class="day-checkbox"><input type="checkbox" id="day-3" value="3"> Thursday</label>
-                                        <label class="day-checkbox"><input type="checkbox" id="day-4" value="4" checked> Friday</label>
-                                        <label class="day-checkbox"><input type="checkbox" id="day-5" value="5"> Saturday</label>
-                                        <label class="day-checkbox"><input type="checkbox" id="day-6" value="6"> Sunday</label>
-                                    </div>
-                                </div>
-
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label>Start Time</label>
-                                        <input type="time" id="window-start-time" value="12:00">
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>End Time</label>
-                                        <input type="time" id="window-end-time" value="17:00">
-                                    </div>
-                                </div>
-
-                                <div class="form-actions">
-                                    <button type="submit" class="btn primary">Save Schedule Settings</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Stock Monitoring Configuration -->
-                    <div class="tab-content" id="stock-tab">
-                        <div class="card">
-                            <div class="card-header">
-                                <h2 class="card-title">Stock Monitoring</h2>
+                                <h2 class="card-title">Monitoring Settings</h2>
                                 <p class="card-subtitle">Configure website inventory tracking and notifications</p>
                             </div>
 
@@ -572,7 +590,7 @@ split</textarea>
                                     <label class="toggle-switch">
                                         <input type="checkbox" id="stock-enabled">
                                         <span class="toggle-slider"></span>
-                                        Enable Stock Monitoring
+                                        Enable Website Monitoring
                                     </label>
                                     <small>Monitor Montagne Parfums website for inventory changes</small>
                                 </div>
@@ -618,18 +636,16 @@ split</textarea>
                                 </div>
 
                                 <div class="form-actions">
-                                    <button type="submit" class="btn primary">Save Stock Monitoring Settings</button>
+                                    <button type="submit" class="btn primary">Save Monitoring Settings</button>
                                 </div>
                             </form>
                         </div>
-                    </div>
 
-                    <!-- Stock Schedule Configuration -->
-                    <div class="tab-content" id="stock-schedule-tab">
+                        <!-- Schedule Settings -->
                         <div class="card">
                             <div class="card-header">
-                                <h2 class="card-title">Stock Monitoring Schedule</h2>
-                                <p class="card-subtitle">Configure when and how often to check for stock changes</p>
+                                <h2 class="card-title">Schedule Settings</h2>
+                                <p class="card-subtitle">Configure when and how often to check for inventory changes</p>
                             </div>
 
                             <form id="stock-schedule-form">
@@ -637,9 +653,9 @@ split</textarea>
                                     <label class="toggle-switch">
                                         <input type="checkbox" id="stock-schedule-enabled">
                                         <span class="toggle-slider"></span>
-                                        Enable Stock Schedule
+                                        Enable Scheduled Monitoring
                                     </label>
-                                    <small>Enable independent stock monitoring schedule (separate from Reddit drops)</small>
+                                    <small>Enable independent website monitoring schedule (separate from Reddit monitoring)</small>
                                 </div>
 
                                 <div class="form-group">
@@ -655,16 +671,16 @@ split</textarea>
                                         <option value="43200">12 hours</option>
                                         <option value="86400">24 hours</option>
                                     </select>
-                                    <small>How often to check for stock changes</small>
+                                    <small>How often to check for inventory changes</small>
                                 </div>
 
                                 <div class="form-group">
                                     <label class="toggle-switch">
                                         <input type="checkbox" id="stock-window-enabled">
                                         <span class="toggle-slider"></span>
-                                        Enable Time Window
+                                        Enable Time Restrictions
                                     </label>
-                                    <small>Restrict stock monitoring to specific days/times (leave off to monitor 24/7)</small>
+                                    <small>Restrict monitoring to specific days/times (leave off to monitor 24/7)</small>
                                 </div>
 
                                 <div class="window-config" id="stock-window-config" style="display: none;">
@@ -734,7 +750,7 @@ split</textarea>
                                 </div>
 
                                 <div class="form-actions">
-                                    <button type="submit" class="btn primary">Save Stock Schedule</button>
+                                    <button type="submit" class="btn primary">Save Schedule Settings</button>
                                 </div>
                             </form>
                         </div>
@@ -763,13 +779,13 @@ split</textarea>
         </nav>
     </div>
 
-    <script src="/static/js/dashboard-functions.js?v=3"></script>
-    <script src="/static/js/toast.js?v=3"></script>
-    <script src="/static/js/theme.js?v=3"></script>
-    <script src="/static/js/router.js?v=6"></script>
-    <script src="/static/js/app.js?v=4"></script>
-    <script src="/static/js/dashboard.js?v=5"></script>
-    <script src="/static/js/configuration.js?v=5"></script>
-    <script src="/static/js/inventory.js?v=5"></script>
+    <script src="/static/js/dashboard-functions.js?v=4"></script>
+    <script src="/static/js/toast.js?v=4"></script>
+    <script src="/static/js/theme.js?v=4"></script>
+    <script src="/static/js/router.js?v=7"></script>
+    <script src="/static/js/app.js?v=5"></script>
+    <script src="/static/js/dashboard.js?v=6"></script>
+    <script src="/static/js/configuration.js?v=7"></script>
+    <script src="/static/js/inventory.js?v=6"></script>
 </body>
 </html>
