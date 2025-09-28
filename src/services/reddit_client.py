@@ -39,15 +39,10 @@ class RedditClient:
                 self.authenticated_user = user.name
                 logger.info(f"Reddit client initialized with user authentication as u/{user.name}")
             except Exception as e:
-                logger.warning(f"Failed to authenticate with refresh token: {e}")
-                logger.info("Falling back to app-only authentication")
-                # Fall back to app-only auth
-                self.reddit = praw.Reddit(
-                    client_id=client_id,
-                    client_secret=client_secret,
-                    user_agent=user_agent
-                )
-                self.reddit.read_only = True
+                logger.error(f"CRITICAL: Failed to authenticate with refresh token: {e}")
+                logger.error("Token may be expired or invalid. Run: python generate_token_headless.py")
+                # Don't silently fall back - this causes missed drops!
+                raise Exception(f"Reddit authentication failed: {e}")
         else:
             # App-only authentication (read-only)
             self.reddit = praw.Reddit(
@@ -163,36 +158,39 @@ class RedditClient:
 
     def test_connection(self) -> bool:
         """
-        Test Reddit API connection
+        Test Reddit API connection and verify proper authentication
 
         Returns:
-            True if connection successful
+            True if connection successful WITH user authentication
         """
         try:
             # Try to access the subreddit
             subreddit = self.reddit.subreddit('MontagneParfums')
             _ = subreddit.display_name
 
-            # Log authentication status
-            if self.authenticated_user:
-                logger.info(f"Reddit API connection successful - Authenticated as u/{self.authenticated_user}")
+            # CRITICAL: Require user authentication for r/MontagneParfums
+            if not self.authenticated_user:
+                logger.error("Reddit API connected but using app-only authentication")
+                logger.error("r/MontagneParfums requires user auth to see member-only posts")
+                logger.error("Run: python generate_token_headless.py to authenticate")
+                return False  # Fail if not properly authenticated
 
-                # Check if subscribed to the subreddit
-                try:
-                    is_subscribed = False
-                    for sub in self.reddit.user.subreddits(limit=None):
-                        if sub.display_name.lower() == 'montagneparfums':
-                            is_subscribed = True
-                            break
-                    if is_subscribed:
-                        logger.info("✓ User is subscribed to r/MontagneParfums - will see member-only content")
-                    else:
-                        logger.warning("User is not subscribed to r/MontagneParfums - may miss some content")
-                except:
-                    pass
-            else:
-                logger.info("Reddit API connection successful - Using app-only authentication")
-                logger.warning("App-only auth may not see member-only posts in r/MontagneParfums")
+            logger.info(f"Reddit API connection successful - Authenticated as u/{self.authenticated_user}")
+
+            # Check if subscribed to the subreddit (required for member-only posts)
+            try:
+                is_subscribed = False
+                for sub in self.reddit.user.subreddits(limit=None):
+                    if sub.display_name.lower() == 'montagneparfums':
+                        is_subscribed = True
+                        break
+                if is_subscribed:
+                    logger.info("✓ User is subscribed to r/MontagneParfums - will see member-only content")
+                else:
+                    logger.warning("WARNING: User is not subscribed to r/MontagneParfums")
+                    logger.warning("Subscribe to ensure you see all posts!")
+            except Exception as e:
+                logger.warning(f"Could not check subscription status: {e}")
 
             return True
         except Exception as e:

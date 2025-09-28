@@ -279,6 +279,10 @@ def generate_ssh_token():
                     lines[i] = f'REDDIT_USERNAME={user.name}\n'
                     username_exists = True
 
+            # CRITICAL FIX: Ensure last line has a newline before appending
+            if lines and not lines[-1].endswith('\n'):
+                lines[-1] += '\n'
+
             if not token_exists:
                 lines.append(f'REDDIT_REFRESH_TOKEN={refresh_token}\n')
             if not username_exists:
