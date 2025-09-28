@@ -93,3 +93,5 @@ config/config.local.yaml
 # Systemd logs
 systemd.log
 systemd.error.log
+
+cache/
