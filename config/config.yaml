@@ -10,6 +10,7 @@ detection:
   confidence_threshold: 0.5
   known_vendors:
   - montagneparfums
+  - montagne_parfums
   primary_keywords:
   - drop
   - restock
