@@ -41,6 +41,13 @@ data/*.db
 # Logs
 logs/
 *.log
+
+# Archives and backups
+*.zip
+*.tar.gz
+*.rar
+*.7z
+logs_backup_*
 *.error.log
 
 # IDE
