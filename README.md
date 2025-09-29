@@ -37,7 +37,28 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
 
 ## Quick Start
 
-### Prerequisites
+### Easy Installation (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/HurleySk/FragDropDetector.git
+cd FragDropDetector
+
+# Run the installer
+bash install.sh
+```
+
+The installer will:
+- Check system requirements
+- Install dependencies
+- Set up Python environment
+- Configure Reddit API credentials
+- Set up auto-start services (optional)
+- Guide you through authentication
+
+### Manual Installation
+
+#### Prerequisites
 ```bash
 # System requirements
 - Python 3.11+
@@ -45,32 +66,24 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
 - Network access to Reddit and montagneparfums.com
 ```
 
-### Installation
-
-1. Clone and setup:
+#### Steps
 ```bash
-git clone https://github.com/yourusername/FragDropDetector.git
-cd FragDropDetector
+# 1. Setup Python environment
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 playwright install chromium
 ```
 
-2. Configure environment:
 ```bash
+# 2. Configure environment
 cp .env.example .env
 # Edit .env with your Reddit API credentials (required)
 # Add notification service credentials (optional)
-```
 
-3. Start the system:
-```bash
-# Run the monitor
-python main.py
-
-# In another terminal, start web interface
-python web_server.py
+# 3. Start the system
+python main.py          # Run the monitor
+python web_server.py   # Start web interface (in another terminal)
 # Access at http://localhost:8000
 ```
 

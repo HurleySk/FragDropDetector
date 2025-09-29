@@ -102,3 +102,5 @@ systemd.log
 systemd.error.log
 
 cache/
+# Private documentation
+FUTURE_IMPROVEMENTS.md
