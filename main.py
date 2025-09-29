@@ -21,13 +21,15 @@ from services.reddit_client import RedditClient
 from services.drop_detector import DropDetector
 from services.notifiers import PushoverNotifier, DiscordWebhookNotifier, EmailNotifier, NotificationManager
 from services.stock_monitor_enhanced import EnhancedStockMonitor, FragranceProduct
+from services.log_manager import LogManager
 from models.database import Database
 
 
-def setup_logging():
-    """Configure colored logging"""
-    handler = colorlog.StreamHandler()
-    handler.setFormatter(
+def setup_logging(config=None):
+    """Configure colored logging with optional file handler"""
+    # Console handler with colors
+    console_handler = colorlog.StreamHandler()
+    console_handler.setFormatter(
         colorlog.ColoredFormatter(
             '%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S',
@@ -43,13 +45,27 @@ def setup_logging():
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
+    logger.addHandler(console_handler)
+
+    # Add file handler if config provided and enabled
+    if config and config.get('file_enabled', False):
+        try:
+            log_manager = LogManager(config)
+            file_handler = log_manager.get_file_handler()
+            logger.addHandler(file_handler)
+            logger.info(f"File logging enabled to {config.get('file_path', 'logs/fragdrop.log')}")
+
+            # Return log manager for cleanup management
+            return logger, log_manager
+        except Exception as e:
+            logger.error(f"Failed to setup file logging: {e}")
+            return logger, None
 
     # Reduce noise from some libraries
     logging.getLogger('urllib3').setLevel(logging.WARNING)
     logging.getLogger('prawcore').setLevel(logging.WARNING)
 
-    return logger
+    return logger, None
 
 
 class FragDropMonitor:
@@ -634,16 +650,26 @@ class FragDropMonitor:
 
 def main():
     """Main entry point"""
-    logger = setup_logging()
+    # Load configuration for logging
+    config_path = os.path.join(os.path.dirname(__file__), 'config', 'config.yaml')
+    logging_config = {}
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            full_config = yaml.safe_load(f)
+            logging_config = full_config.get('logging', {})
+
+    logger, log_manager = setup_logging(logging_config)
 
     # Parse arguments
     if len(sys.argv) > 1 and sys.argv[1] == '--once':
         # Run once for testing
         monitor = FragDropMonitor()
+        monitor.log_manager = log_manager
         monitor.run_once()
     else:
         # Run continuously
         monitor = FragDropMonitor()
+        monitor.log_manager = log_manager
         monitor.run()
 
 

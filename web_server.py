@@ -32,6 +32,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from models.database import Database
 from services.reddit_client import RedditClient
 from services.notifiers import PushoverNotifier, DiscordWebhookNotifier, EmailNotifier
+from services.log_manager import LogManager
 
 # Initialize logging
 def setup_logging():
@@ -101,6 +102,13 @@ app = FastAPI(
     description="Fragrance drop monitoring and notification system",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize log manager on startup"""
+    yaml_config = load_yaml_config()
+    app.state.log_manager = LogManager(yaml_config.get('logging', {}))
+    logger.info("Log manager initialized")
 
 # Add CORS middleware with explicit configuration
 app.add_middleware(
@@ -189,6 +197,22 @@ class StockScheduleConfig(BaseModel):
         if not all(0 <= day <= 6 for day in v):
             raise ValueError('Days of week must be between 0-6 (Monday-Sunday)')
         return list(set(v))  # Remove duplicates
+
+class LoggingConfig(BaseModel):
+    level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
+    file_enabled: bool = Field(default=True)
+    file_path: str = Field(default="logs/fragdrop.log")
+    max_file_size: int = Field(default=10, ge=1, le=100, description="Max file size in MB")
+    backup_count: int = Field(default=5, ge=0, le=20)
+    auto_cleanup: Dict[str, Any] = Field(default_factory=lambda: {
+        "enabled": True,
+        "max_age_days": 30,
+        "max_total_size_mb": 100,
+        "cleanup_interval_hours": 24,
+        "compress_old_logs": True,
+        "clean_cache": True,
+        "cache_max_age_days": 7
+    })
 
 class StatusResponse(BaseModel):
     running: bool
@@ -561,6 +585,96 @@ async def update_stock_schedule_config(config: StockScheduleConfig):
 
     except Exception as e:
         logger.error("Failed to update stock schedule config", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/config/logging")
+async def update_logging_config(config: LoggingConfig):
+    """Update logging configuration with validation"""
+    try:
+        yaml_config = load_yaml_config()
+        yaml_config['logging'] = {
+            'level': config.level,
+            'file_enabled': config.file_enabled,
+            'file_path': config.file_path,
+            'max_file_size': config.max_file_size,
+            'backup_count': config.backup_count,
+            'auto_cleanup': config.auto_cleanup
+        }
+
+        if not save_yaml_config(yaml_config):
+            raise HTTPException(status_code=500, detail="Failed to save configuration")
+
+        # Update log manager if it exists
+        if hasattr(app.state, 'log_manager'):
+            app.state.log_manager.update_config(yaml_config['logging'])
+
+        logger.info("Logging configuration updated", level=config.level)
+        return {"success": True, "message": "Logging configuration updated successfully"}
+
+    except Exception as e:
+        logger.error("Failed to update logging config", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/logs/usage")
+async def get_log_usage():
+    """Get current log disk usage statistics"""
+    try:
+        if not hasattr(app.state, 'log_manager'):
+            yaml_config = load_yaml_config()
+            app.state.log_manager = LogManager(yaml_config.get('logging', {}))
+
+        usage = app.state.log_manager.get_disk_usage()
+        return usage
+
+    except Exception as e:
+        logger.error("Failed to get log usage", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/logs/cleanup")
+async def trigger_log_cleanup():
+    """Manually trigger log cleanup"""
+    try:
+        if not hasattr(app.state, 'log_manager'):
+            yaml_config = load_yaml_config()
+            app.state.log_manager = LogManager(yaml_config.get('logging', {}))
+
+        stats = app.state.log_manager.cleanup_logs()
+
+        return {
+            "success": True,
+            "stats": stats,
+            "message": f"Cleanup complete: {stats['deleted_files']} files deleted, "
+                      f"{stats['compressed_files']} files compressed, "
+                      f"{stats['space_freed_mb']:.2f} MB freed"
+        }
+
+    except Exception as e:
+        logger.error("Failed to run log cleanup", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/logs/download")
+async def download_logs():
+    """Download logs as zip archive"""
+    try:
+        if not hasattr(app.state, 'log_manager'):
+            yaml_config = load_yaml_config()
+            app.state.log_manager = LogManager(yaml_config.get('logging', {}))
+
+        archive_path = app.state.log_manager.create_logs_archive()
+
+        if not archive_path or not archive_path.exists():
+            raise HTTPException(status_code=500, detail="Failed to create logs archive")
+
+        from fastapi.responses import FileResponse
+
+        return FileResponse(
+            path=str(archive_path),
+            filename=archive_path.name,
+            media_type='application/zip'
+        )
+
+    except Exception as e:
+        logger.error("Failed to download logs", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/drops")

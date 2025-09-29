@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>FragDropDetector</title>
-    <link rel="stylesheet" href="/static/css/design-system.css?v=6">
-    <link rel="stylesheet" href="/static/css/base.css?v=8">
-    <link rel="stylesheet" href="/static/css/theme.css?v=7">
-    <link rel="stylesheet" href="/static/css/toast.css?v=4">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=8">
-    <link rel="stylesheet" href="/static/css/configuration.css?v=6">
-    <link rel="stylesheet" href="/static/css/inventory.css?v=8">
+    <link rel="stylesheet" href="/static/css/design-system.css?v=9">
+    <link rel="stylesheet" href="/static/css/base.css?v=9">
+    <link rel="stylesheet" href="/static/css/theme.css?v=9">
+    <link rel="stylesheet" href="/static/css/toast.css?v=9">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=9">
+    <link rel="stylesheet" href="/static/css/configuration.css?v=9">
+    <link rel="stylesheet" href="/static/css/inventory.css?v=9">
 </head>
 <body>
     <div class="app-container">
@@ -348,6 +348,7 @@
                         <button class="tab-btn" data-tab="website">Website Monitor</button>
                         <button class="tab-btn" data-tab="detection">Detection Rules</button>
                         <button class="tab-btn" data-tab="notifications">Notifications</button>
+                        <button class="tab-btn" data-tab="logging">System & Logs</button>
                     </div>
 
                     <!-- Reddit Monitor -->
@@ -787,6 +788,148 @@ review</textarea>
                             </form>
                         </div>
                     </div>
+
+                    <!-- System & Logs Tab -->
+                    <div class="tab-content" id="logging-tab">
+                        <!-- Current Usage -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Log Usage Statistics</h2>
+                                <p class="card-subtitle">Current disk usage and file information</p>
+                            </div>
+                            <div id="log-usage-stats" class="stats-container">
+                                <div class="stat-item">
+                                    <label>Total Size:</label>
+                                    <span id="total-log-size">0 MB</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Logs Directory:</label>
+                                    <span id="logs-dir-size">0 MB</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Cache Directory:</label>
+                                    <span id="cache-dir-size">0 MB</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>File Count:</label>
+                                    <span id="log-file-count">0</span>
+                                </div>
+                                <div class="stat-item">
+                                    <label>Oldest File:</label>
+                                    <span id="oldest-log-file">N/A</span>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn" onclick="refreshLogUsage()">Refresh Stats</button>
+                                <button type="button" class="btn warning" onclick="manualCleanup()">Run Cleanup Now</button>
+                                <button type="button" class="btn primary" onclick="downloadLogs()">Download All Logs</button>
+                            </div>
+                        </div>
+
+                        <!-- Logging Configuration -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Logging Settings</h2>
+                                <p class="card-subtitle">Configure log rotation and automatic cleanup</p>
+                            </div>
+
+                            <form id="logging-form">
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="file-logging-enabled">
+                                        <span class="toggle-slider"></span>
+                                        Enable File Logging
+                                    </label>
+                                    <small>Log to files in addition to console output</small>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Log Level</label>
+                                        <select id="log-level">
+                                            <option value="DEBUG">DEBUG</option>
+                                            <option value="INFO" selected>INFO</option>
+                                            <option value="WARNING">WARNING</option>
+                                            <option value="ERROR">ERROR</option>
+                                            <option value="CRITICAL">CRITICAL</option>
+                                        </select>
+                                        <small>Minimum level of messages to log</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Max File Size (MB)</label>
+                                        <input type="number" id="max-file-size" min="1" max="100" value="10">
+                                        <small>Rotate logs when they reach this size</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Backup Files to Keep</label>
+                                        <input type="number" id="backup-count" min="0" max="20" value="5">
+                                        <small>Number of rotated log files to keep</small>
+                                    </div>
+                                </div>
+
+                                <h3 class="section-title">Automatic Cleanup</h3>
+
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="auto-cleanup-enabled" checked>
+                                        <span class="toggle-slider"></span>
+                                        Enable Automatic Cleanup
+                                    </label>
+                                    <small>Automatically clean up old logs and cache files</small>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Max Age (Days)</label>
+                                        <input type="number" id="max-age-days" min="1" max="365" value="30">
+                                        <small>Delete logs older than this many days</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Max Total Size (MB)</label>
+                                        <input type="number" id="max-total-size" min="10" max="1000" value="100">
+                                        <small>Delete oldest logs if total size exceeds this</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Cleanup Interval (Hours)</label>
+                                        <input type="number" id="cleanup-interval" min="1" max="168" value="24">
+                                        <small>Run automatic cleanup every N hours</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Cache Max Age (Days)</label>
+                                        <input type="number" id="cache-max-age" min="1" max="30" value="7">
+                                        <small>Delete cached files older than this</small>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="compress-old-logs" checked>
+                                        <span class="toggle-slider"></span>
+                                        Compress Old Logs
+                                    </label>
+                                    <small>Compress old logs with gzip to save space</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="clean-cache" checked>
+                                        <span class="toggle-slider"></span>
+                                        Clean Cache Directory
+                                    </label>
+                                    <small>Also clean up old cache files during cleanup</small>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary">Save Logging Settings</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -811,13 +954,13 @@ review</textarea>
         </nav>
     </div>
 
-    <script src="/static/js/dashboard-functions.js?v=4"></script>
-    <script src="/static/js/toast.js?v=4"></script>
-    <script src="/static/js/theme.js?v=4"></script>
-    <script src="/static/js/router.js?v=7"></script>
-    <script src="/static/js/app.js?v=5"></script>
-    <script src="/static/js/dashboard.js?v=7"></script>
-    <script src="/static/js/configuration.js?v=7"></script>
-    <script src="/static/js/inventory.js?v=7"></script>
+    <script src="/static/js/dashboard-functions.js?v=8"></script>
+    <script src="/static/js/toast.js?v=8"></script>
+    <script src="/static/js/theme.js?v=8"></script>
+    <script src="/static/js/router.js?v=8"></script>
+    <script src="/static/js/app.js?v=8"></script>
+    <script src="/static/js/dashboard.js?v=8"></script>
+    <script src="/static/js/configuration.js?v=8"></script>
+    <script src="/static/js/inventory.js?v=8"></script>
 </body>
 </html>

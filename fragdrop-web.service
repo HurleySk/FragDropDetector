@@ -1,0 +1,25 @@
+[Unit]
+Description=FragDropDetector Web Interface
+After=network.target fragdrop.service
+Wants=fragdrop.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/source/FragDropDetector
+Environment="PATH=/usr/bin:/usr/local/bin"
+ExecStart=/usr/bin/python3 /home/pi/source/FragDropDetector/web_server.py
+Restart=always
+RestartSec=30
+
+# Logging
+StandardOutput=append:/home/pi/source/FragDropDetector/logs/web-systemd.log
+StandardError=append:/home/pi/source/FragDropDetector/logs/web-systemd.error.log
+
+# Security
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

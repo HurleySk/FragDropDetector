@@ -23,6 +23,12 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
 - **Email**: SMTP support
 - Configurable for different event types (drops, restocks, new products)
 
+### System Management
+- **Automatic Log Rotation**: Size-based rotation with configurable retention
+- **Log Cleanup**: Automatic removal of old logs to prevent disk filling
+- **Log Compression**: Automatic gzip compression of rotated logs
+- **Web-Based Control**: Manage all logging settings through the interface
+
 ## Quick Start
 
 ### Prerequisites
@@ -114,6 +120,28 @@ stock_schedule:
   days_of_week: []  # Empty = all days
 ```
 
+### Logging Management
+Configurable through web interface or `config.yaml`:
+```yaml
+logging:
+  file_enabled: true
+  file_path: logs/fragdrop.log
+  max_file_size: 10  # MB per file
+  backup_count: 5    # Rotated files to keep
+  auto_cleanup:
+    enabled: true
+    max_age_days: 30         # Delete logs older than this
+    max_total_size_mb: 100   # Maximum total log size
+    cleanup_interval_hours: 24
+    compress_old_logs: true  # Gzip rotated logs
+```
+
+Access through **System & Logs** tab in web interface to:
+- View disk usage and log statistics
+- Download all logs as zip archive
+- Manually trigger cleanup
+- Configure all settings
+
 ### Notifications
 - **Pushover**: Best for mobile, requires $5 app
 - **Discord**: Free, create webhook in server settings
@@ -139,6 +167,10 @@ GET  /api/stock/fragrances           # All products with filters
 POST /api/stock/watchlist/add/{slug} # Add to watchlist
 POST /api/watchlist/bulk             # Bulk operations
 POST /api/test/notifications         # Test notifications
+POST /api/config/logging             # Update logging configuration
+GET  /api/logs/usage                 # Get log statistics
+POST /api/logs/cleanup               # Trigger manual cleanup
+GET  /api/logs/download              # Download logs as zip
 ```
 
 ## Architecture
@@ -152,7 +184,8 @@ FragDropDetector/
 │   │   ├── reddit_client.py         # Reddit API wrapper
 │   │   ├── drop_detector.py         # Pattern matching
 │   │   ├── stock_monitor_enhanced.py # Playwright scraper
-│   │   └── notifiers.py             # Notification handlers
+│   │   ├── notifiers.py             # Notification handlers
+│   │   └── log_manager.py           # Log rotation and cleanup
 │   └── models/
 │       └── database.py              # SQLAlchemy models
 ├── static/                 # Frontend assets (JS/CSS)
@@ -200,9 +233,10 @@ FragDropDetector/
 - **Port 8000 in use**: Kill existing process or change port
 
 ### Logs
-- Monitor logs: Console output from `main.py`
-- Web logs: `/tmp/web_server.log`
-- Database: `fragdropdetector.db` (SQLite)
+- Main logs: `logs/fragdrop.log` (rotated automatically)
+- Archive logs: `logs/fragdrop.log.1.gz`, `.2.gz`, etc.
+- Systemd logs: `journalctl -u fragdrop-monitor -u fragdrop-web`
+- Database: `data/fragdrop.db` (SQLite)
 
 ## Development
 

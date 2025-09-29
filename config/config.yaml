@@ -7,7 +7,15 @@ database:
   path: data/fragdrop.db
   retention_days: 30
 detection:
-  confidence_threshold: 0.5
+  confidence_threshold: 0.8
+  exclusion_keywords:
+  - looking for
+  - where to buy
+  - wtb
+  - wts
+  - iso
+  - recommendation
+  - review
   known_vendors:
   - montagneparfums
   - montagne_parfums
@@ -26,6 +34,14 @@ drop_window:
   start_minute: 0
   timezone: America/New_York
 logging:
+  auto_cleanup:
+    cache_max_age_days: 7
+    clean_cache: true
+    cleanup_interval_hours: 24
+    compress_old_logs: true
+    enabled: true
+    max_age_days: 30
+    max_total_size_mb: 100
   backup_count: 5
   file_enabled: true
   file_path: logs/fragdrop.log
@@ -54,7 +70,6 @@ stock_monitoring:
     price_changes: false
     restocked_products: false
   watchlist:
-  - u5r9io7pjobrurk43byiz5eojzswz0
   - gentle-silver-inspired-by-mfk-gentle-fluidity-silver
 stock_schedule:
   check_interval: 900
