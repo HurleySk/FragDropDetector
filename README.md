@@ -2,13 +2,15 @@
 
 Automated monitoring system for Montagne Parfums fragrance drops and stock changes with real-time notifications.
 
+**What it does:** Monitors r/MontagneParfums subreddit for drop announcements and tracks the Montagne Parfums website for stock changes, sending instant notifications via Pushover, Discord, or Email when drops or restocks occur.
+
 ## Features
 
 ### Core Monitoring
-- **Reddit Scanner**: Monitors r/MontagneParfums for drop announcements during configured windows
-- **Stock Tracker**: Independent website monitoring with customizable scheduling (separate from Reddit)
-- **Smart Detection**: Pattern-based drop detection with confidence scoring
-- **Watchlist**: Track specific fragrances with priority restock notifications
+- **Reddit Scanner**: Monitors r/MontagneParfums for drops (Fridays 12-6 PM ET default)
+- **Stock Tracker**: Independent 24/7 website monitoring (15-minute intervals)
+- **Smart Detection**: Pattern-based detection with 0.8 confidence threshold
+- **Watchlist**: Priority notifications for specific fragrances
 
 ### Web Interface
 - **Dashboard**: System health, recent activity, watchlist widget
@@ -68,17 +70,42 @@ python web_server.py
 # Access at http://localhost:8000
 ```
 
+## Production Deployment
+
+### Systemd Services (Recommended)
+For automatic startup on boot:
+
+```bash
+# Copy service files
+sudo cp fragdrop.service /etc/systemd/system/
+sudo cp fragdrop-web.service /etc/systemd/system/
+
+# Reload systemd and enable services
+sudo systemctl daemon-reload
+sudo systemctl enable fragdrop fragdrop-web
+sudo systemctl start fragdrop fragdrop-web
+
+# Check status
+sudo systemctl status fragdrop fragdrop-web
+
+# View logs
+journalctl -u fragdrop -f      # Monitor logs
+journalctl -u fragdrop-web -f  # Web interface logs
+```
+
 ## Configuration
 
-### Reddit API (Required)
+### Reddit Setup (Required for Reddit Monitoring)
+
+#### 1. Create Reddit App
 1. Go to https://www.reddit.com/prefs/apps
 2. Create app (script type)
 3. Add Client ID and Secret to `.env`
 
-### Reddit User Authentication (REQUIRED)
-User authentication is **required** for Reddit monitoring. Without it, the system will skip Reddit checks and you'll miss member-only posts.
+#### 2. User Authentication (REQUIRED)
+Without authentication, Reddit monitoring is **completely disabled**.
 
-#### SSH Tunnel Method (For Headless Systems)
+**SSH Tunnel Method** (For Headless Systems):
 ```bash
 # 1. SSH with port forwarding from your local machine:
 ssh -L 8080:localhost:8080 pi@YOUR_PI_IP
@@ -98,26 +125,26 @@ python generate_token_headless.py
 **Note**: Reddit intentionally blocks automated headless authentication for security. SSH tunnel is the only reliable method for headless systems.
 
 ### Drop Windows
-Default: Fridays 12-5 PM ET
+Default: Fridays 12-6 PM ET
 ```yaml
 # config/config.yaml
 drop_window:
   days_of_week: [4]  # 0=Mon, 4=Fri
   start_hour: 12
-  end_hour: 18
+  end_hour: 18        # 6 PM (18:00)
   timezone: America/New_York
 ```
 
 ### Stock Schedule (Independent)
-Default: Every 30 minutes, 24/7
+Default: Every 15 minutes, 24/7
 ```yaml
 # config/config.yaml
 stock_schedule:
   enabled: true
-  check_interval: 1800  # 30 minutes
-  window_enabled: false  # Monitor 24/7
+  check_interval: 900   # 15 minutes
+  window_enabled: false # Monitor 24/7
   timezone: America/New_York
-  days_of_week: []  # Empty = all days
+  days_of_week: []      # Empty = all days
 ```
 
 ### Logging Management
@@ -152,7 +179,10 @@ Access through **System & Logs** tab in web interface to:
 ### Web Interface
 - **Dashboard** (`/`): System overview and quick actions
 - **Inventory** (`/#inventory`): Browse products, manage watchlist
-- **Configuration** (`/#configuration`): Update settings
+- **Configuration** (`/#configuration`): Update all settings
+  - Reddit Monitor, Website Monitor, Detection Rules
+  - Notifications (Pushover, Discord, Email)
+  - System & Logs management
 
 ### Watchlist
 1. Click star icon on any product to watch
@@ -179,19 +209,23 @@ GET  /api/logs/download              # Download logs as zip
 FragDropDetector/
 ├── main.py                 # Core monitoring loop
 ├── web_server.py          # FastAPI web interface
+├── generate_token_headless.py # Reddit OAuth setup
 ├── src/
-│   ├── services/
+│   ├── services/          # Business logic
 │   │   ├── reddit_client.py         # Reddit API wrapper
 │   │   ├── drop_detector.py         # Pattern matching
 │   │   ├── stock_monitor_enhanced.py # Playwright scraper
 │   │   ├── notifiers.py             # Notification handlers
 │   │   └── log_manager.py           # Log rotation and cleanup
 │   └── models/
-│       └── database.py              # SQLAlchemy models
-├── static/                 # Frontend assets (JS/CSS)
+│       └── database.py    # SQLAlchemy models
+├── static/                # Frontend assets (JS/CSS)
 ├── templates/             # HTML templates
-└── config/
-    └── config.yaml        # User configuration
+├── config/
+│   └── config.yaml        # User configuration
+├── data/                  # SQLite database
+├── logs/                  # Application logs
+└── cache/                 # Temporary cache files
 ```
 
 ### Database Schema
@@ -210,15 +244,16 @@ FragDropDetector/
 ## Monitoring Logic
 
 ### Reddit Monitoring
-1. **Drop Window Check**: Only monitors during configured hours (Fridays 12-5 PM ET by default)
+1. **Drop Window Check**: Only monitors during configured hours (Fridays 12-6 PM ET by default)
 2. **Reddit Scan**: Checks new posts every 5 minutes (configurable)
 3. **Pattern Detection**:
-   - Primary keywords: drop, release, available, restock
+   - Primary keywords: drop, restock
+   - Secondary keywords: limited
    - Vendor matching: montagneparfums variations
-   - Confidence scoring (threshold: 0.4)
+   - Confidence scoring (threshold: 0.8)
 
 ### Stock Monitoring (Independent)
-1. **Flexible Scheduling**: Runs on separate schedule (30 minutes by default)
+1. **Flexible Scheduling**: Runs on separate schedule (15 minutes by default)
 2. **Optional Time Windows**: Can restrict to specific days/hours or monitor 24/7
 3. **Full Inventory Scan**: Scrapes entire product catalog using Playwright
 4. **Change Detection**: Compares with previous scan for new/restocked/price changes
@@ -235,7 +270,7 @@ FragDropDetector/
 ### Logs
 - Main logs: `logs/fragdrop.log` (rotated automatically)
 - Archive logs: `logs/fragdrop.log.1.gz`, `.2.gz`, etc.
-- Systemd logs: `journalctl -u fragdrop-monitor -u fragdrop-web`
+- Systemd logs: `journalctl -u fragdrop -u fragdrop-web`
 - Database: `data/fragdrop.db` (SQLite)
 
 ## Development
@@ -256,10 +291,6 @@ curl http://localhost:8000/api/stock/fragrances
 # Add to watchlist
 curl -X POST http://localhost:8000/api/stock/watchlist/add/product-slug
 ```
-
-## License
-
-MIT - See LICENSE file
 
 ## Contributing
 
