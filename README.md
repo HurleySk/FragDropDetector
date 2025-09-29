@@ -39,6 +39,12 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
 
 ### Easy Installation (Recommended)
 
+#### Option 1: One-Line Install
+```bash
+curl -sSL https://raw.githubusercontent.com/HurleySk/FragDropDetector/main/install.sh | bash
+```
+
+#### Option 2: Clone and Install
 ```bash
 # Clone the repository
 git clone https://github.com/HurleySk/FragDropDetector.git
