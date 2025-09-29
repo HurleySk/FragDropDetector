@@ -2,7 +2,7 @@ advanced:
   max_retries: 3
   reddit_rate_limit_delay: 1
   retry_delay: 5
-  user_agent: FragDropDetector/1.0 (by /u/YourRedditUsername)
+  user_agent: FragDropDetector/1.0 (by u/cc_apt107)
 database:
   path: data/fragdrop.db
   retention_days: 30
