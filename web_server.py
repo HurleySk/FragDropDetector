@@ -156,6 +156,7 @@ class DetectionConfig(BaseModel):
     confidence_threshold: float = Field(default=0.4, ge=0.0, le=1.0)
     known_vendors: List[str] = Field(default_factory=list)
     exclusion_keywords: List[str] = Field(default_factory=list)
+    trusted_authors: List[str] = Field(default_factory=list)
 
 class DropWindowConfig(BaseModel):
     enabled: bool = Field(default=True)
@@ -486,7 +487,8 @@ async def update_detection_config(config: DetectionConfig):
             "secondary_keywords": config.secondary_keywords,
             "confidence_threshold": config.confidence_threshold,
             "known_vendors": config.known_vendors,
-            "exclusion_keywords": config.exclusion_keywords
+            "exclusion_keywords": config.exclusion_keywords,
+            "trusted_authors": config.trusted_authors
         }
 
         if not save_yaml_config(yaml_config):

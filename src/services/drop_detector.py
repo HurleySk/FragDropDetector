@@ -52,17 +52,27 @@ class DropDetector:
             'link', 'website'
         ]
 
+        # Default trusted authors
+        default_trusted_authors = [
+            'ayybrahamlmaocoln',
+            'wide_parsley1799',
+            'montagneparfums',  # Official account if exists
+            'mpofficial'
+        ]
+
         # Use config values or defaults
         if config:
             self.primary_keywords = config.get('primary_keywords', default_primary)
             self.secondary_keywords = config.get('secondary_keywords', default_secondary)
             self.confidence_threshold = config.get('confidence_threshold', 0.4)
             exclusion_keywords = config.get('exclusion_keywords', [])
+            self.trusted_authors = config.get('trusted_authors', default_trusted_authors)
         else:
             self.primary_keywords = default_primary
             self.secondary_keywords = default_secondary
             self.confidence_threshold = 0.4
             exclusion_keywords = []
+            self.trusted_authors = default_trusted_authors
 
         # Known vendor/brand patterns
         self.vendor_patterns = [
@@ -83,13 +93,6 @@ class DropDetector:
             r'\d{1,2}/\d{1,2}/\d{2,4}',  # Date format MM/DD/YY
         ]
 
-        # Known restock authors (high confidence)
-        self.trusted_authors = [
-            'ayybrahamlmaocoln',
-            'wide_parsley1799',
-            'montagneparfums',  # Official account if exists
-            'mpofficial'
-        ]
 
         # Default exclusion patterns (false positives)
         default_exclusion_patterns = [

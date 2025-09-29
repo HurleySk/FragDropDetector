@@ -15,7 +15,11 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
 ### Web Interface
 - **Dashboard**: System health, recent activity, watchlist widget
 - **Inventory**: Browse all 158+ products with search, filters, and bulk operations
-- **Configuration**: Manage Reddit API, notifications, monitoring settings, and stock schedule
+- **Configuration**: Full control over all settings:
+  - Detection Rules: Keywords, trusted authors, confidence threshold
+  - Monitoring schedules and time windows
+  - Notification services setup
+  - System & Logs management
 - Enhanced toast notifications for instant feedback
 - Clean, responsive design with dark mode support
 
@@ -256,7 +260,7 @@ FragDropDetector/
 The system tracks the last check timestamp and only processes **new posts** since that time. Each post gets a confidence score:
 
 **High-Impact Signals** (0.3-0.6 points each):
-- Trusted authors (`ayybrahamlmaocoln`, `wide_parsley1799`)
+- Trusted authors (configurable via web interface)
 - "Restock" in title or flair
 - Time patterns ("5pm EST", "today at")
 - Vendor mentions ("Montagne Parfums", "MP")

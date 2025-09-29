@@ -24,6 +24,11 @@ detection:
   - restock
   secondary_keywords:
   - limited
+  trusted_authors:
+  - ayybrahamlmaocoln
+  - wide_parsley1799
+  - montagneparfums
+  - mpofficial
 drop_window:
   days_of_week:
   - 4
