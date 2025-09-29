@@ -252,6 +252,23 @@ FragDropDetector/
    - Vendor matching: montagneparfums variations
    - Confidence scoring (threshold: 0.8)
 
+### How Drop Detection Works
+The system tracks the last check timestamp and only processes **new posts** since that time. Each post gets a confidence score:
+
+**High-Impact Signals** (0.3-0.6 points each):
+- Trusted authors (`ayybrahamlmaocoln`, `wide_parsley1799`)
+- "Restock" in title or flair
+- Time patterns ("5pm EST", "today at")
+- Vendor mentions ("Montagne Parfums", "MP")
+
+**Medium-Impact** (0.1-0.2 points):
+- Keywords: drop, release, available, launch
+- Purchase links in post
+
+**Auto-Excluded**: Posts with "looking for", "wtb/wts", "iso", "recommendation", "review"
+
+Posts scoring ≥0.8 trigger notifications. The system remembers processed posts to avoid duplicates.
+
 ### Stock Monitoring (Independent)
 1. **Flexible Scheduling**: Runs on separate schedule (15 minutes by default)
 2. **Optional Time Windows**: Can restrict to specific days/hours or monitor 24/7
