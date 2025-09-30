@@ -312,6 +312,11 @@ async function handleRedditConfigSubmit(e) {
     try {
         setLoading('reddit-form', true);
         await saveRedditConfig(config);
+        // Reload config to show saved values
+        const refreshedConfig = await loadConfig();
+        if (refreshedConfig) {
+            populateRedditConfig(refreshedConfig.reddit || {});
+        }
     } catch (error) {
         // Error already shown in saveRedditConfig
     } finally {
@@ -359,6 +364,11 @@ async function handleDetectionConfigSubmit(e) {
     try {
         setLoading('detection-form', true);
         await saveDetectionConfig(config);
+        // Reload config to show saved values
+        const refreshedConfig = await loadConfig();
+        if (refreshedConfig) {
+            populateDetectionConfig(refreshedConfig.detection || {});
+        }
     } catch (error) {
         // Error already shown in saveDetectionConfig
     } finally {
@@ -401,6 +411,11 @@ async function handleWindowConfigSubmit(e) {
     try {
         setLoading('window-form', true);
         await saveDropWindowConfig(config);
+        // Reload config to show saved values
+        const refreshedConfig = await loadConfig();
+        if (refreshedConfig) {
+            populateDropWindowConfig(refreshedConfig.drop_window || {});
+        }
     } catch (error) {
         // Error already shown in saveDropWindowConfig
     } finally {
@@ -422,6 +437,11 @@ async function handleStockConfigSubmit(e) {
     try {
         setLoading('stock-form', true);
         await saveStockMonitoringConfig(config);
+        // Reload config to show saved values
+        const refreshedConfig = await loadConfig();
+        if (refreshedConfig) {
+            populateStockMonitoringConfig(refreshedConfig.stock_monitoring || {});
+        }
     } catch (error) {
         // Error already shown in saveStockMonitoringConfig
     } finally {
@@ -460,6 +480,11 @@ async function handleStockScheduleConfigSubmit(e) {
     try {
         setLoading('stock-schedule-form', true);
         await saveStockScheduleConfig(config);
+        // Reload config to show saved values
+        const refreshedConfig = await loadConfig();
+        if (refreshedConfig) {
+            populateStockScheduleConfig(refreshedConfig.stock_schedule || {});
+        }
     } catch (error) {
         // Error already shown in saveStockScheduleConfig
     } finally {
@@ -477,6 +502,11 @@ async function handleNotificationConfigSubmit() {
     try {
         setLoading('notifications-tab', true);
         await saveNotificationConfig(config);
+        // Reload config to show saved values
+        const refreshedConfig = await loadConfig();
+        if (refreshedConfig) {
+            populateNotificationConfig(refreshedConfig.notifications || {});
+        }
     } catch (error) {
         // Error already shown in saveNotificationConfig
     } finally {

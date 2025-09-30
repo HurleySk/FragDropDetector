@@ -253,6 +253,35 @@ def save_yaml_config(config: Dict[str, Any]) -> bool:
         logger.error("Failed to save YAML config", error=str(e))
         return False
 
+def update_env_file(updates: Dict[str, str]) -> bool:
+    """Update .env file with new key-value pairs, preserving existing entries"""
+    env_path = Path(__file__).parent / ".env"
+
+    try:
+        # Read existing .env content
+        existing_vars = {}
+        if env_path.exists():
+            with open(env_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        existing_vars[key.strip()] = value.strip()
+
+        # Update with new values
+        existing_vars.update(updates)
+
+        # Write back to .env
+        with open(env_path, 'w', encoding='utf-8') as f:
+            for key, value in existing_vars.items():
+                f.write(f"{key}={value}\n")
+
+        logger.info("Updated .env file", keys=list(updates.keys()))
+        return True
+    except Exception as e:
+        logger.error("Failed to update .env file", error=str(e))
+        return False
+
 def get_database() -> Database:
     """Dependency to get database instance"""
     try:
@@ -446,7 +475,15 @@ async def update_reddit_config(config: RedditConfig):
         if not save_yaml_config(yaml_config):
             raise HTTPException(status_code=500, detail="Failed to save configuration")
 
-        # Update environment variables (would need restart for full effect)
+        # Persist credentials to .env file
+        env_updates = {
+            'REDDIT_CLIENT_ID': config.client_id,
+            'REDDIT_CLIENT_SECRET': config.client_secret
+        }
+        if not update_env_file(env_updates):
+            raise HTTPException(status_code=500, detail="Failed to save credentials to .env file")
+
+        # Update environment variables in memory
         os.environ['REDDIT_CLIENT_ID'] = config.client_id
         os.environ['REDDIT_CLIENT_SECRET'] = config.client_secret
 
@@ -461,13 +498,21 @@ async def update_reddit_config(config: RedditConfig):
 async def update_notification_config(config: NotificationConfig):
     """Update notification configuration with validation"""
     try:
-        # Update environment variables
-        if config.pushover_app_token:
-            os.environ['PUSHOVER_APP_TOKEN'] = config.pushover_app_token
-        if config.pushover_user_key:
-            os.environ['PUSHOVER_USER_KEY'] = config.pushover_user_key
-        if config.discord_webhook_url:
-            os.environ['DISCORD_WEBHOOK_URL'] = config.discord_webhook_url
+        # Build env updates dict with only provided values
+        env_updates = {}
+        if config.pushover_app_token is not None:
+            env_updates['PUSHOVER_APP_TOKEN'] = config.pushover_app_token or ''
+            os.environ['PUSHOVER_APP_TOKEN'] = config.pushover_app_token or ''
+        if config.pushover_user_key is not None:
+            env_updates['PUSHOVER_USER_KEY'] = config.pushover_user_key or ''
+            os.environ['PUSHOVER_USER_KEY'] = config.pushover_user_key or ''
+        if config.discord_webhook_url is not None:
+            env_updates['DISCORD_WEBHOOK_URL'] = config.discord_webhook_url or ''
+            os.environ['DISCORD_WEBHOOK_URL'] = config.discord_webhook_url or ''
+
+        # Persist to .env file
+        if env_updates and not update_env_file(env_updates):
+            raise HTTPException(status_code=500, detail="Failed to save credentials to .env file")
 
         logger.info("Notification configuration updated")
         return {"success": True, "message": "Notification configuration updated successfully"}
