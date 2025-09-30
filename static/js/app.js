@@ -152,11 +152,25 @@ async function loadStatus() {
     }
 }
 
-async function loadConfig() {
+async function loadConfig(forceFresh = false) {
     try {
-        const data = await apiCall('/api/config');
-        AppState.config = data;
-        return data;
+        if (forceFresh) {
+            // Clear all cached config entries
+            for (const [key] of AppState.cache.entries()) {
+                if (key.includes('/api/config')) {
+                    AppState.cache.delete(key);
+                }
+            }
+            // Add cache buster to force fresh fetch
+            const cacheBuster = `?_=${Date.now()}`;
+            const data = await fetch(`${API_BASE}/api/config${cacheBuster}`).then(r => r.json());
+            AppState.config = data;
+            return data;
+        } else {
+            const data = await apiCall('/api/config');
+            AppState.config = data;
+            return data;
+        }
     } catch (error) {
         console.error('Failed to load config:', error);
         showAlert('Failed to load configuration', 'error');

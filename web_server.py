@@ -393,7 +393,7 @@ async def get_status():
 async def get_config():
     """Get current configuration"""
     try:
-        load_dotenv()  # Reload environment variables
+        load_dotenv(override=True)  # Force reload environment variables from .env file
         yaml_config = load_yaml_config()
 
         # Reddit authentication status
@@ -449,6 +449,22 @@ async def get_config():
                 "start_minute": 0,
                 "end_hour": 18,
                 "end_minute": 0
+            }),
+            "logging": yaml_config.get('logging', {
+                "level": "INFO",
+                "file_enabled": True,
+                "file_path": "logs/fragdrop.log",
+                "max_file_size": 10,
+                "backup_count": 5,
+                "auto_cleanup": {
+                    "enabled": True,
+                    "max_age_days": 30,
+                    "max_total_size_mb": 100,
+                    "cleanup_interval_hours": 24,
+                    "compress_old_logs": True,
+                    "clean_cache": True,
+                    "cache_max_age_days": 7
+                }
             })
         }
 

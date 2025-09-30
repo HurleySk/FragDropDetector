@@ -86,6 +86,14 @@ class Router {
                 }
                 break;
             case 'configuration':
+                // Clear config cache before loading configuration page
+                if (window.AppState && window.AppState.cache) {
+                    for (const [key] of window.AppState.cache.entries()) {
+                        if (key.includes('/api/config')) {
+                            window.AppState.cache.delete(key);
+                        }
+                    }
+                }
                 if (typeof initializeConfiguration === 'function') {
                     // Call the function and handle async if it returns a promise
                     const result = initializeConfiguration();

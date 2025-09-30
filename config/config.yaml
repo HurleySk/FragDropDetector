@@ -32,7 +32,7 @@ detection:
 drop_window:
   days_of_week:
   - 4
-  enabled: false
+  enabled: true
   end_hour: 18
   end_minute: 0
   start_hour: 12
@@ -73,9 +73,7 @@ stock_monitoring:
     new_products: true
     out_of_stock: false
     price_changes: false
-    restocked_products: false
-  watchlist:
-  - gentle-silver-inspired-by-mfk-gentle-fluidity-silver
+    restocked_products: true
 stock_schedule:
   check_interval: 900
   days_of_week: []

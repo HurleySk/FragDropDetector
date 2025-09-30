@@ -36,7 +36,7 @@ function setupConfigurationTabs() {
 async function loadAllConfiguration() {
     try {
         // Always fetch fresh config when loading the configuration page
-        const config = await loadConfig();
+        const config = await loadConfig(true);
 
         if (!config) {
             console.error('No configuration data received');
@@ -220,12 +220,6 @@ function bindConfigurationForms() {
         detectionForm.addEventListener('submit', handleDetectionConfigSubmit);
     }
 
-    // Window form
-    const windowForm = document.getElementById('window-form');
-    if (windowForm) {
-        windowForm.addEventListener('submit', handleWindowConfigSubmit);
-    }
-
     // Stock form
     const stockForm = document.getElementById('stock-form');
     if (stockForm) {
@@ -295,7 +289,7 @@ function updateNotificationStatuses() {
 async function handleRedditConfigSubmit(e) {
     e.preventDefault();
 
-    const config = {
+    const redditConfig = {
         client_id: document.getElementById('reddit-client-id').value,
         client_secret: document.getElementById('reddit-client-secret').value,
         user_agent: 'FragDropDetector/1.0',
@@ -304,21 +298,54 @@ async function handleRedditConfigSubmit(e) {
         post_limit: 50
     };
 
-    if (!config.client_id || !config.client_secret) {
+    if (!redditConfig.client_id || !redditConfig.client_secret) {
         showAlert('Please fill in all required Reddit credentials', 'error');
+        return;
+    }
+
+    // Also collect drop window settings from the same form
+    const enabled = document.getElementById('window-enabled').checked;
+    const timezone = document.getElementById('window-timezone').value;
+    const startTime = document.getElementById('window-start-time').value.split(':');
+    const endTime = document.getElementById('window-end-time').value.split(':');
+
+    // Get selected days
+    const days = [];
+    for (let i = 0; i <= 6; i++) {
+        const checkbox = document.getElementById(`day-${i}`);
+        if (checkbox && checkbox.checked) {
+            days.push(i);
+        }
+    }
+
+    const dropWindowConfig = {
+        enabled,
+        timezone,
+        days_of_week: days,
+        start_hour: parseInt(startTime[0]),
+        start_minute: parseInt(startTime[1]),
+        end_hour: parseInt(endTime[0]),
+        end_minute: parseInt(endTime[1])
+    };
+
+    if (enabled && days.length === 0) {
+        showAlert('Please select at least one day when time restrictions are enabled', 'error');
         return;
     }
 
     try {
         setLoading('reddit-form', true);
-        await saveRedditConfig(config);
-        // Reload config to show saved values
-        const refreshedConfig = await loadConfig();
+        // Save both Reddit config and drop window config
+        await saveRedditConfig(redditConfig);
+        await saveDropWindowConfig(dropWindowConfig);
+        // Force reload config from disk to show saved values
+        const refreshedConfig = await loadConfig(true);
         if (refreshedConfig) {
             populateRedditConfig(refreshedConfig.reddit || {});
+            populateDropWindowConfig(refreshedConfig.drop_window || {});
         }
     } catch (error) {
-        // Error already shown in saveRedditConfig
+        // Error already shown in save functions
     } finally {
         setLoading('reddit-form', false);
     }
@@ -364,8 +391,8 @@ async function handleDetectionConfigSubmit(e) {
     try {
         setLoading('detection-form', true);
         await saveDetectionConfig(config);
-        // Reload config to show saved values
-        const refreshedConfig = await loadConfig();
+        // Force reload config from disk to show saved values
+        const refreshedConfig = await loadConfig(true);
         if (refreshedConfig) {
             populateDetectionConfig(refreshedConfig.detection || {});
         }
@@ -373,53 +400,6 @@ async function handleDetectionConfigSubmit(e) {
         // Error already shown in saveDetectionConfig
     } finally {
         setLoading('detection-form', false);
-    }
-}
-
-async function handleWindowConfigSubmit(e) {
-    e.preventDefault();
-
-    const enabled = document.getElementById('window-enabled').checked;
-    const timezone = document.getElementById('window-timezone').value;
-    const startTime = document.getElementById('window-start-time').value.split(':');
-    const endTime = document.getElementById('window-end-time').value.split(':');
-
-    // Get selected days
-    const days = [];
-    for (let i = 0; i <= 6; i++) {
-        const checkbox = document.getElementById(`day-${i}`);
-        if (checkbox && checkbox.checked) {
-            days.push(i);
-        }
-    }
-
-    const config = {
-        enabled,
-        timezone,
-        days_of_week: days,
-        start_hour: parseInt(startTime[0]),
-        start_minute: parseInt(startTime[1]),
-        end_hour: parseInt(endTime[0]),
-        end_minute: parseInt(endTime[1])
-    };
-
-    if (enabled && days.length === 0) {
-        showAlert('Please select at least one day when window checking is enabled', 'error');
-        return;
-    }
-
-    try {
-        setLoading('window-form', true);
-        await saveDropWindowConfig(config);
-        // Reload config to show saved values
-        const refreshedConfig = await loadConfig();
-        if (refreshedConfig) {
-            populateDropWindowConfig(refreshedConfig.drop_window || {});
-        }
-    } catch (error) {
-        // Error already shown in saveDropWindowConfig
-    } finally {
-        setLoading('window-form', false);
     }
 }
 
@@ -437,8 +417,8 @@ async function handleStockConfigSubmit(e) {
     try {
         setLoading('stock-form', true);
         await saveStockMonitoringConfig(config);
-        // Reload config to show saved values
-        const refreshedConfig = await loadConfig();
+        // Force reload config from disk to show saved values
+        const refreshedConfig = await loadConfig(true);
         if (refreshedConfig) {
             populateStockMonitoringConfig(refreshedConfig.stock_monitoring || {});
         }
@@ -480,8 +460,8 @@ async function handleStockScheduleConfigSubmit(e) {
     try {
         setLoading('stock-schedule-form', true);
         await saveStockScheduleConfig(config);
-        // Reload config to show saved values
-        const refreshedConfig = await loadConfig();
+        // Force reload config from disk to show saved values
+        const refreshedConfig = await loadConfig(true);
         if (refreshedConfig) {
             populateStockScheduleConfig(refreshedConfig.stock_schedule || {});
         }
@@ -502,8 +482,8 @@ async function handleNotificationConfigSubmit() {
     try {
         setLoading('notifications-tab', true);
         await saveNotificationConfig(config);
-        // Reload config to show saved values
-        const refreshedConfig = await loadConfig();
+        // Force reload config from disk to show saved values
+        const refreshedConfig = await loadConfig(true);
         if (refreshedConfig) {
             populateNotificationConfig(refreshedConfig.notifications || {});
         }
@@ -660,6 +640,11 @@ async function saveLoggingConfig(event) {
 
         if (data.success) {
             showAlert('Logging configuration saved successfully', 'success');
+            // Force reload config from disk to show saved values
+            const refreshedConfig = await loadConfig(true);
+            if (refreshedConfig) {
+                populateLoggingConfig(refreshedConfig.logging || {});
+            }
         } else {
             showAlert('Failed to save logging configuration', 'error');
         }
