@@ -13,7 +13,16 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
 - **Watchlist**: Priority notifications for specific fragrances
 
 ### Web Interface
-- **Dashboard**: System health, recent activity, watchlist widget
+- **Dashboard**: System health with actionable status cards, recent drops widget
+  - Recent Activity: Shows last event (drop/restock) within 7 days
+  - Reddit Monitor: Window status with countdown to next window
+  - Stock Monitor: Monitoring status and schedule info
+  - Watchlist Alerts: Out-of-stock items needing attention
+- **Activity**: Complete timeline of all drops and stock changes
+  - Filter tabs: All, Drops, Stock Changes
+  - Date grouping: Today, Yesterday, day names, full dates
+  - Confidence badges, author attribution, direct links
+  - Load more pagination (20 items per page)
 - **Inventory**: Browse all 158+ products with search, filters, and bulk operations
 - **Configuration**: Full control over all settings:
   - Detection Rules: Keywords, trusted authors, confidence threshold
@@ -200,7 +209,8 @@ Access through **System & Logs** tab in web interface to:
 ## Usage
 
 ### Web Interface
-- **Dashboard** (`/`): System overview and quick actions
+- **Dashboard** (`/`): System overview with clickable status cards
+- **Activity** (`/#activity`): Complete timeline of drops and stock changes
 - **Inventory** (`/#inventory`): Browse products, manage watchlist
 - **Configuration** (`/#configuration`): Update all settings
   - Reddit Monitor, Website Monitor, Detection Rules
@@ -215,15 +225,24 @@ Access through **System & Logs** tab in web interface to:
 
 ### API Endpoints
 ```
-GET  /api/status                     # System status
+GET  /api/status                     # System status with window info
+GET  /api/monitor/status             # Monitor process health check
+GET  /api/drops                      # Recent drops with pagination
 GET  /api/stock/fragrances           # All products with filters
+GET  /api/stock/changes              # Recent stock changes
 POST /api/stock/watchlist/add/{slug} # Add to watchlist
-POST /api/watchlist/bulk             # Bulk operations
-POST /api/test/notifications         # Test notifications
+POST /api/stock/watchlist/remove/{slug} # Remove from watchlist
+POST /api/watchlist/bulk             # Bulk add/remove operations
+GET  /api/config                     # Get all configuration
+POST /api/config/reddit              # Update Reddit settings
+POST /api/config/stock               # Update stock settings
+POST /api/config/detection           # Update detection rules
+POST /api/config/notifications       # Update notification settings
 POST /api/config/logging             # Update logging configuration
-GET  /api/logs/usage                 # Get log statistics
-POST /api/logs/cleanup               # Trigger manual cleanup
-GET  /api/logs/download              # Download logs as zip
+POST /api/test/notifications         # Test notification services
+GET  /api/logs/usage                 # Disk usage and log statistics
+POST /api/logs/cleanup               # Trigger manual log cleanup
+GET  /api/logs/download              # Download all logs as zip
 ```
 
 ## Architecture
