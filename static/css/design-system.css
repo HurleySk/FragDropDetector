@@ -12,7 +12,11 @@
     /* Core Colors */
     --blue-600: #2563eb;
     --blue-700: #1d4ed8;
+    --blue-800: #1e40af;
+    --blue-900: #1e3a8a;
+    --blue-500: #3b82f6;
     --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
     --blue-200: #bfdbfe;
     --green-600: #059669;
     --green-700: #047857;
@@ -828,6 +832,7 @@ textarea:focus-visible {
 
 /* Professional Icon System */
 .icon-dashboard::before { content: "◧"; }
+.icon-activity::before { content: "≡"; }
 .icon-inventory::before { content: "▦"; }
 .icon-settings::before { content: "⚙"; }
 .icon-target::before { content: "◎"; }

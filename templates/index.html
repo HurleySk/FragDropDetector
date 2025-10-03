@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>FragDropDetector</title>
-    <link rel="stylesheet" href="/static/css/design-system.css?v=9">
-    <link rel="stylesheet" href="/static/css/base.css?v=9">
-    <link rel="stylesheet" href="/static/css/theme.css?v=9">
-    <link rel="stylesheet" href="/static/css/toast.css?v=9">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=9">
-    <link rel="stylesheet" href="/static/css/configuration.css?v=9">
-    <link rel="stylesheet" href="/static/css/inventory.css?v=9">
+    <link rel="stylesheet" href="/static/css/design-system.css?v=21">
+    <link rel="stylesheet" href="/static/css/base.css?v=21">
+    <link rel="stylesheet" href="/static/css/theme.css?v=21">
+    <link rel="stylesheet" href="/static/css/toast.css?v=21">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=21">
+    <link rel="stylesheet" href="/static/css/activity.css?v=21">
+    <link rel="stylesheet" href="/static/css/configuration.css?v=21">
+    <link rel="stylesheet" href="/static/css/inventory.css?v=21">
 </head>
 <body>
     <div class="app-container">
@@ -28,6 +29,10 @@
                 <a href="#dashboard" class="nav-item active" data-page="dashboard">
                     <span class="nav-icon icon-dashboard"></span>
                     <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#activity" class="nav-item" data-page="activity">
+                    <span class="nav-icon icon-activity"></span>
+                    <span class="nav-text">Activity</span>
                 </a>
                 <a href="#inventory" class="nav-item" data-page="inventory">
                     <span class="nav-icon icon-inventory"></span>
@@ -60,28 +65,39 @@
 
                 <!-- Status Overview -->
                 <div class="status-overview grid grid-responsive-4">
-                    <div class="status-card card">
-                        <div class="status-card-icon icon-target"></div>
-                        <div class="status-value" id="drops-count">0</div>
-                        <div class="status-label">Drops Detected</div>
+                    <div class="status-card card clickable" id="recent-activity-card" onclick="navigateToPage('activity')">
+                        <div class="status-card-header">
+                            <div class="status-card-title">Recent Activity</div>
+                        </div>
+                        <div class="status-value" id="recent-activity-text">Loading...</div>
+                        <div class="status-label" id="recent-activity-subtitle">--</div>
                     </div>
 
-                    <div class="status-card card">
-                        <div class="status-card-icon icon-bottle"></div>
-                        <div class="status-value" id="fragrances-count">0</div>
-                        <div class="status-label">Fragrances Tracked</div>
+                    <div class="status-card card clickable" id="reddit-monitor-card" onclick="navigateToConfigTab('reddit')">
+                        <div class="status-card-header">
+                            <div class="card-badge" id="drops-badge">0</div>
+                            <div class="status-card-title">Reddit Monitor</div>
+                        </div>
+                        <div class="status-value" id="reddit-window-status">Loading...</div>
+                        <div class="status-label" id="reddit-window-subtitle">--</div>
                     </div>
 
-                    <div class="status-card card">
-                        <div class="status-card-icon icon-chart"></div>
-                        <div class="status-value" id="stock-changes-count">0</div>
-                        <div class="status-label">Stock Changes</div>
+                    <div class="status-card card clickable" id="stock-monitor-card" onclick="navigateToPage('inventory')">
+                        <div class="status-card-header">
+                            <div class="card-badge" id="fragrances-badge">0</div>
+                            <div class="status-card-title">Stock Monitor</div>
+                        </div>
+                        <div class="status-value" id="stock-window-status">Loading...</div>
+                        <div class="status-label" id="stock-window-subtitle">--</div>
                     </div>
 
-                    <div class="status-card card">
-                        <div class="status-card-icon icon-clock"></div>
-                        <div class="status-value" id="next-window">--</div>
-                        <div class="status-label">Next Window</div>
+                    <div class="status-card card clickable" id="watchlist-alerts-card" onclick="navigateToInventoryWatchlist()">
+                        <div class="status-card-header">
+                            <div class="card-badge" id="stock-changes-badge">0</div>
+                            <div class="status-card-title">Watchlist Alerts</div>
+                        </div>
+                        <div class="status-value" id="watchlist-alert-count">0</div>
+                        <div class="status-label" id="watchlist-alert-subtitle">items need attention</div>
                     </div>
                 </div>
 
@@ -241,6 +257,34 @@
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Activity Page -->
+            <div class="page-content activity-page hidden" id="activity-content">
+                <div class="page-header">
+                    <h1 class="page-title">Recent Activity</h1>
+                    <p class="page-subtitle">Timeline of drops and stock changes</p>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="activity-filters">
+                    <button class="filter-tab active" data-filter="all">All</button>
+                    <button class="filter-tab" data-filter="drops">Drops</button>
+                    <button class="filter-tab" data-filter="stock">Stock Changes</button>
+                </div>
+
+                <!-- Activity Timeline -->
+                <div id="activity-timeline" class="activity-timeline">
+                    <div class="loading-placeholder">
+                        <div class="loading-spinner"></div>
+                        <p>Loading activity...</p>
+                    </div>
+                </div>
+
+                <!-- Load More -->
+                <div class="activity-load-more">
+                    <button id="load-more-activity" class="btn btn-secondary">Load More</button>
                 </div>
             </div>
 
@@ -951,6 +995,10 @@ mpofficial</textarea>
                     <div class="bottom-nav-icon icon-dashboard"></div>
                     <span>Dashboard</span>
                 </a>
+                <a href="#activity" class="bottom-nav-item" data-page="activity">
+                    <div class="bottom-nav-icon icon-activity"></div>
+                    <span>Activity</span>
+                </a>
                 <a href="#inventory" class="bottom-nav-item" data-page="inventory">
                     <div class="bottom-nav-icon icon-inventory"></div>
                     <span>Inventory</span>
@@ -963,13 +1011,14 @@ mpofficial</textarea>
         </nav>
     </div>
 
-    <script src="/static/js/dashboard-functions.js?v=12"></script>
-    <script src="/static/js/toast.js?v=12"></script>
-    <script src="/static/js/theme.js?v=12"></script>
-    <script src="/static/js/router.js?v=12"></script>
-    <script src="/static/js/app.js?v=12"></script>
-    <script src="/static/js/dashboard.js?v=12"></script>
-    <script src="/static/js/configuration.js?v=12"></script>
-    <script src="/static/js/inventory.js?v=12"></script>
+    <script src="/static/js/dashboard-functions.js?v=20"></script>
+    <script src="/static/js/toast.js?v=20"></script>
+    <script src="/static/js/theme.js?v=20"></script>
+    <script src="/static/js/router.js?v=20"></script>
+    <script src="/static/js/app.js?v=20"></script>
+    <script src="/static/js/dashboard.js?v=20"></script>
+    <script src="/static/js/activity.js?v=20"></script>
+    <script src="/static/js/configuration.js?v=20"></script>
+    <script src="/static/js/inventory.js?v=20"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 class Router {
     constructor() {
         this.currentPage = 'dashboard';
-        this.pages = ['dashboard', 'inventory', 'configuration'];
+        this.pages = ['dashboard', 'activity', 'inventory', 'configuration'];
         this.init();
     }
 
@@ -80,6 +80,11 @@ class Router {
                     initializeDashboard();
                 }
                 break;
+            case 'activity':
+                if (typeof initializeActivity === 'function') {
+                    initializeActivity();
+                }
+                break;
             case 'inventory':
                 if (window.InventoryManager) {
                     window.InventoryManager.init();
@@ -109,6 +114,7 @@ class Router {
         // Update page title
         const titles = {
             dashboard: 'Dashboard - FragDropDetector',
+            activity: 'Activity - FragDropDetector',
             inventory: 'Inventory - FragDropDetector',
             configuration: 'Configuration - FragDropDetector'
         };
@@ -121,6 +127,11 @@ class Router {
             case 'dashboard':
                 if (typeof cleanupDashboard === 'function') {
                     cleanupDashboard();
+                }
+                break;
+            case 'activity':
+                if (typeof cleanupActivity === 'function') {
+                    cleanupActivity();
                 }
                 break;
             case 'inventory':
