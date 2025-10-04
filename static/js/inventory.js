@@ -233,11 +233,18 @@ const InventoryManager = {
                 ? `<span class="parfumo-votes">(${item.parfumo_votes.toLocaleString()} votes)</span>`
                 : '';
 
+            // Create link if we have a Parfumo URL
+            const scoreContent = item.parfumo_url
+                ? `<a href="${item.parfumo_url}" target="_blank" class="parfumo-link">
+                     <span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>
+                   </a>`
+                : `<span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>`;
+
             ratingHtml = `
                 <div class="item-rating">
                     <div class="rating-line">
                         <span class="parfumo-label">Parfumo:</span>
-                        <span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>
+                        ${scoreContent}
                         ${votesDisplay}
                     </div>
                 </div>

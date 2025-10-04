@@ -436,6 +436,20 @@
     font-weight: var(--font-medium);
 }
 
+.parfumo-link {
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+}
+
+.parfumo-link:hover {
+    text-decoration: underline !important;
+}
+
+.parfumo-link:hover .parfumo-score {
+    background: var(--blue-100);
+    color: var(--blue-700);
+}
+
 .parfumo-score {
     font-weight: var(--font-bold);
     color: var(--blue-600);
