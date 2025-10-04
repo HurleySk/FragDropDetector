@@ -98,6 +98,38 @@
     font-size: 16px;
 }
 
+/* Sort Direction Toggle Button */
+.sort-direction-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--rounded-lg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sort-direction-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    color: var(--primary);
+}
+
+.sort-direction-btn .sort-arrow {
+    font-size: 20px;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.sort-direction-btn.desc .sort-arrow {
+    transform: rotate(180deg);
+}
+
 .controls-row {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -385,7 +417,7 @@
 
 /* Parfumo Rating Display */
 .item-rating {
-    margin-top: var(--space-1);
+    margin-top: var(--space-3);
     padding: var(--space-1) var(--space-2);
     background: var(--gray-50);
     border-radius: var(--rounded);

@@ -59,6 +59,16 @@ const InventoryManager = {
             this.applyFilters();
         });
 
+        // Sort direction toggle
+        const sortDirectionToggle = document.getElementById('sort-direction-toggle');
+        if (sortDirectionToggle) {
+            sortDirectionToggle.addEventListener('click', () => {
+                this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+                sortDirectionToggle.classList.toggle('desc', this.sortOrder === 'desc');
+                this.applyFilters();
+            });
+        }
+
         // Pagination
         document.getElementById('prev-page')?.addEventListener('click', () => this.changePage(-1));
         document.getElementById('next-page')?.addEventListener('click', () => this.changePage(1));
@@ -142,6 +152,16 @@ const InventoryManager = {
                 case 'in_stock':
                     aVal = a.in_stock ? 1 : 0;
                     bVal = b.in_stock ? 1 : 0;
+                    break;
+                case 'parfumo_score':
+                    // Handle null scores - put them at the end
+                    aVal = a.parfumo_score ?? (this.sortOrder === 'desc' ? -Infinity : Infinity);
+                    bVal = b.parfumo_score ?? (this.sortOrder === 'desc' ? -Infinity : Infinity);
+                    break;
+                case 'parfumo_votes':
+                    // Handle null votes - put them at the end
+                    aVal = a.parfumo_votes ?? (this.sortOrder === 'desc' ? -1 : Infinity);
+                    bVal = b.parfumo_votes ?? (this.sortOrder === 'desc' ? -1 : Infinity);
                     break;
                 default:
                     aVal = a[this.sortBy]?.toLowerCase() || '';

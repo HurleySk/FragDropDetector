@@ -1026,6 +1026,9 @@ async def get_fragrances(
 
         # Convert to list for filtering
         result = []
+        new_mappings_created = 0
+        max_new_mappings_per_request = 5  # Limit to prevent timeouts
+
         for slug, data in fragrances.items():
             item = {
                 **data,
@@ -1035,7 +1038,16 @@ async def get_fragrances(
 
             # Add original fragrance info and ratings if requested
             if include_ratings and mapper:
+                # Try to get existing mapping or create new one
                 mapping = mapper.get_mapping(slug)
+
+                # If no mapping exists, try to create one from the product name (with limit)
+                if not mapping and new_mappings_created < max_new_mappings_per_request:
+                    # Extract from product name (e.g., "INSPIRED BY...")
+                    mapping = mapper.update_mapping(slug, item['name'], '')
+                    if mapping:
+                        new_mappings_created += 1
+
                 if mapping:
                     item['original_brand'] = mapping.get('original_brand')
                     item['original_name'] = mapping.get('original_name')
@@ -1065,7 +1077,7 @@ async def get_fragrances(
             result = [f for f in result if f['is_watchlisted']]
 
         # Apply sorting
-        if sort_by in ['name', 'slug', 'price', 'in_stock']:
+        if sort_by in ['name', 'slug', 'price', 'in_stock', 'parfumo_score', 'parfumo_votes']:
             reverse = sort_order == 'desc'
             if sort_by == 'price':
                 # Special handling for price sorting
@@ -1078,6 +1090,22 @@ async def get_fragrances(
                     except:
                         return float('inf') if not reverse else float('-inf')
                 result.sort(key=price_key, reverse=reverse)
+            elif sort_by == 'parfumo_score':
+                # Handle NULL scores - put them at the end for both asc and desc
+                def score_key(item):
+                    score = item.get('parfumo_score')
+                    if score is None:
+                        return float('-inf') if reverse else float('inf')
+                    return score
+                result.sort(key=score_key, reverse=reverse)
+            elif sort_by == 'parfumo_votes':
+                # Handle NULL votes - put them at the end for both asc and desc
+                def votes_key(item):
+                    votes = item.get('parfumo_votes')
+                    if votes is None:
+                        return -1 if reverse else float('inf')
+                    return votes
+                result.sort(key=votes_key, reverse=reverse)
             else:
                 result.sort(key=lambda x: x[sort_by], reverse=reverse)
 
