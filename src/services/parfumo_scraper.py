@@ -72,7 +72,7 @@ class ParfumoScraper:
     def fetch_rating(self, parfumo_id: str) -> Optional[Dict]:
         """
         Fetch rating for a fragrance from Parfumo
-        parfumo_id format: "Brand/Fragrance-Name-Year-ID"
+        parfumo_id format: "Brand/Fragrance-Name-Year-ID" or just "Brand/Fragrance-Name"
         """
         if not parfumo_id:
             return None
@@ -107,12 +107,8 @@ class ParfumoScraper:
             # Extract overall rating (0-10 scale)
             rating_data = {}
 
-            # Look for the main rating score
-            rating_element = soup.find('span', class_='rating_value')
-            if not rating_element:
-                # Alternative selectors for rating
-                rating_element = soup.find('div', {'itemprop': 'ratingValue'})
-
+            # Correct selector for main rating score
+            rating_element = soup.find('span', {'itemprop': 'ratingValue'})
             if rating_element:
                 try:
                     rating_text = rating_element.get_text().strip()
@@ -123,31 +119,39 @@ class ParfumoScraper:
                 except ValueError:
                     logger.warning(f"Could not parse rating: {rating_element.get_text()}")
 
-            # Look for vote count
-            votes_element = soup.find('span', class_='rating_count')
-            if not votes_element:
-                votes_element = soup.find('div', {'itemprop': 'ratingCount'})
-
+            # Correct selector for vote count
+            votes_element = soup.find('span', {'itemprop': 'ratingCount'})
             if votes_element:
                 try:
                     votes_text = votes_element.get_text().strip()
+                    # Remove "Ratings" text and extract number
                     votes_match = re.search(r'(\d+)', votes_text.replace(',', ''))
                     if votes_match:
                         rating_data['votes'] = int(votes_match.group(1))
                 except ValueError:
                     logger.warning(f"Could not parse votes: {votes_element.get_text()}")
 
-            # Look for subcategory ratings (scent, longevity, sillage)
+            # Look for subcategory ratings from data-percentage attributes
             subcategories = {}
-            for category in ['scent', 'longevity', 'sillage', 'bottle', 'value']:
-                category_element = soup.find('div', {'data-category': category})
-                if category_element:
-                    try:
-                        score = category_element.find('span', class_='score')
-                        if score:
-                            subcategories[category] = float(score.get_text().strip())
-                    except:
-                        pass
+            barfiller_elements = soup.find_all('div', class_='barfiller_element rating-details')
+
+            for elem in barfiller_elements:
+                category = elem.get('data-type')
+                if category:
+                    # Map internal names to display names
+                    category_map = {
+                        'scent': 'scent',
+                        'durability': 'longevity',
+                        'sillage': 'sillage',
+                        'bottle': 'bottle'
+                    }
+                    if category in category_map:
+                        try:
+                            percentage = float(elem.get('data-percentage', 0))
+                            # Convert percentage to 0-10 scale
+                            subcategories[category_map[category]] = round(percentage / 10, 1)
+                        except (ValueError, TypeError):
+                            pass
 
             if subcategories:
                 rating_data['subcategories'] = subcategories
@@ -186,14 +190,73 @@ class ParfumoScraper:
     def search_fragrance(self, brand: str, fragrance_name: str) -> Optional[str]:
         """
         Search for a fragrance on Parfumo and return its ID
-        This would require more complex scraping of search results
         """
-        # This is a simplified version - full implementation would need
-        # to search Parfumo and parse results
-        logger.info(f"Searching Parfumo for: {brand} {fragrance_name}")
+        try:
+            # Build search query
+            search_query = f"{fragrance_name} {brand}".strip()
+            logger.info(f"Searching Parfumo for: {search_query}")
 
-        # For now, return None - this would need actual search implementation
-        return None
+            # Use Parfumo search page
+            search_url = "https://www.parfumo.com/s_perfumes_x.php"
+            params = {
+                'in': '1',  # Search in perfume names
+                'filter': search_query
+            }
+
+            response = requests.get(search_url, params=params, headers=self.headers, timeout=10)
+            if response.status_code != 200:
+                logger.warning(f"Search failed with status {response.status_code}")
+                return None
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Look for perfume links in search results
+            # Find all links and filter for perfume pages
+            all_links = soup.find_all('a', href=True)
+            perfume_links = []
+
+            for link in all_links:
+                href = str(link.get('href', ''))
+                # Match pattern like: https://www.parfumo.com/Perfumes/Creed/aventus
+                if '/Perfumes/' in href and not href.endswith('/Perfumes'):
+                    # Exclude list pages and other non-perfume links
+                    if not any(x in href for x in ['current_page=', 's_perfumes', '?']):
+                        perfume_links.append(link)
+
+            if not perfume_links:
+                logger.info(f"No results found for: {search_query}")
+                return None
+
+            # Try to find best match
+            brand_lower = brand.lower().replace(' ', '_')
+            fragrance_lower = fragrance_name.lower().replace(' ', '_')
+
+            for link in perfume_links:
+                href = link.get('href', '')
+                # Extract the ID from the full URL
+                if 'parfumo.com/Perfumes/' in href:
+                    # Get everything after /Perfumes/
+                    parfumo_id = href.split('/Perfumes/')[-1]
+
+                    # Check if this looks like a good match
+                    id_lower = parfumo_id.lower()
+                    if brand_lower in id_lower or fragrance_lower in id_lower:
+                        logger.info(f"Found Parfumo match: {parfumo_id}")
+                        return parfumo_id
+
+            # If no good match, return the first result
+            if perfume_links:
+                first_href = perfume_links[0].get('href', '')
+                if 'parfumo.com/Perfumes/' in first_href:
+                    parfumo_id = first_href.split('/Perfumes/')[-1]
+                    logger.info(f"Using first search result: {parfumo_id}")
+                    return parfumo_id
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error searching Parfumo for {brand} {fragrance_name}: {e}")
+            return None
 
 
 # Singleton instance

@@ -97,31 +97,28 @@ class FragranceMapper:
 
     def get_parfumo_id(self, brand: str, fragrance_name: str) -> Optional[str]:
         """
-        Generate likely Parfumo ID based on brand and fragrance name
-        This is a best guess - actual ID may need verification
+        Get Parfumo ID for a fragrance by searching Parfumo
         """
-        # Parfumo URL format: Brand/Fragrance-Name-Year-ID
-        # We can construct the partial URL for searching
-        brand_slug = brand.replace(' ', '-').replace('&', 'and')
-        fragrance_slug = fragrance_name.replace(' ', '-')
+        # Import here to avoid circular dependency
+        from .parfumo_scraper import get_parfumo_scraper
 
-        # Common patterns - these would need to be scraped/verified
-        parfumo_patterns = {
-            ('Creed', 'Aventus'): 'Creed/Aventus-2010-9828',
-            ('Tom Ford', 'Lost Cherry'): 'Tom-Ford/Lost-Cherry-2018-53279',
-            ('Tom Ford', 'Tobacco Vanille'): 'Tom-Ford/Tobacco-Vanille-2007-1825',
-            ('Maison Francis Kurkdjian', 'Baccarat Rouge 540'): 'Maison-Francis-Kurkdjian/Baccarat-Rouge-540-2015-25324',
-            ('Le Labo', 'Santal 33'): 'Le-Labo/Santal-33-2011-12201',
-            ('Parfums de Marly', 'Layton'): 'Parfums-de-Marly/Layton-2016-35502',
-            ('Dior', 'Sauvage'): 'Dior/Sauvage-Eau-de-Toilette-2015-31861',
-        }
+        # First check if we have a cached mapping for this exact combination
+        # This avoids repeated searches for the same fragrance
+        cache_key = f"{brand}|{fragrance_name}"
+        if hasattr(self, '_search_cache'):
+            if cache_key in self._search_cache:
+                return self._search_cache[cache_key]
+        else:
+            self._search_cache = {}
 
-        key = (brand, fragrance_name)
-        if key in parfumo_patterns:
-            return parfumo_patterns[key]
+        # Use Parfumo scraper to search for the fragrance
+        scraper = get_parfumo_scraper()
+        parfumo_id = scraper.search_fragrance(brand, fragrance_name)
 
-        # Return partial URL for manual completion
-        return f"{brand_slug}/{fragrance_slug}"
+        # Cache the result (even if None) to avoid repeated searches
+        self._search_cache[cache_key] = parfumo_id
+
+        return parfumo_id
 
     def update_mapping(self, slug: str, product_name: str, product_description: str = "") -> Dict:
         """

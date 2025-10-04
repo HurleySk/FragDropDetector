@@ -192,20 +192,20 @@ const InventoryManager = {
         const isSelected = this.selectedItems.has(item.slug) ? 'selected' : '';
         const checkboxChecked = this.selectedItems.has(item.slug) ? 'checked' : '';
 
-        // Build rating display if we have original fragrance info
+        // Build rating display if we have Parfumo score
         let ratingHtml = '';
-        if (item.original_brand && item.original_name) {
-            const scoreDisplay = item.parfumo_score
-                ? `<span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>`
-                : '';
+        if (item.parfumo_score) {
             const votesDisplay = item.parfumo_votes
-                ? `<span class="parfumo-votes">(${item.parfumo_votes.toLocaleString()})</span>`
+                ? `<span class="parfumo-votes">(${item.parfumo_votes.toLocaleString()} votes)</span>`
                 : '';
 
             ratingHtml = `
                 <div class="item-rating">
-                    <div class="original-info">Inspired by ${item.original_brand} ${item.original_name}</div>
-                    ${scoreDisplay || votesDisplay ? `<div class="rating-line">${scoreDisplay} ${votesDisplay}</div>` : ''}
+                    <div class="rating-line">
+                        <span class="parfumo-label">Parfumo:</span>
+                        <span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>
+                        ${votesDisplay}
+                    </div>
                 </div>
             `;
         }
