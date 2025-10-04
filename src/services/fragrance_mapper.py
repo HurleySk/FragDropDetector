@@ -148,7 +148,24 @@ class FragranceMapper:
 
     def get_mapping(self, slug: str) -> Optional[Dict]:
         """Get mapping for a specific Montagne product"""
-        return self.mappings.get(slug)
+        mapping = self.mappings.get(slug)
+
+        # If we have a mapping but no parfumo_id, try to find it
+        if mapping and mapping.get('original_brand') and not mapping.get('parfumo_id'):
+            brand = mapping['original_brand']
+            fragrance = mapping['original_name']
+
+            # Search for the parfumo_id
+            parfumo_id = self.get_parfumo_id(brand, fragrance)
+
+            if parfumo_id:
+                # Update the mapping with the found ID
+                mapping['parfumo_id'] = parfumo_id
+                self.mappings[slug] = mapping
+                self.save_mappings()
+                logger.info(f"Found and cached Parfumo ID for {slug}: {parfumo_id}")
+
+        return mapping
 
     def get_all_mappings(self) -> Dict:
         """Get all mappings"""

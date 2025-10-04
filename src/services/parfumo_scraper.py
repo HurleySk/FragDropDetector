@@ -30,7 +30,6 @@ class ParfumoScraper:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
@@ -192,14 +191,15 @@ class ParfumoScraper:
         Search for a fragrance on Parfumo and return its ID
         """
         try:
-            # Build search query
-            search_query = f"{fragrance_name} {brand}".strip()
+            # Build search query using "brand - fragrance" format
+            search_query = f"{brand} - {fragrance_name}".strip()
             logger.info(f"Searching Parfumo for: {search_query}")
 
             # Use Parfumo search page
             search_url = "https://www.parfumo.com/s_perfumes_x.php"
             params = {
                 'in': '1',  # Search in perfume names
+                'order': 'popular',  # Sort by popularity
                 'filter': search_query
             }
 
@@ -215,42 +215,59 @@ class ParfumoScraper:
             all_links = soup.find_all('a', href=True)
             perfume_links = []
 
+            logger.info(f"Found {len(all_links)} total links on search page")
+
             for link in all_links:
                 href = str(link.get('href', ''))
-                # Match pattern like: https://www.parfumo.com/Perfumes/Creed/aventus
-                if '/Perfumes/' in href and not href.endswith('/Perfumes'):
-                    # Exclude list pages and other non-perfume links
-                    if not any(x in href for x in ['current_page=', 's_perfumes', '?']):
-                        perfume_links.append(link)
+                # Match perfume pages: /Perfumes/Brand/FragranceName
+                if '/Perfumes/' in href and href != 'https://www.parfumo.com/Perfumes/':
+                    # Exclude brand-only links (they don't end with a fragrance name)
+                    if href.endswith('/Perfumes/'):
+                        continue
+
+                    # Extract the path after /Perfumes/
+                    if 'parfumo.com/Perfumes/' in href:
+                        # Full URL format
+                        path_parts = href.split('/Perfumes/')
+                        if len(path_parts) > 1 and path_parts[1]:
+                            # Make sure it has both brand and fragrance
+                            path = path_parts[1]
+                            if '/' in path or path.count('_') > 0:  # Has brand/fragrance separator
+                                perfume_links.append((link, path))
+                                logger.debug(f"Found perfume link: {path}")
+                    elif href.startswith('/Perfumes/'):
+                        # Relative URL format
+                        path = href[10:]  # Remove '/Perfumes/'
+                        if path and ('/' in path or '_' in path):
+                            perfume_links.append((link, path))
+                            logger.debug(f"Found perfume link: {path}")
+
+            logger.info(f"Found {len(perfume_links)} perfume links")
 
             if not perfume_links:
                 logger.info(f"No results found for: {search_query}")
                 return None
 
             # Try to find best match
-            brand_lower = brand.lower().replace(' ', '_')
-            fragrance_lower = fragrance_name.lower().replace(' ', '_')
+            brand_lower = brand.lower()
+            fragrance_lower = fragrance_name.lower()
 
-            for link in perfume_links:
-                href = link.get('href', '')
-                # Extract the ID from the full URL
-                if 'parfumo.com/Perfumes/' in href:
-                    # Get everything after /Perfumes/
-                    parfumo_id = href.split('/Perfumes/')[-1]
+            for link, path in perfume_links:
+                # The path is already extracted, just use it
+                parfumo_id = path
 
-                    # Check if this looks like a good match
-                    id_lower = parfumo_id.lower()
-                    if brand_lower in id_lower or fragrance_lower in id_lower:
-                        logger.info(f"Found Parfumo match: {parfumo_id}")
-                        return parfumo_id
+                # Check if this looks like a good match
+                id_lower = parfumo_id.lower()
+                if brand_lower in id_lower or fragrance_lower in id_lower:
+                    logger.info(f"Found Parfumo match: {parfumo_id}")
+                    return parfumo_id
 
             # If no good match, return the first result
             if perfume_links:
-                first_href = perfume_links[0].get('href', '')
-                if 'parfumo.com/Perfumes/' in first_href:
-                    parfumo_id = first_href.split('/Perfumes/')[-1]
-                    logger.info(f"Using first search result: {parfumo_id}")
-                    return parfumo_id
+                _, first_path = perfume_links[0]  # Unpack the tuple
+                parfumo_id = first_path
+                logger.info(f"Using first search result: {parfumo_id}")
+                return parfumo_id
 
             return None
 
