@@ -1059,7 +1059,8 @@ async def get_fragrances(
                             item['parfumo_score'] = rating_data.get('score')
                             item['parfumo_votes'] = rating_data.get('votes')
                         # Add Parfumo URL for the original fragrance
-                        item['parfumo_url'] = f"https://www.parfumo.com/Perfumes{mapping['parfumo_id']}"
+                        # parfumo_id already contains the brand/fragrance path
+                        item['parfumo_url'] = f"https://www.parfumo.com/Perfumes/{mapping['parfumo_id']}"
 
             result.append(item)
 
