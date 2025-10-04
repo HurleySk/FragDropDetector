@@ -56,7 +56,8 @@ const InventoryManager = {
         document.getElementById('sort-select')?.addEventListener('change', (e) => {
             const value = e.target.value;
             this.sortBy = value;
-            this.applyFilters();
+            // Reload from server with new sort parameters
+            this.loadInventory();
         });
 
         // Sort direction toggle
@@ -65,7 +66,8 @@ const InventoryManager = {
             sortDirectionToggle.addEventListener('click', () => {
                 this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
                 sortDirectionToggle.classList.toggle('desc', this.sortOrder === 'desc');
-                this.applyFilters();
+                // Reload from server with new sort order
+                this.loadInventory();
             });
         }
 
@@ -78,7 +80,14 @@ const InventoryManager = {
         try {
             this.showLoading(true);
 
-            const response = await fetch(`/api/stock/fragrances?t=${Date.now()}`);
+            // Pass sort parameters to API for proper server-side sorting
+            const params = new URLSearchParams({
+                sort_by: this.sortBy,
+                sort_order: this.sortOrder,
+                t: Date.now()
+            });
+
+            const response = await fetch(`/api/stock/fragrances?${params}`);
             if (!response.ok) throw new Error('Failed to load inventory');
 
             const data = await response.json();
