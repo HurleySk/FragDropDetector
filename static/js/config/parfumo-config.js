@@ -114,14 +114,13 @@ function hideParfumoProgress() {
     if (progressDiv) progressDiv.style.display = 'none';
 }
 
-let parfumoProgressInterval = null;
-
 function pollParfumoProgress() {
-    if (parfumoProgressInterval) {
-        clearInterval(parfumoProgressInterval);
+    // Use global interval so it persists across page navigation
+    if (window.parfumoProgressInterval) {
+        clearInterval(window.parfumoProgressInterval);
     }
 
-    parfumoProgressInterval = setInterval(async () => {
+    window.parfumoProgressInterval = setInterval(async () => {
         try {
             const response = await fetch('/api/parfumo/status');
             if (!response.ok) return;
@@ -131,8 +130,8 @@ function pollParfumoProgress() {
             if (data.currently_updating) {
                 showParfumoProgress(data.update_progress || 0);
             } else {
-                clearInterval(parfumoProgressInterval);
-                parfumoProgressInterval = null;
+                clearInterval(window.parfumoProgressInterval);
+                window.parfumoProgressInterval = null;
                 hideParfumoProgress();
                 loadParfumoStatus();
                 showAlert('Parfumo update completed', 'success');

@@ -1,9 +1,9 @@
 {
-  "last_full_update": "2025-10-04T15:28:24.272832",
+  "last_full_update": "2025-10-04T20:53:28.369123",
   "total_mapped": 149,
   "total_not_found": 15,
-  "total_with_ratings": 35,
-  "currently_updating": false,
-  "update_progress": 100,
+  "total_with_ratings": 0,
+  "currently_updating": true,
+  "update_progress": 81,
   "last_error": null
 }

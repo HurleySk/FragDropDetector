@@ -7,13 +7,20 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 import re
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Tuple
 from datetime import datetime, timedelta
 import json
 import os
 from time import sleep
 
 logger = logging.getLogger(__name__)
+
+try:
+    from rapidfuzz import fuzz
+    FUZZY_AVAILABLE = True
+except ImportError:
+    FUZZY_AVAILABLE = False
+    logger.warning("rapidfuzz not available, using fallback string matching")
 
 
 class ParfumoScraper:
@@ -25,14 +32,23 @@ class ParfumoScraper:
         self.cache = self.load_cache()
         self.cache_duration_days = 7
 
-        # Request headers to appear as a browser
+        # Use session to maintain cookies and connection
+        self.session = requests.Session()
+
+        # Request headers to appear as a real browser
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
         }
 
     def load_cache(self) -> Dict:
@@ -68,9 +84,53 @@ class ParfumoScraper:
 
         return age < timedelta(days=self.cache_duration_days)
 
+    def try_parfumo_urls(self, parfumo_id: str) -> Optional[Dict]:
+        """
+        Try multiple URL variations until one works
+
+        Args:
+            parfumo_id: Base Parfumo ID
+
+        Returns:
+            Rating data if found, None otherwise
+        """
+        # Generate URL variations
+        variations = [
+            parfumo_id,  # Original
+            parfumo_id.replace('_', '-'),  # Underscores to dashes
+            parfumo_id.replace('-', '_'),  # Dashes to underscores
+        ]
+
+        # Try removing year/ID suffix: "Brand/Name-2020-12345" -> "Brand/Name"
+        parts = parfumo_id.split('/')
+        if len(parts) >= 2:
+            name_part = parts[-1]
+            # Remove anything after the second dash (usually year-id)
+            dash_parts = name_part.split('-')
+            if len(dash_parts) > 2:
+                clean_name = '-'.join(dash_parts[:2])
+                variations.append(f"{parts[0]}/{clean_name}")
+
+        logger.info(f"Trying {len(variations)} URL variations for {parfumo_id}")
+
+        for variant in variations:
+            if variant != parfumo_id:
+                logger.debug(f"Trying variant: {variant}")
+
+            rating = self._fetch_rating_single(variant)
+            if rating and rating.get('score'):
+                logger.info(f"Found rating using variant: {variant}")
+                # Cache with original ID for future lookups
+                self.cache[parfumo_id] = rating
+                self.save_cache()
+                return rating
+
+        logger.warning(f"No working URL found for {parfumo_id}")
+        return None
+
     def fetch_rating(self, parfumo_id: str) -> Optional[Dict]:
         """
-        Fetch rating for a fragrance from Parfumo
+        Fetch rating for a fragrance from Parfumo with automatic URL variation handling
         parfumo_id format: "Brand/Fragrance-Name-Year-ID" or just "Brand/Fragrance-Name"
         """
         if not parfumo_id:
@@ -81,6 +141,22 @@ class ParfumoScraper:
             logger.info(f"Using cached Parfumo data for {parfumo_id}")
             return self.cache[parfumo_id]
 
+        # Try URL variations
+        return self.try_parfumo_urls(parfumo_id)
+
+    def _fetch_rating_single(self, parfumo_id: str) -> Optional[Dict]:
+        """
+        Fetch rating for a single Parfumo ID without variations
+
+        Args:
+            parfumo_id: Parfumo ID to fetch
+
+        Returns:
+            Rating data if found, None otherwise
+        """
+        if not parfumo_id:
+            return None
+
         try:
             # Construct full URL
             url = f"{self.base_url}{parfumo_id}"
@@ -89,7 +165,7 @@ class ParfumoScraper:
             # Make request with retry logic
             for attempt in range(3):
                 try:
-                    response = requests.get(url, headers=self.headers, timeout=10)
+                    response = self.session.get(url, headers=self.headers, timeout=10)
                     if response.status_code == 200:
                         break
                     elif response.status_code == 404:
@@ -203,7 +279,7 @@ class ParfumoScraper:
                 'filter': search_query
             }
 
-            response = requests.get(search_url, params=params, headers=self.headers, timeout=10)
+            response = self.session.get(search_url, params=params, headers=self.headers, timeout=10)
             if response.status_code != 200:
                 logger.warning(f"Search failed with status {response.status_code}")
                 return None
@@ -248,27 +324,50 @@ class ParfumoScraper:
                 logger.info(f"No results found for: {search_query}")
                 return None
 
-            # Try to find best match
+            # Try to find best match using fuzzy matching
             brand_lower = brand.lower()
             fragrance_lower = fragrance_name.lower()
+            combined_search = f"{brand_lower} {fragrance_lower}"
 
-            for link, path in perfume_links:
-                # The path is already extracted, just use it
-                parfumo_id = path
+            matches: List[Tuple[float, str]] = []
 
-                # Check if this looks like a good match
-                id_lower = parfumo_id.lower()
-                if brand_lower in id_lower or fragrance_lower in id_lower:
-                    logger.info(f"Found Parfumo match: {parfumo_id}")
-                    return parfumo_id
+            if FUZZY_AVAILABLE:
+                # Use fuzzy matching for better accuracy
+                for link, path in perfume_links:
+                    path_lower = path.lower()
 
-            # If no good match, return the first result
-            if perfume_links:
-                _, first_path = perfume_links[0]  # Unpack the tuple
-                parfumo_id = first_path
-                logger.info(f"Using first search result: {parfumo_id}")
-                return parfumo_id
+                    # Calculate similarity scores
+                    brand_score = fuzz.partial_ratio(brand_lower, path_lower)
+                    fragrance_score = fuzz.partial_ratio(fragrance_lower, path_lower)
+                    combined_score = fuzz.partial_ratio(combined_search, path_lower)
 
+                    # Weighted average: brand and fragrance equally important
+                    final_score = (brand_score + fragrance_score + combined_score) / 3
+
+                    logger.debug(f"Fuzzy match {path}: brand={brand_score}, frag={fragrance_score}, combined={combined_score}, final={final_score}")
+
+                    # Require minimum 70% similarity
+                    if final_score >= 70:
+                        matches.append((final_score, path))
+
+                # Sort by score, best match first
+                matches.sort(reverse=True, key=lambda x: x[0])
+
+                if matches:
+                    best_score, best_path = matches[0]
+                    logger.info(f"Found Parfumo match with {best_score:.1f}% similarity: {best_path}")
+                    return best_path
+
+            else:
+                # Fallback to substring matching
+                for link, path in perfume_links:
+                    id_lower = path.lower()
+                    if brand_lower in id_lower and fragrance_lower in id_lower:
+                        logger.info(f"Found Parfumo match (substring): {path}")
+                        return path
+
+            # If no good match found, don't return anything (better than wrong match)
+            logger.info(f"No confident match found for: {brand} - {fragrance_name}")
             return None
 
         except Exception as e:

@@ -99,18 +99,12 @@ async def get_fragrances(
 ):
     """Get all tracked fragrances with search and filter support"""
     try:
-        from services.fragrance_mapper import get_fragrance_mapper
-        from services.parfumo_scraper import get_parfumo_scraper
-
         db = get_database()
         fragrances = db.get_all_fragrances()
 
         yaml_config = load_yaml_config()
         watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
         logger.info(f"Loaded watchlist with {len(watchlist)} items: {watchlist}")
-
-        mapper = get_fragrance_mapper() if include_ratings else None
-        scraper = get_parfumo_scraper() if include_ratings else None
 
         result = []
 
@@ -121,19 +115,18 @@ async def get_fragrances(
                 'is_watchlisted': slug in watchlist
             }
 
-            if include_ratings and mapper:
-                mapping = mapper.get_mapping(slug)
-
-                if mapping:
-                    item['original_brand'] = mapping.get('original_brand')
-                    item['original_name'] = mapping.get('original_name')
-
-                    if scraper and mapping.get('parfumo_id'):
-                        rating_data = scraper.fetch_rating(mapping['parfumo_id'])
-                        if rating_data:
-                            item['parfumo_score'] = rating_data.get('score')
-                            item['parfumo_votes'] = rating_data.get('votes')
-                        item['parfumo_url'] = f"https://www.parfumo.com/Perfumes/{mapping['parfumo_id']}"
+            # Data is now directly in the database, no need for separate mapper/scraper calls
+            if include_ratings:
+                if data.get('original_brand'):
+                    item['original_brand'] = data['original_brand']
+                if data.get('original_name'):
+                    item['original_name'] = data['original_name']
+                if data.get('parfumo_score'):
+                    item['parfumo_score'] = data['parfumo_score']
+                if data.get('parfumo_votes'):
+                    item['parfumo_votes'] = data['parfumo_votes']
+                if data.get('parfumo_id'):
+                    item['parfumo_url'] = f"https://www.parfumo.com/Perfumes/{data['parfumo_id']}"
 
             result.append(item)
 

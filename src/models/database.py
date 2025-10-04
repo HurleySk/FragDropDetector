@@ -87,6 +87,8 @@ class FragranceStock(Base):
     parfumo_id = Column(String(200))
     parfumo_score = Column(Float)  # 0-10 scale
     parfumo_votes = Column(Integer)
+    parfumo_not_found = Column(Boolean, default=False)  # Mark if Parfumo search failed
+    last_searched = Column(DateTime)  # Last time we searched Parfumo
     original_rating = Column(Float)  # Rating from original brand site if available
     original_reviews_count = Column(Integer)
     rating_last_updated = Column(DateTime)
@@ -451,7 +453,14 @@ class Database:
                     'url': f.url,
                     'price': f.price,
                     'in_stock': f.in_stock,
-                    'last_seen': f.last_seen.isoformat()
+                    'last_seen': f.last_seen.isoformat(),
+                    'original_brand': f.original_brand,
+                    'original_name': f.original_name,
+                    'parfumo_id': f.parfumo_id,
+                    'parfumo_score': f.parfumo_score,
+                    'parfumo_votes': f.parfumo_votes,
+                    'parfumo_not_found': f.parfumo_not_found,
+                    'rating_last_updated': f.rating_last_updated.isoformat() if f.rating_last_updated else None
                 } for f in fragrances
             }
         finally:
@@ -556,5 +565,184 @@ class Database:
             logger.error(f"Error bulk saving stock changes: {e}")
             session.rollback()
             return 0
+        finally:
+            session.close()
+
+    def update_fragrance_mapping(
+        self,
+        slug: str,
+        original_brand: Optional[str] = None,
+        original_name: Optional[str] = None,
+        parfumo_id: Optional[str] = None
+    ) -> bool:
+        """
+        Update fragrance mapping (brand, name, parfumo_id)
+
+        Args:
+            slug: Fragrance slug
+            original_brand: Original brand name
+            original_name: Original fragrance name
+            parfumo_id: Parfumo ID
+
+        Returns:
+            True if successful, False otherwise
+        """
+        session = self.get_session()
+        try:
+            fragrance = session.query(FragranceStock).filter_by(slug=slug).first()
+            if not fragrance:
+                logger.warning(f"Fragrance {slug} not found for mapping update")
+                return False
+
+            if original_brand is not None:
+                fragrance.original_brand = original_brand
+            if original_name is not None:
+                fragrance.original_name = original_name
+            if parfumo_id is not None:
+                fragrance.parfumo_id = parfumo_id
+                # Reset not_found flag if we have a new ID
+                fragrance.parfumo_not_found = False
+
+            fragrance.updated_at = datetime.utcnow()
+            session.commit()
+            logger.info(f"Updated mapping for {slug}: {original_brand} - {original_name}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error updating fragrance mapping for {slug}: {e}")
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+    def update_fragrance_rating(
+        self,
+        slug: str,
+        parfumo_id: str,
+        score: Optional[float] = None,
+        votes: Optional[int] = None
+    ) -> bool:
+        """
+        Update Parfumo rating for a fragrance
+
+        Args:
+            slug: Fragrance slug
+            parfumo_id: Parfumo ID
+            score: Rating score (0-10)
+            votes: Number of votes
+
+        Returns:
+            True if successful, False otherwise
+        """
+        session = self.get_session()
+        try:
+            fragrance = session.query(FragranceStock).filter_by(slug=slug).first()
+            if not fragrance:
+                logger.warning(f"Fragrance {slug} not found for rating update")
+                return False
+
+            fragrance.parfumo_id = parfumo_id
+            if score is not None:
+                fragrance.parfumo_score = score
+            if votes is not None:
+                fragrance.parfumo_votes = votes
+            fragrance.rating_last_updated = datetime.utcnow()
+            fragrance.last_searched = datetime.utcnow()
+            fragrance.parfumo_not_found = False
+            fragrance.updated_at = datetime.utcnow()
+
+            session.commit()
+            logger.info(f"Updated rating for {slug}: {score}/10 ({votes} votes)")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error updating fragrance rating for {slug}: {e}")
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+    def mark_parfumo_not_found(self, slug: str) -> bool:
+        """
+        Mark a fragrance as not found on Parfumo
+
+        Args:
+            slug: Fragrance slug
+
+        Returns:
+            True if successful, False otherwise
+        """
+        session = self.get_session()
+        try:
+            fragrance = session.query(FragranceStock).filter_by(slug=slug).first()
+            if not fragrance:
+                logger.warning(f"Fragrance {slug} not found for marking not found")
+                return False
+
+            fragrance.parfumo_not_found = True
+            fragrance.last_searched = datetime.utcnow()
+            fragrance.updated_at = datetime.utcnow()
+
+            session.commit()
+            logger.info(f"Marked {slug} as not found on Parfumo")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error marking {slug} as not found: {e}")
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+    def get_fragrances_needing_parfumo_update(
+        self,
+        skip_not_found_days: int = 90
+    ) -> List[Dict[str, Any]]:
+        """
+        Get fragrances that need Parfumo data updates
+
+        Args:
+            skip_not_found_days: Skip fragrances marked not found within this many days
+
+        Returns:
+            List of fragrance dictionaries
+        """
+        from datetime import timedelta
+
+        session = self.get_session()
+        try:
+            cutoff_date = datetime.utcnow() - timedelta(days=skip_not_found_days)
+
+            # Get fragrances that:
+            # 1. Have original brand/name but no parfumo_id, OR
+            # 2. Have parfumo_id but no recent rating, OR
+            # 3. Marked not_found but past the skip period
+            fragrances = session.query(FragranceStock).filter(
+                FragranceStock.original_brand.isnot(None),
+                FragranceStock.original_name.isnot(None)
+            ).all()
+
+            results = []
+            for frag in fragrances:
+                # Skip if marked not found recently
+                if frag.parfumo_not_found and frag.last_searched and frag.last_searched > cutoff_date:
+                    continue
+
+                results.append({
+                    'slug': frag.slug,
+                    'name': frag.name,
+                    'original_brand': frag.original_brand,
+                    'original_name': frag.original_name,
+                    'parfumo_id': frag.parfumo_id,
+                    'parfumo_score': frag.parfumo_score,
+                    'rating_last_updated': frag.rating_last_updated,
+                    'last_searched': frag.last_searched
+                })
+
+            return results
+
+        except Exception as e:
+            logger.error(f"Error getting fragrances needing update: {e}")
+            return []
         finally:
             session.close()

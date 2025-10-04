@@ -68,6 +68,7 @@ parfumo:
   enabled: true
   last_update: null
   update_time: '02:00'
+  rate_limit_delay: 5.0
 reddit:
   check_interval: 300
   post_limit: 50
