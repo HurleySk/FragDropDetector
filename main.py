@@ -408,6 +408,79 @@ class FragDropMonitor:
         except Exception as e:
             self.logger.error(f"Error during drop check: {e}")
 
+    def start_parfumo_scheduler(self):
+        """Start a thread that runs Parfumo update at the scheduled daily time"""
+        if not self.config.get('parfumo', {}).get('enabled', True):
+            return
+
+        import threading
+        import pytz
+
+        def parfumo_scheduler():
+            while True:
+                try:
+                    # Calculate seconds until next scheduled time
+                    update_time_str = self.config.get('parfumo', {}).get('update_time', '02:00')
+                    update_hour, update_minute = map(int, update_time_str.split(':'))
+
+                    # Use the same timezone as Reddit drop window
+                    tz = pytz.timezone(self.drop_window_timezone)
+                    now = datetime.now(tz)
+                    scheduled_time = now.replace(hour=update_hour, minute=update_minute, second=0, microsecond=0)
+
+                    # If the scheduled time has already passed today, schedule for tomorrow
+                    if scheduled_time <= now:
+                        scheduled_time = scheduled_time + timedelta(days=1)
+
+                    # Calculate seconds to wait
+                    seconds_to_wait = (scheduled_time - now).total_seconds()
+
+                    self.logger.info(f"Next Parfumo update scheduled for {scheduled_time.strftime('%Y-%m-%d %H:%M %Z')} ({seconds_to_wait/3600:.1f} hours from now)")
+
+                    # Sleep until the scheduled time
+                    time.sleep(seconds_to_wait)
+
+                    # Run the update
+                    self.run_parfumo_update()
+
+                except Exception as e:
+                    self.logger.error(f"Error in Parfumo scheduler: {e}")
+                    # Wait an hour before trying again if there's an error
+                    time.sleep(3600)
+
+        # Start the scheduler in a daemon thread
+        scheduler_thread = threading.Thread(target=parfumo_scheduler, daemon=True)
+        scheduler_thread.start()
+
+    def run_parfumo_update(self):
+        """Run the Parfumo update"""
+        try:
+            from src.services.parfumo_updater import get_parfumo_updater
+
+            updater = get_parfumo_updater()
+
+            # Check if not already updating
+            status = updater.get_status()
+            if status.get('currently_updating'):
+                self.logger.info("Parfumo update already in progress, skipping")
+                return
+
+            self.logger.info("Starting scheduled daily Parfumo update")
+
+            # Run update
+            results = updater.update_all_ratings()
+            self.logger.info(f"Parfumo update completed: {results}")
+
+            # Update config with last update time
+            self.config['parfumo']['last_update'] = datetime.now().isoformat()
+            # Save config
+            with open('config/config.yaml', 'w') as f:
+                import yaml
+                yaml.dump(self.config, f, default_flow_style=False)
+
+        except Exception as e:
+            self.logger.error(f"Error running Parfumo update: {e}")
+
     async def check_stock_changes(self):
         """Check for stock changes on Montagne Parfums website"""
         if not self.stock_enabled or not self.stock_schedule_enabled:
@@ -614,6 +687,9 @@ class FragDropMonitor:
             # Track last execution times for independent scheduling
             last_reddit_check = 0
             last_stock_check = 0
+
+            # Start Parfumo daily update thread
+            self.start_parfumo_scheduler()
 
             # Use minimum interval for main loop to ensure proper timing
             main_loop_interval = min(self.check_interval, self.stock_check_interval if self.stock_schedule_enabled else self.check_interval)

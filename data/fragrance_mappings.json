@@ -12,7 +12,7 @@
   "alcantara-supreme": {
     "original_brand": "Chanel",
     "original_name": "Allure Homme Sport Superleggera",
-    "parfumo_id": null
+    "parfumo_id": "Chanel/allure-homme-sport-superleggera"
   },
   "alcantara-supreme-inspired-by-chanel-allure-homme-sport-superleggera": {
     "original_brand": "Chanel",
@@ -27,12 +27,12 @@
   "ambre-musc": {
     "original_brand": "Yves Saint Laurent",
     "original_name": "Tuxedo",
-    "parfumo_id": null
+    "parfumo_id": "Yves_Saint_Laurent/tuxedo"
   },
   "ambre-vanille": {
     "original_brand": "Parfums de Marly",
     "original_name": "Altha\u00efr",
-    "parfumo_id": null
+    "parfumo_id": "Parfums_de_Marly/althair"
   },
   "ambre-vanille-inspired-by-parfums-de-marly-althar": {
     "original_brand": "Parfums",
@@ -80,9 +80,11 @@
     "parfumo_id": "Maison_Francis_Kurkdjian/Aqua_Vitae_Forte"
   },
   "arabian-sand-inspired-by-gissah-sanad": {
+    "last_searched": "2025-10-04T15:19:16.866173",
     "original_brand": "Gissah",
     "original_name": "Sanad",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "arcticpalace": {
     "original_brand": "Memo",
@@ -97,7 +99,7 @@
   "blanc-intense": {
     "original_brand": "Tom Ford",
     "original_name": "Soleil Blanc",
-    "parfumo_id": null
+    "parfumo_id": "Tom_Ford/Soleil_Blanc_Eau_de_Parfum"
   },
   "bleuoud": {
     "original_brand": "Fragrance",
@@ -112,12 +114,12 @@
   "bois-imperial": {
     "original_brand": "Creed",
     "original_name": "Royal Oud",
-    "parfumo_id": null
+    "parfumo_id": "Creed/Royal_Oud"
   },
   "bois-rouge": {
     "original_brand": "Maison Francis Kurkdjian",
     "original_name": "Oud Extrait de Parfum",
-    "parfumo_id": null
+    "parfumo_id": "Maison_Francis_Kurkdjian/Oud_Satin_Mood_Extrait_de_Parfum"
   },
   "bold-effect-inspired-by-initio-side-effect": {
     "original_brand": "Initio",
@@ -170,9 +172,11 @@
     "parfumo_id": "Creed/carmina"
   },
   "chilly-pineapple": {
+    "last_searched": "2025-10-04T15:19:50.262945",
     "original_brand": "Pacific",
     "original_name": "Chill And Aventus Cologne",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "ciel-elixir": {
     "original_brand": "Dior",
@@ -210,9 +214,11 @@
     "parfumo_id": "Louis_Vuitton/Attrape_Rves"
   },
   "eau-gaiac": {
+    "last_searched": "2025-10-04T15:20:02.826661",
     "original_brand": "Le",
     "original_name": "Labo Gaiac 10 Tokyo City",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "eau-matcha": {
     "original_brand": "Le",
@@ -235,9 +241,11 @@
     "parfumo_id": "Le_Labo/Santal_33_Eau_de_Parfum"
   },
   "eau-vanille": {
+    "last_searched": "2025-10-04T15:20:11.160990",
     "original_brand": "Le",
     "original_name": "Labo 44 Vanille Paris City",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "eaubergamote": {
     "original_brand": "Le",
@@ -255,19 +263,25 @@
     "parfumo_id": "Initio/Rehab"
   },
   "elysian-fraiche": {
+    "last_searched": "2025-10-04T15:20:16.741558",
     "original_brand": "Roja",
     "original_name": "Elysium Parfum Cologne",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "elysiancologne": {
+    "last_searched": "2025-10-04T15:20:17.213187",
     "original_brand": "Roja",
     "original_name": "Elysium Cologne",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "elysianintense": {
+    "last_searched": "2025-10-04T15:20:17.220948",
     "original_brand": "Roja",
     "original_name": "Elysium Cologne",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "enigmatic-exclusif": {
     "original_brand": "Roja",
@@ -300,14 +314,18 @@
     "parfumo_id": "mind-games/french-defense"
   },
   "galilean": {
+    "last_searched": "2025-10-04T15:20:29.643280",
     "original_brand": "Marc",
     "original_name": "Antoine Barrois Ganymede Edp",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "galilean-683": {
+    "last_searched": "2025-10-04T15:20:30.632610",
     "original_brand": "Marc",
     "original_name": "Antoine Barrois B683 Edp",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "gentle-silver-inspired-by-mfk-gentle-fluidity-silver": {
     "original_brand": "Maison Francis Kurkdjian",
@@ -347,7 +365,7 @@
   "hudson-county": {
     "original_brand": "Gissah",
     "original_name": "Hudson Valley",
-    "parfumo_id": null
+    "parfumo_id": "gissah/hudson-valley"
   },
   "hudson-county-inspired-by-gissah-hudson-valley": {
     "original_brand": "Gissah",
@@ -360,19 +378,23 @@
     "parfumo_id": "Amouage/Reflection_Man"
   },
   "image-45": {
+    "last_searched": "2025-10-04T15:20:50.534253",
     "original_brand": "Amouage",
     "original_name": "Reflection 45th Anniversary",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "image-45-inspired-by-amouage-reflection-45": {
+    "last_searched": "2025-10-04T15:20:51.004451",
     "original_brand": "Amouage",
     "original_name": "Reflection 45 Man",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "imaginary": {
     "original_brand": "Louis Vuitton",
     "original_name": "Imagination",
-    "parfumo_id": null
+    "parfumo_id": "Louis_Vuitton/imagination"
   },
   "imaginary-inspired-by-louis-vuitton-imagination": {
     "original_brand": "Louis",
@@ -380,14 +402,18 @@
     "parfumo_id": "Louis_Vuitton/imagination"
   },
   "imaginary-pineapple-inspired-by-imagination-and-aventus-cologne": {
+    "last_searched": "2025-10-04T15:20:55.873235",
     "original_brand": "Imagination",
     "original_name": "And Aventus Cologne",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "intermission": {
+    "last_searched": "2025-10-04T15:20:56.767166",
     "original_brand": "Amouage",
     "original_name": "Interlude Men",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "irishverbena": {
     "original_brand": "Creed",
@@ -407,7 +433,7 @@
   "la-ciel": {
     "original_brand": "Dior",
     "original_name": "Sauvage",
-    "parfumo_id": null
+    "parfumo_id": "Dior/Sauvage_Eau_de_Toilette"
   },
   "la-ciel-de-nuit": {
     "original_brand": "Dior",
@@ -427,7 +453,7 @@
   "le-bonbon": {
     "original_brand": "Maison Francis Kurkdjian",
     "original_name": "Baccarat Rouge 540",
-    "parfumo_id": null
+    "parfumo_id": "Maison_Francis_Kurkdjian/Baccarat_Rouge_540_Eau_de_Parfum"
   },
   "le-bonbon-1": {
     "original_brand": "Maison Francis Kurkdjian",
@@ -492,7 +518,7 @@
   "millesime-1849": {
     "original_brand": "Creed",
     "original_name": "Mill\u00e9sime Imp\u00e9rial",
-    "parfumo_id": null
+    "parfumo_id": "Creed/Millesime_Imperial"
   },
   "moi": {
     "original_brand": "Glossier",
@@ -540,9 +566,11 @@
     "parfumo_id": "Fragrance_Du_Bois/oud-orange-intense-parfum"
   },
   "otws15i03wvm2nv0n3jlhkrhdp9jdq": {
+    "last_searched": "2025-10-04T15:21:54.254232",
     "original_brand": "Le",
     "original_name": "Labo Musc 25 Los Angeles City Exclusive",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "oud-ambre-absolu": {
     "original_brand": "Roja",
@@ -562,7 +590,7 @@
   "oud-miniere": {
     "original_brand": "Tom Ford",
     "original_name": "Oud Wood",
-    "parfumo_id": null
+    "parfumo_id": "Tom_Ford/Oud_Wood_Eau_de_Parfum"
   },
   "oudverde": {
     "original_brand": "Fragrance",
@@ -612,7 +640,7 @@
   "pineapple-royale": {
     "original_brand": "Creed",
     "original_name": "Aventus",
-    "parfumo_id": null
+    "parfumo_id": "Creed/aventus"
   },
   "pineapplefrais": {
     "original_brand": "Creed",
@@ -647,7 +675,7 @@
   "pomme-pour-elle": {
     "original_brand": "Creed",
     "original_name": "Aventus for Her",
-    "parfumo_id": null
+    "parfumo_id": "Creed/Aventus_for_Her"
   },
   "pommepourelle": {
     "original_brand": "Creed",
@@ -675,9 +703,11 @@
     "parfumo_id": "Fragrance_Du_Bois/santal-complet"
   },
   "rose-oud": {
+    "last_searched": "2025-10-04T15:22:41.791014",
     "original_brand": "By Kilian",
     "original_name": "Sacred Wood",
-    "parfumo_id": null
+    "parfumo_id": null,
+    "parfumo_not_found": true
   },
   "sekushy-inspired-by-sekushi-no-7-lengling": {
     "original_brand": "Sekushi",
@@ -687,7 +717,7 @@
   "sicilian-tobacco": {
     "original_brand": "Xerjoff",
     "original_name": "Naxos",
-    "parfumo_id": null
+    "parfumo_id": "Xerjoff/naxos"
   },
   "siciliantobacco": {
     "original_brand": "Xerjoff",
@@ -787,7 +817,7 @@
   "vanille-patchouli": {
     "original_brand": "Tom Ford",
     "original_name": "Noir de Noir",
-    "parfumo_id": null
+    "parfumo_id": "Tom_Ford/noir-extreme-eau-de-parfum"
   },
   "vanilleabsolute": {
     "original_brand": "Nishane",
@@ -797,7 +827,7 @@
   "vert-riviere": {
     "original_brand": "Creed",
     "original_name": "Green Irish Tweed",
-    "parfumo_id": null
+    "parfumo_id": "Creed/Green_Irish_Tweed"
   },
   "victory-of-bacchus-inspired-by-argos-triumph-of-bacchus": {
     "original_brand": "Argos",

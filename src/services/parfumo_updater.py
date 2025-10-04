@@ -57,7 +57,7 @@ class ParfumoUpdater:
         except Exception as e:
             logger.error(f"Error saving Parfumo status: {e}")
 
-    def update_all_ratings(self, max_items: int = None) -> Dict:
+    def update_all_ratings(self) -> Dict:
         """Update Parfumo ratings for all mapped fragrances"""
         from .fragrance_mapper import get_fragrance_mapper
         from .parfumo_scraper import get_parfumo_scraper
@@ -79,15 +79,10 @@ class ParfumoUpdater:
         }
 
         try:
-            # Get all mappings
+            # Get all mappings - always update all
             mappings = mapper.mappings
             total = len(mappings)
-
-            if max_items:
-                # Limit the number of items to update
-                items_to_update = list(mappings.items())[:max_items]
-            else:
-                items_to_update = list(mappings.items())
+            items_to_update = list(mappings.items())
 
             for idx, (slug, mapping) in enumerate(items_to_update):
                 # Update progress
@@ -234,22 +229,15 @@ class ParfumoUpdater:
         """Get current update status"""
         return self.status.copy()
 
-    def should_update(self, config: Dict) -> bool:
-        """Check if update should run based on config"""
-        if not config.get('parfumo', {}).get('enabled', True):
-            return False
-
+    def get_last_update_date(self, config: Dict) -> Optional[datetime]:
+        """Get the last update date from config"""
         last_update = config.get('parfumo', {}).get('last_update')
-        if not last_update:
-            return True
-
-        try:
-            last_date = datetime.fromisoformat(last_update)
-            interval_hours = config.get('parfumo', {}).get('update_interval', 168)
-
-            return datetime.now() - last_date > timedelta(hours=interval_hours)
-        except:
-            return True
+        if last_update:
+            try:
+                return datetime.fromisoformat(last_update)
+            except:
+                pass
+        return None
 
 
 def get_parfumo_updater() -> ParfumoUpdater:

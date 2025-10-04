@@ -730,14 +730,12 @@ async function downloadLogs() {
 // Parfumo Functions
 function populateParfumoConfig(config) {
     const enabledEl = document.getElementById('parfumo-enabled');
-    const intervalEl = document.getElementById('parfumo-update-interval');
+    const timeEl = document.getElementById('parfumo-update-time');
     const autoScrapeEl = document.getElementById('parfumo-auto-scrape');
-    const maxScrapesEl = document.getElementById('parfumo-max-scrapes');
 
     if (enabledEl) enabledEl.checked = config.enabled !== false;
-    if (intervalEl) intervalEl.value = config.update_interval || 168;
+    if (timeEl) timeEl.value = config.update_time || '02:00';
     if (autoScrapeEl) autoScrapeEl.checked = config.auto_scrape_new !== false;
-    if (maxScrapesEl) maxScrapesEl.value = config.max_scrapes_per_run || 10;
 }
 
 async function handleParfumoConfigSubmit(e) {
@@ -745,9 +743,8 @@ async function handleParfumoConfigSubmit(e) {
 
     const config = {
         enabled: document.getElementById('parfumo-enabled').checked,
-        update_interval: parseInt(document.getElementById('parfumo-update-interval').value) || 168,
-        auto_scrape_new: document.getElementById('parfumo-auto-scrape').checked,
-        max_scrapes_per_run: parseInt(document.getElementById('parfumo-max-scrapes').value) || 10
+        update_time: document.getElementById('parfumo-update-time').value || '02:00',
+        auto_scrape_new: document.getElementById('parfumo-auto-scrape').checked
     };
 
     try {

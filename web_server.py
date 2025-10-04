@@ -849,9 +849,8 @@ async def update_parfumo_config(config: dict):
 
         yaml_config['parfumo'].update({
             'enabled': config.get('enabled', True),
-            'update_interval': config.get('update_interval', 168),
-            'auto_scrape_new': config.get('auto_scrape_new', True),
-            'max_scrapes_per_run': config.get('max_scrapes_per_run', 10)
+            'update_time': config.get('update_time', '02:00'),
+            'auto_scrape_new': config.get('auto_scrape_new', True)
         })
 
         if save_yaml_config(yaml_config):
@@ -880,14 +879,10 @@ async def trigger_parfumo_update():
                 "progress": status.get('update_progress', 0)
             }
 
-        # Get config for max items
-        yaml_config = load_yaml_config()
-        max_items = yaml_config.get('parfumo', {}).get('max_scrapes_per_run', 10)
-
         # Start update in background (in production, use background task)
         import threading
         def run_update():
-            results = updater.update_all_ratings(max_items)
+            results = updater.update_all_ratings()
             logger.info(f"Parfumo update completed: {results}")
 
         thread = threading.Thread(target=run_update)
@@ -895,7 +890,7 @@ async def trigger_parfumo_update():
 
         return {
             "success": True,
-            "message": f"Parfumo update started for up to {max_items} items"
+            "message": "Parfumo update started for all fragrances"
         }
 
     except Exception as e:

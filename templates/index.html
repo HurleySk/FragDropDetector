@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/static/css/toast.css?v=42">
     <link rel="stylesheet" href="/static/css/dashboard.css?v=42">
     <link rel="stylesheet" href="/static/css/activity.css?v=42">
-    <link rel="stylesheet" href="/static/css/configuration.css?v=42">
+    <link rel="stylesheet" href="/static/css/configuration.css?v=43">
     <link rel="stylesheet" href="/static/css/inventory.css?v=42">
 </head>
 <body>
@@ -868,12 +868,9 @@ mpofficial</textarea>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="parfumo-update-interval">Update Interval</label>
-                                    <div class="input-with-unit">
-                                        <input type="number" id="parfumo-update-interval" class="form-input" value="168" min="1" max="720">
-                                        <span class="unit">hours</span>
-                                    </div>
-                                    <small>How often to update ratings for existing fragrances (default: 7 days)</small>
+                                    <label for="parfumo-update-time">Daily Update Time</label>
+                                    <input type="time" id="parfumo-update-time" class="form-input" value="02:00">
+                                    <small>Time to run daily update of all fragrance ratings (uses Reddit Monitor timezone)</small>
                                 </div>
 
                                 <div class="form-group">
@@ -885,11 +882,6 @@ mpofficial</textarea>
                                     <small>Automatically fetch Parfumo data when new products are detected</small>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="parfumo-max-scrapes">Max Updates per Run</label>
-                                    <input type="number" id="parfumo-max-scrapes" class="form-input" value="10" min="1" max="50">
-                                    <small>Limit the number of fragrances updated per run to prevent timeouts</small>
-                                </div>
 
                                 <div class="form-actions">
                                     <button type="submit" class="btn primary">Save Settings</button>
@@ -1117,7 +1109,7 @@ mpofficial</textarea>
     <script src="/static/js/app.js?v=20"></script>
     <script src="/static/js/dashboard.js?v=20"></script>
     <script src="/static/js/activity.js?v=20"></script>
-    <script src="/static/js/configuration.js?v=20"></script>
+    <script src="/static/js/configuration.js?v=21"></script>
     <script src="/static/js/inventory.js?v=20"></script>
 </body>
 </html>
