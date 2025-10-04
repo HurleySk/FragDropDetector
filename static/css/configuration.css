@@ -571,3 +571,72 @@
         min-width: 120px;
     }
 }
+/* Parfumo Status Styles */
+.parfumo-status {
+    padding: var(--space-4);
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.status-label {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.status-value {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.update-progress {
+    margin: var(--space-4) 0;
+}
+
+.progress-bar {
+    height: 24px;
+    background: var(--gray-200);
+    border-radius: var(--rounded-lg);
+    overflow: hidden;
+    margin-bottom: var(--space-2);
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    display: block;
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.input-with-unit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.input-with-unit .form-input {
+    flex: 1;
+}
+
+.input-with-unit .unit {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+

@@ -395,6 +395,7 @@
                     <div class="tab-nav">
                         <button class="tab-btn active" data-tab="reddit">Reddit Monitor</button>
                         <button class="tab-btn" data-tab="website">Website Monitor</button>
+                        <button class="tab-btn" data-tab="parfumo">Parfumo</button>
                         <button class="tab-btn" data-tab="detection">Detection Rules</button>
                         <button class="tab-btn" data-tab="notifications">Notifications</button>
                         <button class="tab-btn" data-tab="logging">System & Logs</button>
@@ -844,6 +845,99 @@ mpofficial</textarea>
                                     <button type="submit" class="btn primary">Save Schedule Settings</button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    <!-- Parfumo Tab -->
+                    <div class="tab-content" id="parfumo-tab">
+                        <!-- Parfumo Settings -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Parfumo Integration</h2>
+                                <p class="card-subtitle">Configure automatic rating updates from Parfumo.com</p>
+                            </div>
+
+                            <form id="parfumo-form">
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="parfumo-enabled" checked>
+                                        <span class="toggle-slider"></span>
+                                        Enable Parfumo Integration
+                                    </label>
+                                    <small>Fetch fragrance ratings and information from Parfumo.com</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="parfumo-update-interval">Update Interval</label>
+                                    <div class="input-with-unit">
+                                        <input type="number" id="parfumo-update-interval" class="form-input" value="168" min="1" max="720">
+                                        <span class="unit">hours</span>
+                                    </div>
+                                    <small>How often to update ratings for existing fragrances (default: 7 days)</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="parfumo-auto-scrape" checked>
+                                        <span class="toggle-slider"></span>
+                                        Auto-scrape New Products
+                                    </label>
+                                    <small>Automatically fetch Parfumo data when new products are detected</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="parfumo-max-scrapes">Max Updates per Run</label>
+                                    <input type="number" id="parfumo-max-scrapes" class="form-input" value="10" min="1" max="50">
+                                    <small>Limit the number of fragrances updated per run to prevent timeouts</small>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary">Save Settings</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Parfumo Status -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Update Status</h2>
+                                <p class="card-subtitle">Current status of Parfumo data synchronization</p>
+                            </div>
+
+                            <div class="parfumo-status">
+                                <div class="status-grid">
+                                    <div class="status-item">
+                                        <span class="status-label">Last Update:</span>
+                                        <span class="status-value" id="parfumo-last-update">Never</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <span class="status-label">Total Mapped:</span>
+                                        <span class="status-value" id="parfumo-total-mapped">0</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <span class="status-label">With Ratings:</span>
+                                        <span class="status-value" id="parfumo-with-ratings">0</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <span class="status-label">Not Found:</span>
+                                        <span class="status-value" id="parfumo-not-found">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="update-progress" id="parfumo-progress" style="display: none;">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="parfumo-progress-bar" style="width: 0%"></div>
+                                    </div>
+                                    <span class="progress-text" id="parfumo-progress-text">Updating...</span>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn secondary" id="parfumo-update-btn" onclick="triggerParfumoUpdate()">
+                                        Update Now
+                                    </button>
+                                    <small id="parfumo-update-status"></small>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

@@ -101,6 +101,7 @@ class FragranceMapper:
         """
         # Import here to avoid circular dependency
         from .parfumo_scraper import get_parfumo_scraper
+        from datetime import datetime
 
         # First check if we have a cached mapping for this exact combination
         # This avoids repeated searches for the same fragrance
@@ -150,20 +151,21 @@ class FragranceMapper:
         """Get mapping for a specific Montagne product"""
         mapping = self.mappings.get(slug)
 
-        # If we have a mapping but no parfumo_id, try to find it
-        if mapping and mapping.get('original_brand') and not mapping.get('parfumo_id'):
-            brand = mapping['original_brand']
-            fragrance = mapping['original_name']
+        # Don't search if marked as not found recently (within 90 days)
+        if mapping and mapping.get('parfumo_not_found'):
+            from datetime import datetime, timedelta
+            last_searched = mapping.get('last_searched')
+            if last_searched:
+                try:
+                    last_date = datetime.fromisoformat(last_searched)
+                    if datetime.now() - last_date < timedelta(days=90):
+                        # Still within skip period, return mapping without searching
+                        return mapping
+                except:
+                    pass
 
-            # Search for the parfumo_id
-            parfumo_id = self.get_parfumo_id(brand, fragrance)
-
-            if parfumo_id:
-                # Update the mapping with the found ID
-                mapping['parfumo_id'] = parfumo_id
-                self.mappings[slug] = mapping
-                self.save_mappings()
-                logger.info(f"Found and cached Parfumo ID for {slug}: {parfumo_id}")
+        # Note: We no longer auto-search for parfumo_id here to avoid slow page loads
+        # Searching is now handled by the ParfumoUpdater service
 
         return mapping
 

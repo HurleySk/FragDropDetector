@@ -534,6 +534,16 @@ class FragDropMonitor:
                     'change_type': 'new_product'
                 })
 
+                # Auto-scrape Parfumo data for new products if enabled
+                if self.config.get('parfumo', {}).get('auto_scrape_new', True):
+                    try:
+                        from src.services.parfumo_updater import get_parfumo_updater
+                        updater = get_parfumo_updater()
+                        if updater.update_single_fragrance(product.slug):
+                            self.logger.info(f"Successfully fetched Parfumo data for new product: {product.name}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to fetch Parfumo data for {product.name}: {e}")
+
         # Restocked products
         if changes['restocked'] and self.stock_notifications.get('restocked_products', True):
             for product in changes['restocked']:

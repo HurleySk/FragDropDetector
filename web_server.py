@@ -626,6 +626,13 @@ async def get_config():
                 "end_hour": 18,
                 "end_minute": 0
             }),
+            "parfumo": yaml_config.get('parfumo', {
+                "enabled": True,
+                "update_interval": 168,
+                "auto_scrape_new": True,
+                "max_scrapes_per_run": 10,
+                "last_update": None
+            }),
             "logging": yaml_config.get('logging', {
                 "level": "INFO",
                 "file_enabled": True,
@@ -830,6 +837,93 @@ async def update_stock_schedule_config(config: StockScheduleConfig):
         logger.error("Failed to update stock schedule config", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/config/parfumo")
+async def update_parfumo_config(config: dict):
+    """Update Parfumo configuration"""
+    try:
+        yaml_config = load_yaml_config()
+
+        # Update Parfumo settings
+        if 'parfumo' not in yaml_config:
+            yaml_config['parfumo'] = {}
+
+        yaml_config['parfumo'].update({
+            'enabled': config.get('enabled', True),
+            'update_interval': config.get('update_interval', 168),
+            'auto_scrape_new': config.get('auto_scrape_new', True),
+            'max_scrapes_per_run': config.get('max_scrapes_per_run', 10)
+        })
+
+        if save_yaml_config(yaml_config):
+            return {"success": True, "message": "Parfumo configuration updated"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save configuration")
+
+    except Exception as e:
+        logger.error("Failed to update Parfumo config", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/parfumo/update")
+async def trigger_parfumo_update():
+    """Manually trigger Parfumo update"""
+    try:
+        from src.services.parfumo_updater import get_parfumo_updater
+
+        updater = get_parfumo_updater()
+
+        # Check if already updating
+        status = updater.get_status()
+        if status.get('currently_updating'):
+            return {
+                "success": False,
+                "message": "Update already in progress",
+                "progress": status.get('update_progress', 0)
+            }
+
+        # Get config for max items
+        yaml_config = load_yaml_config()
+        max_items = yaml_config.get('parfumo', {}).get('max_scrapes_per_run', 10)
+
+        # Start update in background (in production, use background task)
+        import threading
+        def run_update():
+            results = updater.update_all_ratings(max_items)
+            logger.info(f"Parfumo update completed: {results}")
+
+        thread = threading.Thread(target=run_update)
+        thread.start()
+
+        return {
+            "success": True,
+            "message": f"Parfumo update started for up to {max_items} items"
+        }
+
+    except Exception as e:
+        logger.error("Failed to trigger Parfumo update", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/parfumo/status")
+async def get_parfumo_status():
+    """Get Parfumo update status"""
+    try:
+        from src.services.parfumo_updater import get_parfumo_updater
+
+        updater = get_parfumo_updater()
+        status = updater.get_status()
+
+        # Add config info
+        yaml_config = load_yaml_config()
+        parfumo_config = yaml_config.get('parfumo', {})
+
+        return {
+            **status,
+            'config': parfumo_config
+        }
+
+    except Exception as e:
+        logger.error("Failed to get Parfumo status", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/config/logging")
 async def update_logging_config(config: LoggingConfig):
     """Update logging configuration with validation"""
@@ -1026,8 +1120,6 @@ async def get_fragrances(
 
         # Convert to list for filtering
         result = []
-        new_mappings_created = 0
-        max_new_mappings_per_request = 5  # Limit to prevent timeouts
 
         for slug, data in fragrances.items():
             item = {
@@ -1038,15 +1130,8 @@ async def get_fragrances(
 
             # Add original fragrance info and ratings if requested
             if include_ratings and mapper:
-                # Try to get existing mapping or create new one
+                # Only get existing mapping, don't create new ones on page load
                 mapping = mapper.get_mapping(slug)
-
-                # If no mapping exists, try to create one from the product name (with limit)
-                if not mapping and new_mappings_created < max_new_mappings_per_request:
-                    # Extract from product name (e.g., "INSPIRED BY...")
-                    mapping = mapper.update_mapping(slug, item['name'], '')
-                    if mapping:
-                        new_mappings_created += 1
 
                 if mapping:
                     item['original_brand'] = mapping.get('original_brand')

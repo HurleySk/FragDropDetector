@@ -63,6 +63,12 @@ notifications:
   pushover:
     enabled: true
   send_test_on_start: false
+parfumo:
+  auto_scrape_new: true
+  enabled: true
+  last_update: null
+  max_scrapes_per_run: 10
+  update_interval: 168
 reddit:
   check_interval: 300
   post_limit: 50

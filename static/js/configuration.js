@@ -49,10 +49,13 @@ async function loadAllConfiguration() {
         populateDropWindowConfig(config.drop_window || {});
         populateStockMonitoringConfig(config.stock_monitoring || {});
         populateStockScheduleConfig(config.stock_schedule || {});
+        populateParfumoConfig(config.parfumo || {});
         populateLoggingConfig(config.logging || {});
 
         // Load initial log usage stats
         refreshLogUsage();
+        // Load Parfumo status
+        loadParfumoStatus();
     } catch (error) {
         console.error('Failed to load configuration:', error);
         showAlert('Failed to load configuration', 'error');
@@ -230,6 +233,12 @@ function bindConfigurationForms() {
     const stockScheduleForm = document.getElementById('stock-schedule-form');
     if (stockScheduleForm) {
         stockScheduleForm.addEventListener('submit', handleStockScheduleConfigSubmit);
+    }
+
+    // Parfumo form
+    const parfumoForm = document.getElementById('parfumo-form');
+    if (parfumoForm) {
+        parfumoForm.addEventListener('submit', handleParfumoConfigSubmit);
     }
 
     // Logging form
@@ -718,7 +727,163 @@ async function downloadLogs() {
     }
 }
 
+// Parfumo Functions
+function populateParfumoConfig(config) {
+    const enabledEl = document.getElementById('parfumo-enabled');
+    const intervalEl = document.getElementById('parfumo-update-interval');
+    const autoScrapeEl = document.getElementById('parfumo-auto-scrape');
+    const maxScrapesEl = document.getElementById('parfumo-max-scrapes');
+
+    if (enabledEl) enabledEl.checked = config.enabled !== false;
+    if (intervalEl) intervalEl.value = config.update_interval || 168;
+    if (autoScrapeEl) autoScrapeEl.checked = config.auto_scrape_new !== false;
+    if (maxScrapesEl) maxScrapesEl.value = config.max_scrapes_per_run || 10;
+}
+
+async function handleParfumoConfigSubmit(e) {
+    e.preventDefault();
+
+    const config = {
+        enabled: document.getElementById('parfumo-enabled').checked,
+        update_interval: parseInt(document.getElementById('parfumo-update-interval').value) || 168,
+        auto_scrape_new: document.getElementById('parfumo-auto-scrape').checked,
+        max_scrapes_per_run: parseInt(document.getElementById('parfumo-max-scrapes').value) || 10
+    };
+
+    try {
+        const response = await fetch('/api/config/parfumo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showAlert('Parfumo settings saved successfully', 'success');
+        } else {
+            throw new Error(result.detail || 'Failed to save settings');
+        }
+    } catch (error) {
+        console.error('Error saving Parfumo config:', error);
+        showAlert('Failed to save Parfumo settings', 'error');
+    }
+}
+
+async function loadParfumoStatus() {
+    try {
+        const response = await fetch('/api/parfumo/status');
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        // Update status display
+        const lastUpdateEl = document.getElementById('parfumo-last-update');
+        const totalMappedEl = document.getElementById('parfumo-total-mapped');
+        const withRatingsEl = document.getElementById('parfumo-with-ratings');
+        const notFoundEl = document.getElementById('parfumo-not-found');
+
+        if (lastUpdateEl) {
+            lastUpdateEl.textContent = data.last_full_update
+                ? new Date(data.last_full_update).toLocaleString()
+                : 'Never';
+        }
+        if (totalMappedEl) totalMappedEl.textContent = data.total_mapped || 0;
+        if (withRatingsEl) withRatingsEl.textContent = data.total_with_ratings || 0;
+        if (notFoundEl) notFoundEl.textContent = data.total_not_found || 0;
+
+        // Update progress if updating
+        if (data.currently_updating) {
+            showParfumoProgress(data.update_progress || 0);
+        } else {
+            hideParfumoProgress();
+        }
+    } catch (error) {
+        console.error('Error loading Parfumo status:', error);
+    }
+}
+
+async function triggerParfumoUpdate() {
+    const updateBtn = document.getElementById('parfumo-update-btn');
+    const statusEl = document.getElementById('parfumo-update-status');
+
+    if (updateBtn) updateBtn.disabled = true;
+    if (statusEl) statusEl.textContent = 'Starting update...';
+
+    try {
+        const response = await fetch('/api/parfumo/update', {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showAlert(result.message, 'success');
+            if (statusEl) statusEl.textContent = 'Update started';
+
+            // Start polling for progress
+            pollParfumoProgress();
+        } else {
+            throw new Error(result.message || 'Failed to trigger update');
+        }
+    } catch (error) {
+        console.error('Error triggering Parfumo update:', error);
+        showAlert('Failed to trigger Parfumo update', 'error');
+        if (statusEl) statusEl.textContent = 'Update failed';
+    } finally {
+        if (updateBtn) updateBtn.disabled = false;
+    }
+}
+
+function showParfumoProgress(progress) {
+    const progressDiv = document.getElementById('parfumo-progress');
+    const progressBar = document.getElementById('parfumo-progress-bar');
+    const progressText = document.getElementById('parfumo-progress-text');
+
+    if (progressDiv) progressDiv.style.display = 'block';
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    if (progressText) progressText.textContent = `Updating... ${progress}%`;
+}
+
+function hideParfumoProgress() {
+    const progressDiv = document.getElementById('parfumo-progress');
+    if (progressDiv) progressDiv.style.display = 'none';
+}
+
+let parfumoProgressInterval = null;
+
+function pollParfumoProgress() {
+    // Clear existing interval if any
+    if (parfumoProgressInterval) {
+        clearInterval(parfumoProgressInterval);
+    }
+
+    // Poll every 2 seconds
+    parfumoProgressInterval = setInterval(async () => {
+        try {
+            const response = await fetch('/api/parfumo/status');
+            if (!response.ok) return;
+
+            const data = await response.json();
+
+            if (data.currently_updating) {
+                showParfumoProgress(data.update_progress || 0);
+            } else {
+                // Update complete
+                clearInterval(parfumoProgressInterval);
+                parfumoProgressInterval = null;
+                hideParfumoProgress();
+                loadParfumoStatus(); // Reload full status
+                showAlert('Parfumo update completed', 'success');
+            }
+        } catch (error) {
+            console.error('Error polling Parfumo status:', error);
+        }
+    }, 2000);
+}
+
 // Make functions global for onclick handlers
 window.refreshLogUsage = refreshLogUsage;
 window.manualCleanup = manualCleanup;
 window.downloadLogs = downloadLogs;
+window.triggerParfumoUpdate = triggerParfumoUpdate;
