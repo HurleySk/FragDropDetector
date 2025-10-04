@@ -24,7 +24,8 @@ const InventoryManager = {
             searchInput.addEventListener('input', (e) => {
                 clearTimeout(this.searchTimeout);
                 this.searchTimeout = setTimeout(() => {
-                    this.applyFilters();
+                    // When filtering, preserve server sort order
+                    this.applyFilters(true);
                 }, 300);
             });
         }
@@ -35,7 +36,8 @@ const InventoryManager = {
             watchlistToggle.addEventListener('click', () => {
                 this.watchlistOnly = !this.watchlistOnly;
                 watchlistToggle.classList.toggle('active', this.watchlistOnly);
-                this.applyFilters();
+                // When filtering, preserve server sort order
+                this.applyFilters(true);
             });
         }
 
@@ -50,7 +52,7 @@ const InventoryManager = {
         }
 
         // Filter dropdown
-        document.getElementById('stock-filter')?.addEventListener('change', () => this.applyFilters());
+        document.getElementById('stock-filter')?.addEventListener('change', () => this.applyFilters(true));
 
         // Sort dropdown
         document.getElementById('sort-select')?.addEventListener('change', (e) => {
@@ -94,7 +96,8 @@ const InventoryManager = {
             this.allItems = data.items || [];
             this.totalItems = data.total || 0;
 
-            this.applyFilters();
+            // Data from server is already sorted, so we pass skipSort flag
+            this.applyFilters(true);
             this.updateStats();
 
         } catch (error) {
@@ -109,7 +112,7 @@ const InventoryManager = {
         }
     },
 
-    applyFilters() {
+    applyFilters(skipSort = false) {
         // Get filter values
         const searchTerm = document.getElementById('inventory-search')?.value.toLowerCase() || '';
         const stockFilter = document.getElementById('stock-filter')?.value;
@@ -137,8 +140,10 @@ const InventoryManager = {
             return true;
         });
 
-        // Sort items
-        this.sortItems();
+        // Only sort if not already sorted by server
+        if (!skipSort) {
+            this.sortItems();
+        }
 
         // Reset to first page
         this.currentPage = 1;
