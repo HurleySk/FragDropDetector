@@ -140,7 +140,7 @@ async function apiCall(endpoint, options = {}) {
 async function loadStatus() {
     try {
         setLoading('system-status', true);
-        const data = await apiCall('/api/status');
+        const data = await StatusService.getStatus();
         AppState.status = data;
         updateSystemStatus(data);
         return data;
@@ -154,23 +154,9 @@ async function loadStatus() {
 
 async function loadConfig(forceFresh = false) {
     try {
-        if (forceFresh) {
-            // Clear all cached config entries
-            for (const [key] of AppState.cache.entries()) {
-                if (key.includes('/api/config')) {
-                    AppState.cache.delete(key);
-                }
-            }
-            // Add cache buster to force fresh fetch
-            const cacheBuster = `?_=${Date.now()}`;
-            const data = await fetch(`${API_BASE}/api/config${cacheBuster}`).then(r => r.json());
-            AppState.config = data;
-            return data;
-        } else {
-            const data = await apiCall('/api/config');
-            AppState.config = data;
-            return data;
-        }
+        const data = await ConfigService.getConfig(forceFresh);
+        AppState.config = data;
+        return data;
     } catch (error) {
         console.error('Failed to load config:', error);
         showAlert('Failed to load configuration', 'error');
@@ -194,10 +180,7 @@ function updateSystemStatus(status) {
 // Configuration Functions
 async function saveRedditConfig(config) {
     try {
-        const result = await apiCall('/api/config/reddit', {
-            method: 'POST',
-            body: JSON.stringify(config)
-        });
+        const result = await ConfigService.saveRedditConfig(config);
         showAlert('Reddit configuration saved successfully', 'success');
         AppState.cache.clear(); // Clear cache to reload fresh data
         return result;
@@ -209,10 +192,7 @@ async function saveRedditConfig(config) {
 
 async function saveNotificationConfig(config) {
     try {
-        const result = await apiCall('/api/config/notifications', {
-            method: 'POST',
-            body: JSON.stringify(config)
-        });
+        const result = await ConfigService.saveNotificationConfig(config);
         showAlert('Notification configuration saved successfully', 'success');
         AppState.cache.clear();
         return result;
@@ -224,10 +204,7 @@ async function saveNotificationConfig(config) {
 
 async function saveDetectionConfig(config) {
     try {
-        const result = await apiCall('/api/config/detection', {
-            method: 'POST',
-            body: JSON.stringify(config)
-        });
+        const result = await ConfigService.saveDetectionConfig(config);
         showAlert('Detection configuration saved successfully', 'success');
         AppState.cache.clear();
         return result;
@@ -239,10 +216,7 @@ async function saveDetectionConfig(config) {
 
 async function saveDropWindowConfig(config) {
     try {
-        const result = await apiCall('/api/config/drop-window', {
-            method: 'POST',
-            body: JSON.stringify(config)
-        });
+        const result = await ConfigService.saveDropWindowConfig(config);
         showAlert('Drop window configuration saved successfully', 'success');
         AppState.cache.clear();
         return result;
@@ -254,10 +228,7 @@ async function saveDropWindowConfig(config) {
 
 async function saveStockMonitoringConfig(config) {
     try {
-        const result = await apiCall('/api/config/stock-monitoring', {
-            method: 'POST',
-            body: JSON.stringify(config)
-        });
+        const result = await ConfigService.saveStockMonitoringConfig(config);
         showAlert('Stock monitoring configuration saved successfully', 'success');
         AppState.cache.clear();
         return result;
@@ -269,10 +240,7 @@ async function saveStockMonitoringConfig(config) {
 
 async function saveStockScheduleConfig(config) {
     try {
-        const result = await apiCall('/api/config/stock-schedule', {
-            method: 'POST',
-            body: JSON.stringify(config)
-        });
+        const result = await ConfigService.saveStockScheduleConfig(config);
         showAlert('Stock schedule configuration saved successfully', 'success');
         AppState.cache.clear();
         return result;
@@ -324,8 +292,7 @@ async function testRedditConnection() {
 // Data Loading Functions
 async function loadRecentDrops(limit = 10) {
     try {
-        const drops = await apiCall(`/api/drops?limit=${limit}`);
-        return drops;
+        return await DropsService.getRecentDrops(limit);
     } catch (error) {
         console.error('Failed to load drops:', error);
         return [];
@@ -334,8 +301,7 @@ async function loadRecentDrops(limit = 10) {
 
 async function loadStockChanges(limit = 10) {
     try {
-        const changes = await apiCall(`/api/stock/changes?limit=${limit}`);
-        return changes;
+        return await StockService.getRecentChanges(limit);
     } catch (error) {
         console.error('Failed to load stock changes:', error);
         return [];
@@ -344,8 +310,7 @@ async function loadStockChanges(limit = 10) {
 
 async function loadFragrances() {
     try {
-        const fragrances = await apiCall('/api/stock/fragrances');
-        return fragrances;
+        return await StockService.getFragrances();
     } catch (error) {
         console.error('Failed to load fragrances:', error);
         return {};

@@ -4,9 +4,10 @@ Database models and setup for FragDropDetector
 
 import os
 from datetime import datetime
+from typing import Optional, Dict, List, Any
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 import logging
 
 logger = logging.getLogger(__name__)
@@ -110,7 +111,7 @@ class StockChange(Base):
 class Database:
     """Database manager class"""
 
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: Optional[str] = None) -> None:
         """
         Initialize database connection
 
@@ -134,11 +135,11 @@ class Database:
         Base.metadata.create_all(self.engine)
         logger.info(f"Database initialized at {db_path}")
 
-    def get_session(self):
+    def get_session(self) -> Session:
         """Get a new database session"""
         return self.SessionLocal()
 
-    def save_post(self, post_data: dict):
+    def save_post(self, post_data: Dict[str, Any]) -> None:
         """
         Save a Reddit post to database
 
@@ -179,12 +180,15 @@ class Database:
         finally:
             session.close()
 
-    def save_drop(self, drop_data: dict):
+    def save_drop(self, drop_data: Dict[str, Any]) -> Optional[int]:
         """
         Save a detected drop
 
         Args:
             drop_data: Drop dictionary with detection metadata
+
+        Returns:
+            Drop ID if saved, None if already exists or on error
         """
         import json
 
@@ -287,7 +291,7 @@ class Database:
         finally:
             session.close()
 
-    def get_recent_drops(self, limit: int = 10) -> list:
+    def get_recent_drops(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get recent drops with post information"""
         import json
         session = self.get_session()

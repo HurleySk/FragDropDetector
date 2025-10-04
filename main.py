@@ -7,8 +7,6 @@ Monitors r/MontagneParfums for fragrance drops
 import os
 import sys
 import time
-import logging
-import colorlog
 import yaml
 from datetime import datetime, timezone, timedelta
 import pytz
@@ -17,55 +15,14 @@ from dotenv import load_dotenv
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
+from utils.logger import setup_logger, get_logger
 from services.reddit_client import RedditClient
 from services.drop_detector import DropDetector
 from services.notifiers import PushoverNotifier, DiscordWebhookNotifier, EmailNotifier, NotificationManager
 from services.stock_monitor_enhanced import EnhancedStockMonitor, FragranceProduct
 from services.log_manager import LogManager
+from services.schedule_manager import ScheduleManager
 from models.database import Database
-
-
-def setup_logging(config=None):
-    """Configure colored logging with optional file handler"""
-    # Console handler with colors
-    console_handler = colorlog.StreamHandler()
-    console_handler.setFormatter(
-        colorlog.ColoredFormatter(
-            '%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-            log_colors={
-                'DEBUG': 'cyan',
-                'INFO': 'green',
-                'WARNING': 'yellow',
-                'ERROR': 'red',
-                'CRITICAL': 'red,bg_white',
-            }
-        )
-    )
-
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    logger.addHandler(console_handler)
-
-    # Add file handler if config provided and enabled
-    if config and config.get('file_enabled', False):
-        try:
-            log_manager = LogManager(config)
-            file_handler = log_manager.get_file_handler()
-            logger.addHandler(file_handler)
-            logger.info(f"File logging enabled to {config.get('file_path', 'logs/fragdrop.log')}")
-
-            # Return log manager for cleanup management
-            return logger, log_manager
-        except Exception as e:
-            logger.error(f"Failed to setup file logging: {e}")
-            return logger, None
-
-    # Reduce noise from some libraries
-    logging.getLogger('urllib3').setLevel(logging.WARNING)
-    logging.getLogger('prawcore').setLevel(logging.WARNING)
-
-    return logger, None
 
 
 class FragDropMonitor:
@@ -73,7 +30,7 @@ class FragDropMonitor:
 
     def __init__(self):
         """Initialize the monitor"""
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
         self.logger.info("Initializing FragDropMonitor...")
 
         # Load environment variables
@@ -91,6 +48,7 @@ class FragDropMonitor:
         self.db = Database()
         self.notification_manager = NotificationManager()
         self.stock_monitor = None  # Will be initialized asynchronously
+        self.schedule_manager = ScheduleManager(self.config)
 
         # Configuration
         self.subreddit = os.getenv('SUBREDDIT', 'MontagneParfums')
@@ -219,115 +177,15 @@ class FragDropMonitor:
 
     def is_drop_window(self):
         """Check if current time is within configured drop window"""
-        # If window checking is disabled, always return True
-        if not self.drop_window_enabled:
-            return True
-
-        tz = pytz.timezone(self.drop_window_timezone)
-        now = datetime.now(tz)
-
-        # Check if it's one of the configured days
-        if now.weekday() not in self.drop_window_days:
-            return False
-
-        # Create time objects for comparison
-        current_time = now.time()
-        start_time = datetime.now().replace(
-            hour=self.drop_window_start_hour,
-            minute=self.drop_window_start_minute,
-            second=0,
-            microsecond=0
-        ).time()
-        end_time = datetime.now().replace(
-            hour=self.drop_window_end_hour,
-            minute=self.drop_window_end_minute,
-            second=0,
-            microsecond=0
-        ).time()
-
-        # Check if current time is within window
-        return start_time <= current_time < end_time
+        return self.schedule_manager.is_drop_window()
 
     def is_stock_window(self):
         """Check if current time is within configured stock monitoring window"""
-        # If stock schedule is disabled, don't check
-        if not self.stock_schedule_enabled or not self.stock_enabled:
-            return False
-
-        # If window checking is disabled, always return True
-        if not self.stock_window_enabled:
-            return True
-
-        tz = pytz.timezone(self.stock_window_timezone)
-        now = datetime.now(tz)
-
-        # Check if it's one of the configured days (empty list means all days)
-        if self.stock_window_days and now.weekday() not in self.stock_window_days:
-            return False
-
-        # Create time objects for comparison
-        current_time = now.time()
-        start_time = datetime.now().replace(
-            hour=self.stock_window_start_hour,
-            minute=self.stock_window_start_minute,
-            second=0,
-            microsecond=0
-        ).time()
-        end_time = datetime.now().replace(
-            hour=self.stock_window_end_hour,
-            minute=self.stock_window_end_minute,
-            second=0,
-            microsecond=0
-        ).time()
-
-        # Check if current time is within window
-        return start_time <= current_time < end_time
+        return self.stock_schedule_enabled and self.stock_enabled and self.schedule_manager.is_stock_window()
 
     def get_time_until_next_window(self):
         """Calculate time until next configured drop window"""
-        if not self.drop_window_enabled:
-            return 0  # If disabled, window is always "now"
-
-        tz = pytz.timezone(self.drop_window_timezone)
-        now = datetime.now(tz)
-
-        # Find the next occurrence of a configured day
-        min_days_until = 7
-        for day in self.drop_window_days:
-            days_until = (day - now.weekday()) % 7
-
-            # Check if it's today and we haven't passed the end time
-            if days_until == 0:
-                current_time = now.time()
-                end_time = datetime.now().replace(
-                    hour=self.drop_window_end_hour,
-                    minute=self.drop_window_end_minute,
-                    second=0,
-                    microsecond=0
-                ).time()
-
-                if current_time >= end_time:
-                    # Already passed today's window, look at next week
-                    days_until = 7
-
-            min_days_until = min(min_days_until, days_until)
-
-        # Calculate the next window start time
-        next_window = now.replace(
-            hour=self.drop_window_start_hour,
-            minute=self.drop_window_start_minute,
-            second=0,
-            microsecond=0
-        )
-
-        if min_days_until == 0 and now.hour < self.drop_window_start_hour:
-            # Window is today but hasn't started yet
-            pass
-        else:
-            next_window = next_window + timedelta(days=min_days_until if min_days_until > 0 else 7)
-
-        time_diff = next_window - now
-        return time_diff.total_seconds()
+        return self.schedule_manager.get_time_until_next_drop_window()
 
     def check_for_drops(self):
         """Check for new drops"""
@@ -337,16 +195,11 @@ class FragDropMonitor:
 
         # Check if we're in the drop window
         if not self.is_drop_window():
-            tz = pytz.timezone(self.drop_window_timezone)
+            tz = pytz.timezone(self.drop_window_config.get('timezone', 'America/New_York'))
             now = datetime.now(tz)
 
-            # Format the days for display
-            day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-            configured_days = ', '.join([day_names[d] for d in sorted(self.drop_window_days)])
-
-            window_time = f"{self.drop_window_start_hour:02d}:{self.drop_window_start_minute:02d}-{self.drop_window_end_hour:02d}:{self.drop_window_end_minute:02d}"
-
-            self.logger.info(f"Outside drop window ({configured_days} {window_time} {self.drop_window_timezone}). Current time: {now.strftime('%A %I:%M %p %Z')}")
+            window_desc = self.schedule_manager.get_drop_window_description()
+            self.logger.info(f"Outside drop window ({window_desc}). Current time: {now.strftime('%A %I:%M %p %Z')}")
 
             # Calculate time until next window
             seconds_until = self.get_time_until_next_window()
@@ -489,18 +342,11 @@ class FragDropMonitor:
         # Check if we're in the stock monitoring window (independent of Reddit drop window)
         if not self.is_stock_window():
             if self.stock_window_enabled:
-                tz = pytz.timezone(self.stock_window_timezone)
+                tz = pytz.timezone(self.stock_schedule_config.get('timezone', 'America/New_York'))
                 now = datetime.now(tz)
 
-                # Format the days for display
-                if self.stock_window_days:
-                    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    configured_days = ', '.join([day_names[d] for d in sorted(self.stock_window_days)])
-                else:
-                    configured_days = 'Daily'
-
-                window_time = f"{self.stock_window_start_hour:02d}:{self.stock_window_start_minute:02d}-{self.stock_window_end_hour:02d}:{self.stock_window_end_minute:02d}"
-                self.logger.info(f"Outside stock monitoring window ({configured_days} {window_time} {self.stock_window_timezone}). Current time: {now.strftime('%A %I:%M %p %Z')}")
+                window_desc = self.schedule_manager.get_stock_window_description()
+                self.logger.info(f"Outside stock monitoring window ({window_desc}). Current time: {now.strftime('%A %I:%M %p %Z')}")
             return
 
         try:
@@ -736,24 +582,32 @@ class FragDropMonitor:
 
 def main():
     """Main entry point"""
-    # Load configuration for logging
     config_path = os.path.join(os.path.dirname(__file__), 'config', 'config.yaml')
     logging_config = {}
+    log_manager = None
+
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
             full_config = yaml.safe_load(f)
             logging_config = full_config.get('logging', {})
 
-    logger, log_manager = setup_logging(logging_config)
+    logger = setup_logger(
+        name="main",
+        level=logging_config.get('level', 'INFO'),
+        file_path=logging_config.get('file_path') if logging_config.get('file_enabled') else None,
+        max_bytes=logging_config.get('max_file_size', 10) * 1024 * 1024,
+        backup_count=logging_config.get('backup_count', 5),
+        use_colors=True
+    )
 
-    # Parse arguments
+    if logging_config.get('file_enabled'):
+        log_manager = LogManager(logging_config)
+
     if len(sys.argv) > 1 and sys.argv[1] == '--once':
-        # Run once for testing
         monitor = FragDropMonitor()
         monitor.log_manager = log_manager
         monitor.run_once()
     else:
-        # Run continuously
         monitor = FragDropMonitor()
         monitor.log_manager = log_manager
         monitor.run()
