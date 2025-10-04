@@ -88,20 +88,12 @@ async function fetchWatchlistData() {
 async function removeFromWatchlist(slug) {
     try {
         console.log('Removing from watchlist:', slug);
-        const response = await fetch(`/api/stock/watchlist/remove/${slug}?t=${Date.now()}`, {
-            method: 'POST',
-            cache: 'no-cache'
-        });
-
-        if (response.ok) {
-            console.log('Successfully removed from watchlist');
-            // Force refresh the watchlist display
-            setTimeout(() => fetchWatchlistData(), 100);
-            if (window.showAlert) {
-                showAlert('Removed from watchlist', 'success');
-            }
-        } else {
-            console.error('Failed to remove from watchlist, response not ok:', response.status);
+        await WatchlistService.removeItem(slug);
+        console.log('Successfully removed from watchlist');
+        // Force refresh the watchlist display
+        setTimeout(() => fetchWatchlistData(), 100);
+        if (window.showAlert) {
+            showAlert('Removed from watchlist', 'success');
         }
     } catch (error) {
         console.error('Failed to remove from watchlist:', error);

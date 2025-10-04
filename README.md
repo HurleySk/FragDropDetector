@@ -1,322 +1,696 @@
 # FragDropDetector
 
-Automated monitoring system for Montagne Parfums fragrance drops and stock changes with real-time notifications and Parfumo ratings integration.
+**Automated monitoring system for Montagne Parfums fragrance drops with real-time notifications and Parfumo ratings.**
 
-**What it does:** Monitors r/MontagneParfums subreddit for drop announcements and tracks the Montagne Parfums website for stock changes, sending instant notifications via Pushover, Discord, or Email when drops or restocks occur. Shows Parfumo ratings for original fragrances that Montagne clones.
+Monitors r/MontagneParfums subreddit for drop announcements and tracks the Montagne Parfums website for stock changes, sending instant notifications when drops or restocks occur. Includes Parfumo ratings for original fragrances that Montagne clones.
 
 ## Features
 
-### Core Monitoring
-- **Reddit Scanner**: Monitors r/MontagneParfums for drops (Fridays 12-6 PM ET default)
-- **Stock Tracker**: Independent 24/7 website monitoring (15-minute intervals)
-- **Smart Detection**: Pattern-based detection with 0.8 confidence threshold
-- **Watchlist**: Priority notifications for specific fragrances
+### Dual Monitoring System
+- **Reddit Scanner**: Monitors r/MontagneParfums for drop posts (default: Fridays 12-6 PM ET)
+- **Stock Tracker**: 24/7 website monitoring for inventory changes (15-minute intervals)
+- **Independent Schedules**: Reddit and stock monitoring run on separate, configurable schedules
+- **Smart Detection**: ML-based pattern detection with 0.8 confidence threshold
+- **Watchlist**: Priority notifications for specific fragrances you care about
 
 ### Web Interface
-- **Dashboard**: System health with actionable status cards, recent drops widget
-  - Recent Activity: Shows last event (drop/restock) within 7 days
-  - Reddit Monitor: Window status with countdown to next window
-  - Stock Monitor: Monitoring status and schedule info
-  - Watchlist Alerts: Out-of-stock items needing attention
-- **Activity**: Complete timeline of all drops and stock changes
-  - Filter tabs: All, Drops, Stock Changes
-  - Date grouping: Today, Yesterday, day names, full dates
-  - Confidence badges, author attribution, direct links
+Modern single-page application with real-time updates:
+
+- **Dashboard** - System health overview
+  - Recent activity with last drop/restock within 7 days
+  - Reddit monitor status with countdown to next window
+  - Stock monitor status and schedule info
+  - Watchlist alerts for out-of-stock items
+  - Health checks for Reddit, database, notifications, monitoring
+
+- **Activity Timeline** - Complete history
+  - Filter by drops, stock changes, or all events
+  - Date grouping (Today, Yesterday, day names, full dates)
+  - Confidence badges and author attribution
+  - Direct links to Reddit posts
   - Load more pagination (20 items per page)
-- **Inventory**: Browse all 158+ products with:
-  - Parfumo ratings for original fragrances
-  - Advanced sorting: Name, Price, Availability, Rating, Popularity
-  - Ascending/descending sort toggle
-  - Search, filters, bulk watchlist operations
-- **Configuration**: Full control over all settings:
-  - Detection Rules: Keywords, trusted authors, confidence threshold
-  - Monitoring schedules and time windows
-  - Notification services setup
-  - System & Logs management
-- Enhanced toast notifications for instant feedback
-- Clean, responsive design with dark mode support
+
+- **Inventory Browser** - All 158+ products
+  - Parfumo ratings and popularity scores for originals
+  - Advanced sorting (Name, Price, Availability, Rating, Popularity)
+  - Search and filtering
+  - Bulk watchlist operations
+  - Stock status indicators
+
+- **Configuration Manager** - Full control
+  - Reddit monitor settings and authentication status
+  - Website monitor schedules and windows
+  - Detection rules (keywords, trusted authors, threshold)
+  - Notification services (Pushover, Discord, Email)
+  - Parfumo integration with smart scraping controls
+  - System settings and log management
+
+- **Responsive Design** - Dark mode support, mobile-friendly
 
 ### Notifications
-- **Pushover**: iOS/Android push notifications
-- **Discord**: Webhook integration
-- **Email**: SMTP support
-- Configurable for different event types (drops, restocks, new products)
+- **Pushover**: iOS/Android push notifications (requires $5 app)
+- **Discord**: Webhook integration (free)
+- **Email**: SMTP support (Gmail, Outlook, etc.)
+- **Configurable**: Enable per event type (drops, restocks, new products)
+
+### Parfumo Integration
+- **Automatic Rating Fetch**: Scrapes Parfumo.com for fragrance ratings
+- **Smart Mapping**: Maps Montagne products to original fragrances
+- **Daily Updates**: Configurable scheduled rating updates (default: 2:00 AM)
+- **Manual Triggers**: Update ratings on-demand via web interface
+- **Popularity Scores**: Shows rating counts for each fragrance
+- **Clickable Links**: Direct links to Parfumo pages from inventory
 
 ### System Management
-- **Automatic Log Rotation**: Size-based rotation with configurable retention
-- **Log Cleanup**: Automatic removal of old logs to prevent disk filling
-- **Log Compression**: Automatic gzip compression of rotated logs
-- **Web-Based Control**: Manage all logging settings through the interface
+- **Automatic Log Rotation**: Size-based with configurable retention
+- **Log Cleanup**: Automatic removal of old logs (30-day default)
+- **Log Compression**: Gzip compression of rotated logs
+- **Download Logs**: Export all logs as zip archive
+- **Resource Monitoring**: Track disk usage and log statistics
 
 ## Quick Start
 
-### Installation
+### Automated Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/HurleySk/FragDropDetector.git
 cd FragDropDetector
-
-# Run the installer
 bash install.sh
 ```
 
 The installer will:
-- Check system requirements
-- Install dependencies
-- Set up Python environment
-- Configure Reddit API credentials
-- Set up auto-start services (optional)
-- Guide you through authentication
+1. Check system requirements (Python 3.11+, 1GB RAM)
+2. Install Python dependencies
+3. Set up Playwright for browser automation
+4. Configure Reddit API credentials
+5. Optionally set up systemd auto-start services
+6. Guide you through Reddit authentication
 
 ### Manual Installation
 
 #### Prerequisites
-- Python 3.11+
+- Python 3.11 or higher
 - 1GB+ RAM
 - Network access to Reddit and montagneparfums.com
 
-#### Steps
+#### Installation Steps
+
 ```bash
-# 1. Setup Python environment
+# 1. Clone repository
+git clone https://github.com/HurleySk/FragDropDetector.git
+cd FragDropDetector
+
+# 2. Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
 playwright install chromium
+
+# 4. Configure environment
+cp .env.example .env
+# Edit .env with your Reddit API credentials
+nano .env
+
+# 5. Start the system
+python main.py          # Terminal 1: Run monitor
+python web_server.py   # Terminal 2: Start web interface
+
+# Access web interface at http://localhost:8000
 ```
 
-```bash
-# 2. Configure environment
-cp .env.example .env
-# Edit .env with your Reddit API credentials (required)
-# Add notification service credentials (optional)
+## Configuration
 
-# 3. Start the system
-python main.py          # Run the monitor
-python web_server.py   # Start web interface (in another terminal)
-# Access at http://localhost:8000
+### Reddit API Setup (Required for Reddit Monitoring)
+
+#### 1. Create Reddit App
+1. Go to https://www.reddit.com/prefs/apps
+2. Click "create app" or "create another app"
+3. Select "script" type
+4. Fill in details:
+   - **name**: FragDropDetector (or your choice)
+   - **redirect uri**: http://localhost:8080
+5. Copy Client ID (under app name) and Secret
+
+#### 2. Configure .env File
+```bash
+REDDIT_CLIENT_ID=your_client_id_here
+REDDIT_CLIENT_SECRET=your_secret_here
+REDDIT_USER_AGENT=FragDropDetector/1.0
+REDDIT_USERNAME=your_reddit_username
+```
+
+#### 3. Authenticate (REQUIRED)
+
+Reddit authentication is **required** because r/MontagneParfums has member-only posts invisible to anonymous users.
+
+**For Headless Systems (Raspberry Pi, server):**
+```bash
+# On your local computer, create SSH tunnel:
+ssh -L 8080:localhost:8080 pi@YOUR_PI_IP
+
+# On the Pi/server, run authentication:
+python generate_token_headless.py
+
+# Follow browser instructions on your local machine
+# Token is saved and persists indefinitely
+```
+
+**For Desktop Systems:**
+```bash
+python generate_token_headless.py
+# Opens browser automatically for authentication
+```
+
+**Why This is Necessary:**
+- r/MontagneParfums requires user authentication to view all posts
+- Member-only posts are completely invisible without authentication
+- Reddit intentionally blocks automated headless authentication for security
+- SSH tunnel is the only reliable method for headless systems
+
+### Drop Window Configuration
+
+Default: Fridays 12:00 PM - 6:00 PM ET
+
+Edit `config/config.yaml`:
+```yaml
+drop_window:
+  enabled: true
+  days_of_week: [4]      # 0=Monday, 4=Friday, 6=Sunday
+  start_hour: 12         # 12 PM
+  end_hour: 18           # 6 PM (18:00 in 24-hour format)
+  timezone: America/New_York
+```
+
+For 24/7 monitoring, set `enabled: false`.
+
+### Stock Monitoring Schedule (Independent)
+
+Default: Every 15 minutes, 24/7
+
+Edit `config/config.yaml`:
+```yaml
+stock_schedule:
+  enabled: true
+  check_interval: 900    # Seconds (900 = 15 minutes)
+  window_enabled: false  # false = 24/7, true = use time windows
+  timezone: America/New_York
+
+  # Only used if window_enabled: true
+  days_of_week: []       # Empty = all days
+  start_hour: 9
+  end_hour: 18
+```
+
+### Notification Services
+
+#### Pushover (Recommended for Mobile)
+Best for instant mobile notifications. Requires one-time $5 app purchase.
+
+```bash
+# Add to .env:
+PUSHOVER_APP_TOKEN=your_app_token
+PUSHOVER_USER_KEY=your_user_key
+```
+
+Get credentials at https://pushover.net
+
+#### Discord
+Free webhook integration.
+
+```bash
+# Add to .env:
+DISCORD_WEBHOOK_URL=your_webhook_url
+```
+
+Create webhook: Server Settings → Integrations → Webhooks
+
+#### Email
+Any SMTP server (Gmail, Outlook, etc.)
+
+```bash
+# Add to .env:
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+EMAIL_SENDER=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password
+EMAIL_RECIPIENTS=recipient1@example.com,recipient2@example.com
+```
+
+**Gmail Note**: Use App Passwords (Account Settings → Security → 2-Step Verification → App Passwords)
+
+### Parfumo Configuration
+
+Edit `config/config.yaml`:
+```yaml
+parfumo:
+  enabled: true
+  auto_scrape_new: true    # Auto-fetch ratings for new products
+  update_time: "02:00"     # Daily update time (24-hour format)
+  rate_limit_delay: 2.0    # Seconds between requests (be nice)
+```
+
+## Usage
+
+### Web Interface
+
+Access at http://localhost:8000 (or your server's IP)
+
+**Navigation:**
+- **Dashboard** (`/`) - System overview and quick actions
+- **Activity** (`/#activity`) - Complete timeline of events
+- **Inventory** (`/#inventory`) - Browse all products and manage watchlist
+- **Configuration** (`/#configuration`) - Update all settings
+
+**Watchlist Management:**
+1. Browse to Inventory tab
+2. Click star icon on products you want to track
+3. Enable "Watchlist Only" toggle to filter view
+4. Use checkboxes for bulk add/remove operations
+5. Get notified when watchlisted items come back in stock
+
+**Configuration Updates:**
+1. Navigate to Configuration tab
+2. Select appropriate section (Reddit, Website, Notifications, etc.)
+3. Update settings in real-time
+4. Changes apply immediately, no restart needed
+
+### API Endpoints
+
+The system exposes a REST API for programmatic access:
+
+**System Status:**
+- `GET /api/status` - Full system status
+- `GET /api/status/monitor` - Monitor-specific status
+- `GET /health` - Health check
+
+**Drops:**
+- `GET /api/drops?limit=10` - Recent drops
+- `DELETE /api/drops/{id}` - Delete drop
+
+**Stock:**
+- `GET /api/stock/fragrances` - All fragrances (supports sorting, filtering)
+- `GET /api/stock/changes?limit=10` - Recent stock changes
+- `DELETE /api/stock/changes/{id}` - Delete stock change
+
+**Watchlist:**
+- `POST /api/stock/watchlist/add/{slug}` - Add to watchlist
+- `POST /api/stock/watchlist/remove/{slug}` - Remove from watchlist
+- `POST /api/watchlist/bulk` - Bulk add (body: `{"slugs": [...]}`)
+- `DELETE /api/watchlist/bulk` - Bulk remove
+
+**Configuration:**
+- `GET /api/config` - Get all configuration
+- `POST /api/config/reddit` - Update Reddit settings
+- `POST /api/config/notifications` - Update notification settings
+- `POST /api/config/detection` - Update detection rules
+
+**Parfumo:**
+- `GET /api/parfumo/status` - Get update status
+- `POST /api/parfumo/update-all` - Trigger full rating update
+- `POST /api/parfumo/update/{slug}` - Update specific fragrance
+
+**Logs:**
+- `GET /api/logs/download` - Download all logs as zip
+- `POST /api/logs/cleanup` - Manually trigger log cleanup
+
+**Testing:**
+- `POST /api/test/notifications` - Test all notification services
+
+### Command Line
+
+```bash
+# Start main monitor
+python main.py
+
+# Start web interface
+python web_server.py
+
+# Run authentication
+python generate_token_headless.py
+
+# Check setup
+python check_setup.py
 ```
 
 ## Production Deployment
 
 ### Systemd Services (Recommended)
-For automatic startup on boot:
+
+For automatic startup on boot and proper process management:
 
 ```bash
-# Copy service files
+# 1. Copy service files
 sudo cp fragdrop.service /etc/systemd/system/
 sudo cp fragdrop-web.service /etc/systemd/system/
 
-# Reload systemd and enable services
+# 2. Edit service files if needed (update paths, user)
+sudo nano /etc/systemd/system/fragdrop.service
+sudo nano /etc/systemd/system/fragdrop-web.service
+
+# 3. Reload systemd and enable services
 sudo systemctl daemon-reload
 sudo systemctl enable fragdrop fragdrop-web
+
+# 4. Start services
 sudo systemctl start fragdrop fragdrop-web
 
-# Check status
-sudo systemctl status fragdrop fragdrop-web
+# 5. Check status
+sudo systemctl status fragdrop
+sudo systemctl status fragdrop-web
 
-# View logs
-journalctl -u fragdrop -f      # Monitor logs
-journalctl -u fragdrop-web -f  # Web interface logs
+# 6. View logs
+sudo journalctl -u fragdrop -f       # Monitor logs
+sudo journalctl -u fragdrop-web -f   # Web interface logs
 ```
 
-## Configuration
+### Log Management
 
-### Reddit Setup (Required for Reddit Monitoring)
+Automatic log rotation and cleanup:
 
-#### 1. Create Reddit App
-1. Go to https://www.reddit.com/prefs/apps
-2. Create app (script type)
-3. Add Client ID and Secret to `.env`
-
-#### 2. User Authentication (REQUIRED)
-Without authentication, Reddit monitoring is **completely disabled**.
-
-**SSH Tunnel Method** (For Headless Systems):
-```bash
-# 1. SSH with port forwarding from your local machine:
-ssh -L 8080:localhost:8080 pi@YOUR_PI_IP
-
-# 2. Run authentication script on Pi:
-python generate_token_headless.py
-
-# 3. Follow browser instructions on your local machine
-# Token is automatically saved and persists indefinitely
-```
-
-**Why Authentication is Required:**
-- r/MontagneParfums has member-only posts invisible to anonymous users
-- Notification links won't work without proper authentication
-- Stock monitoring continues to work independently
-
-**Note**: Reddit intentionally blocks automated headless authentication for security. SSH tunnel is the only reliable method for headless systems.
-
-### Drop Windows
-Default: Fridays 12-6 PM ET
 ```yaml
 # config/config.yaml
-drop_window:
-  days_of_week: [4]  # 0=Mon, 4=Fri
-  start_hour: 12
-  end_hour: 18        # 6 PM (18:00)
-  timezone: America/New_York
-```
-
-### Stock Schedule (Independent)
-Default: Every 15 minutes, 24/7
-```yaml
-# config/config.yaml
-stock_schedule:
-  enabled: true
-  check_interval: 900   # 15 minutes
-  window_enabled: false # Monitor 24/7
-  timezone: America/New_York
-  days_of_week: []      # Empty = all days
-```
-
-### Logging Management
-Configurable through web interface or `config.yaml`:
-```yaml
 logging:
   file_enabled: true
   file_path: logs/fragdrop.log
-  max_file_size: 10  # MB per file
-  backup_count: 5    # Rotated files to keep
+  max_file_size: 10              # MB per file
+  backup_count: 5                # Number of rotated files to keep
   auto_cleanup:
     enabled: true
-    max_age_days: 30         # Delete logs older than this
-    max_total_size_mb: 100   # Maximum total log size
-    cleanup_interval_hours: 24
-    compress_old_logs: true  # Gzip rotated logs
+    max_age_days: 30             # Delete logs older than this
+    max_total_size_mb: 100       # Maximum total log directory size
+    cleanup_interval_hours: 24   # How often to run cleanup
+    compress_old_logs: true      # Gzip rotated logs
 ```
 
-Access through **System & Logs** tab in web interface to:
-- View disk usage and log statistics
-- Download all logs as zip archive
-- Manually trigger cleanup
-- Configure all settings
+Manage via web interface:
+- **System & Logs tab** - View disk usage, download logs, trigger cleanup
 
-### Notifications
-- **Pushover**: Best for mobile, requires $5 app
-- **Discord**: Free, create webhook in server settings
-- **Email**: Any SMTP server (Gmail, Outlook, etc.)
+### Reverse Proxy (Optional)
 
-## Usage
+For exposing web interface on standard HTTP/HTTPS ports:
 
-### Web Interface
-- **Dashboard** (`/`): System overview with clickable status cards
-- **Activity** (`/#activity`): Complete timeline of drops and stock changes
-- **Inventory** (`/#inventory`): Browse products, manage watchlist
-- **Configuration** (`/#configuration`): Update all settings
-  - Reddit Monitor, Website Monitor, Detection Rules
-  - Notifications (Pushover, Discord, Email)
-  - System & Logs management
+**Nginx:**
+```nginx
+server {
+    listen 80;
+    server_name fragdrop.yourdomain.com;
 
-### Watchlist
-1. Click star icon on any product to watch
-2. Get notified when items come back in stock
-3. Use "Watchlist Only" toggle to filter view
-4. Bulk operations with checkboxes
-
-### API
-REST API with endpoints for:
-- System status and monitoring
-- Drops and stock data with filtering/sorting
-- Watchlist management
-- Configuration updates
-- Notification testing
-- Log management
-
-## Architecture
-
-```
-FragDropDetector/
-├── main.py                 # Core monitoring loop
-├── web_server.py          # FastAPI web interface
-├── generate_token_headless.py # Reddit OAuth setup
-├── src/
-│   ├── services/          # Business logic
-│   │   ├── reddit_client.py         # Reddit API wrapper
-│   │   ├── drop_detector.py         # Pattern matching
-│   │   ├── stock_monitor_enhanced.py # Playwright scraper
-│   │   ├── notifiers.py             # Notification handlers
-│   │   └── log_manager.py           # Log rotation and cleanup
-│   └── models/
-│       └── database.py    # SQLAlchemy models
-├── static/                # Frontend assets (JS/CSS)
-├── templates/             # HTML templates
-├── config/
-│   └── config.yaml        # User configuration
-├── data/                  # SQLite database
-├── logs/                  # Application logs
-└── cache/                 # Temporary cache files
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
 ```
 
-### Database
-SQLite database with tables for posts, drops, product inventory (158+ items), stock changes, and notifications.
+**Apache:**
+```apache
+<VirtualHost *:80>
+    ServerName fragdrop.yourdomain.com
 
-### Key Technologies
-- **Backend**: Python, FastAPI, SQLAlchemy, Playwright
-- **Frontend**: Vanilla JS, CSS Grid, CSS Variables
-- **Database**: SQLite
-- **Scraping**: Playwright (handles JavaScript-rendered content)
-
-## Monitoring Logic
-
-### Reddit Monitoring
-1. **Drop Window Check**: Only monitors during configured hours (Fridays 12-6 PM ET by default)
-2. **Reddit Scan**: Checks new posts every 5 minutes (configurable)
-3. **Pattern Detection**:
-   - Primary keywords: drop, restock
-   - Secondary keywords: limited
-   - Vendor matching: montagneparfums variations
-   - Confidence scoring (threshold: 0.8)
-
-### Drop Detection
-- Uses confidence scoring (threshold: 0.8) based on keywords, authors, and patterns
-- Tracks processed posts to avoid duplicate notifications
-- Configurable trusted authors and detection rules via web interface
-
-### Stock Monitoring (Independent)
-1. **Flexible Scheduling**: Runs on separate schedule (15 minutes by default)
-2. **Optional Time Windows**: Can restrict to specific days/hours or monitor 24/7
-3. **Full Inventory Scan**: Scrapes entire product catalog using Playwright
-4. **Change Detection**: Compares with previous scan for new/restocked/price changes
-5. **Smart Caching**: 15-minute cache to reduce server load
+    ProxyPass / http://localhost:8000/
+    ProxyPassReverse / http://localhost:8000/
+    ProxyPreserveHost On
+</VirtualHost>
+```
 
 ## Troubleshooting
 
 ### Common Issues
-- **"No module named playwright"**: Run `playwright install chromium`
-- **Reddit 401 Error**: Check Client ID/Secret in `.env`
-- **Empty inventory**: Website may have changed structure
-- **Port 8000 in use**: Kill existing process or change port
 
-### Logs
-- Main logs: `logs/fragdrop.log` (rotated automatically)
-- Archive logs: `logs/fragdrop.log.1.gz`, `.2.gz`, etc.
-- Systemd logs: `journalctl -u fragdrop -u fragdrop-web`
-- Database: `data/fragdrop.db` (SQLite)
-
-## Development
-
-### Adding Features
-- Notification services: Extend `NotificationManager` in `notifiers.py`
-- New scrapers: Add to `services/` with async pattern
-- API endpoints: Add to `web_server.py` with FastAPI decorators
-
-### Testing
+**"No module named playwright"**
 ```bash
-# Test notifications
-curl -X POST http://localhost:8000/api/test/notifications
-
-# Check stock
-curl http://localhost:8000/api/stock/fragrances
-
-# Add to watchlist
-curl -X POST http://localhost:8000/api/stock/watchlist/add/product-slug
+pip install playwright
+playwright install chromium
 ```
+
+**Reddit 401 Error / Authentication Failed**
+- Check `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET` in `.env`
+- Re-run authentication: `python generate_token_headless.py`
+- Check that your Reddit app type is "script" not "web app"
+
+**Empty Inventory / No Products Found**
+- Website structure may have changed
+- Check logs: `tail -f logs/fragdrop.log`
+- Verify network access: `curl https://www.montagneparfums.com`
+
+**Port 8000 Already in Use**
+```bash
+# Find and kill process
+lsof -i :8000
+kill -9 <PID>
+
+# Or use different port
+python web_server.py --port 8001
+```
+
+**Parfumo Updates Failing**
+- Parfumo.com may have changed structure
+- Check rate limiting (default: 2 seconds between requests)
+- View logs for specific errors
+- Disable temporarily: set `parfumo.enabled: false` in config
+
+**Watchlist Not Saving**
+- Check write permissions on `config/config.yaml`
+- Verify browser localStorage is enabled
+- Check browser console for JavaScript errors
+
+### Log Locations
+
+- **Main logs**: `logs/fragdrop.log` (current)
+- **Rotated logs**: `logs/fragdrop.log.1.gz`, `.2.gz`, etc.
+- **Systemd logs**: `journalctl -u fragdrop -u fragdrop-web`
+- **Database**: `data/fragdrop.db` (SQLite)
+- **Parfumo status**: `data/parfumo_status.json`
+
+### Debug Mode
+
+Enable verbose logging in `config/config.yaml`:
+```yaml
+logging:
+  level: DEBUG  # Change from INFO to DEBUG
+```
+
+Or via environment variable:
+```bash
+export LOG_LEVEL=DEBUG
+python main.py
+```
+
+### Database Issues
+
+**Reset Database (WARNING: Deletes all data):**
+```bash
+rm data/fragdrop.db
+python main.py  # Will recreate with fresh schema
+```
+
+**Inspect Database:**
+```bash
+sqlite3 data/fragdrop.db
+.tables  # List all tables
+.schema posts  # View table schema
+SELECT COUNT(*) FROM drops;  # Query drops
+.quit
+```
+
+## Architecture
+
+### Technology Stack
+- **Backend**: Python 3.11, FastAPI, SQLAlchemy, Pydantic
+- **Frontend**: Vanilla JavaScript (SPA), CSS Grid, CSS Variables
+- **Database**: SQLite with connection pooling
+- **Scraping**: Playwright (headless Chromium)
+- **Reddit API**: PRAW (Python Reddit API Wrapper)
+- **Testing**: pytest (25+ tests)
+
+### Project Structure
+```
+FragDropDetector/
+├── main.py                       # Core monitoring loop (531 lines)
+├── web_server.py                 # FastAPI application (180 lines)
+├── generate_token_headless.py    # Reddit OAuth helper
+├── install.sh                    # Automated installer
+├── requirements.txt              # Python dependencies
+│
+├── src/                          # Core Python modules
+│   ├── config/
+│   │   ├── constants.py          # Centralized constants (13 classes)
+│   │   └── settings.py           # Pydantic settings (type-safe)
+│   ├── models/
+│   │   ├── database.py           # SQLAlchemy ORM models
+│   │   └── domain/
+│   │       └── fragrance.py      # Unified Fragrance domain model
+│   ├── services/
+│   │   ├── container.py          # Dependency injection container
+│   │   ├── schedule_manager.py   # Time window management
+│   │   ├── reddit_client.py      # Reddit API wrapper
+│   │   ├── drop_detector.py      # Pattern matching engine
+│   │   ├── stock_monitor_enhanced.py  # Playwright scraper
+│   │   ├── notifiers.py          # Notification handlers
+│   │   ├── log_manager.py        # Log rotation and cleanup
+│   │   ├── parfumo_scheduler.py  # Daily rating updates
+│   │   ├── parfumo_scraper.py    # Parfumo.com scraper
+│   │   ├── parfumo_updater.py    # Rating update orchestration
+│   │   └── fragrance_mapper.py   # Product → original mapping
+│   └── utils/
+│       ├── logger.py             # Centralized logging
+│       └── error_handler.py      # Error decorators and utilities
+│
+├── api/                          # Modular FastAPI routes
+│   ├── routes/
+│   │   ├── health.py             # Health checks
+│   │   ├── status.py             # System status
+│   │   ├── drops.py              # Drop endpoints
+│   │   ├── stock.py              # Stock/inventory
+│   │   ├── config.py             # Configuration
+│   │   ├── logs.py               # Log management
+│   │   ├── test.py               # Testing endpoints
+│   │   └── parfumo.py            # Parfumo integration
+│   ├── models.py                 # Pydantic validation models
+│   └── dependencies.py           # Shared dependencies
+│
+├── static/                       # Frontend assets
+│   ├── css/                      # Stylesheets
+│   │   ├── design-system.css     # Core design tokens
+│   │   ├── base.css              # Base styles
+│   │   ├── theme.css             # Theme colors
+│   │   └── *.css                 # Component styles
+│   └── js/                       # JavaScript
+│       ├── api/                  # API client layer
+│       │   ├── client.js         # HTTP client with caching/retry
+│       │   ├── endpoints.js      # Endpoint definitions
+│       │   └── services.js       # Service functions
+│       ├── config/               # Configuration modules (6 files)
+│       │   ├── reddit-config.js
+│       │   ├── notification-config.js
+│       │   ├── detection-config.js
+│       │   ├── stock-config.js
+│       │   ├── logging-config.js
+│       │   └── parfumo-config.js
+│       ├── dashboard/            # Dashboard modules (5 files)
+│       │   ├── utils.js          # Time formatting, navigation
+│       │   ├── display.js        # Activity rendering
+│       │   ├── health.js         # Health checks
+│       │   ├── status.js         # Status cards
+│       │   └── data.js           # Data loading
+│       ├── state.js              # State management
+│       ├── router.js             # SPA routing
+│       ├── app.js                # Application controller
+│       ├── dashboard-main.js     # Dashboard controller
+│       ├── activity.js           # Activity timeline
+│       ├── inventory.js          # Inventory browser
+│       └── configuration.js      # Config manager
+│
+├── templates/
+│   └── index.html                # SPA shell
+│
+├── tests/                        # Test suite
+│   ├── conftest.py               # Fixtures and helpers
+│   ├── test_fragrance_model.py   # Domain model tests (9 tests)
+│   ├── test_schedule_manager.py  # Schedule logic (11 tests)
+│   ├── test_database_integration.py  # DB tests (5 tests)
+│   └── test_service_container.py # Container tests
+│
+├── config/
+│   └── config.yaml               # User configuration
+├── data/
+│   ├── fragdrop.db               # SQLite database
+│   └── parfumo_status.json       # Parfumo update status
+├── logs/
+│   └── fragdrop.log*             # Application logs
+└── cache/                        # Temporary cache files
+```
+
+### Database Schema
+- **posts** - Reddit posts scanned
+- **drops** - Detected drop events with confidence scores
+- **fragrance_stock** - Product inventory (158+ items)
+- **stock_changes** - Stock change history
+- **notifications** - Notification log
+- **settings** - Application settings
+
+### Monitoring Logic
+
+**Reddit Monitoring:**
+1. Check if within drop window (e.g., Fridays 12-6 PM ET)
+2. Scan new posts every 5 minutes (configurable)
+3. Run pattern detection:
+   - Primary keywords: "drop", "restock"
+   - Secondary keywords: "limited", "available"
+   - Vendor matching: "montagneparfums" variations
+   - Trusted author bonus
+   - Calculate confidence score (0.0-1.0)
+4. If confidence ≥ 0.8, trigger notifications
+5. Track processed posts to avoid duplicates
+
+**Stock Monitoring:**
+1. Check if within stock window (or 24/7)
+2. Every N minutes (default: 15), scrape full catalog
+3. Use Playwright to handle JavaScript-rendered content
+4. Compare with previous scan:
+   - Detect new products
+   - Detect restocks (was out → now in stock)
+   - Detect out of stock (was in → now out)
+   - Detect price changes
+5. Save changes to database
+6. Send notifications (watchlist gets priority)
+7. Cache results for 15 minutes to reduce load
+
+## Testing
+
+### Run Tests
+
+```bash
+# All tests
+pytest tests/ -v
+
+# By marker
+pytest tests/ -m unit          # Unit tests only
+pytest tests/ -m integration   # Integration tests only
+
+# Specific file
+pytest tests/test_fragrance_model.py -v
+
+# With coverage
+pytest tests/ --cov=src --cov-report=html
+```
+
+### Test Coverage
+- Domain models (Fragrance)
+- Schedule management (time windows)
+- Database operations
+- Service container
+- 25+ passing tests
 
 ## Contributing
 
-Pull requests welcome. For major changes, open an issue first.
+Contributions welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+### Development Setup
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Make changes and add tests
+4. Run test suite (`pytest tests/ -v`)
+5. Commit changes (`git commit -m 'Add amazing feature'`)
+6. Push to branch (`git push origin feature/amazing-feature`)
+7. Open Pull Request
+
+## License
+
+This project is open source. Please check the repository for license details.
+
+## Support
+
+- **Issues**: https://github.com/HurleySk/FragDropDetector/issues
+- **Discussions**: Use GitHub Discussions for questions and ideas
+- **Reddit**: r/MontagneParfums community
+
+## Credits
+
+Built for the r/MontagneParfums community to never miss a fragrance drop.

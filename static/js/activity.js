@@ -275,13 +275,10 @@ async function deleteActivity(id, type) {
     const eventElement = document.querySelector(`[data-event-id="${id}"][data-event-type="${type}"]`);
 
     try {
-        const endpoint = type === 'drop' ? `/api/drops/${id}` : `/api/stock/changes/${id}`;
-        const response = await fetch(endpoint, {
-            method: 'DELETE'
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to delete activity');
+        if (type === 'drop') {
+            await DropsService.deleteDrop(id);
+        } else {
+            await StockService.deleteChange(id);
         }
 
         if (eventElement) {

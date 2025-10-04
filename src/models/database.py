@@ -5,6 +5,7 @@ Database models and setup for FragDropDetector
 import os
 from datetime import datetime
 from typing import Optional, Dict, List, Any
+from contextlib import contextmanager
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -127,9 +128,20 @@ class Database:
         self.engine = create_engine(
             f'sqlite:///{db_path}',
             echo=False,
-            connect_args={'check_same_thread': False}  # For SQLite
+            pool_size=10,
+            max_overflow=20,
+            pool_pre_ping=True,
+            connect_args={
+                'check_same_thread': False,
+                'timeout': 30
+            }
         )
-        self.SessionLocal = sessionmaker(bind=self.engine, autocommit=False, autoflush=False)
+        self.SessionLocal = sessionmaker(
+            bind=self.engine,
+            autocommit=False,
+            autoflush=False,
+            expire_on_commit=False
+        )
 
         # Create tables
         Base.metadata.create_all(self.engine)
@@ -138,6 +150,29 @@ class Database:
     def get_session(self) -> Session:
         """Get a new database session"""
         return self.SessionLocal()
+
+    @contextmanager
+    def session(self):
+        """
+        Context manager for database sessions
+
+        Usage:
+            with db.session() as session:
+                user = session.query(User).first()
+                session.commit()
+
+        Automatically handles rollback on exceptions and closes session
+        """
+        session = self.get_session()
+        try:
+            yield session
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Database session error: {e}")
+            raise
+        finally:
+            session.close()
 
     def save_post(self, post_data: Dict[str, Any]) -> None:
         """
@@ -419,5 +454,107 @@ class Database:
                     'last_seen': f.last_seen.isoformat()
                 } for f in fragrances
             }
+        finally:
+            session.close()
+
+    def bulk_save_fragrances(self, fragrance_list: List[Dict]) -> bool:
+        """
+        Bulk save/update multiple fragrances efficiently
+
+        Args:
+            fragrance_list: List of fragrance data dictionaries
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not fragrance_list:
+            return True
+
+        session = self.get_session()
+        try:
+            # Get all existing slugs for efficient lookup
+            existing_slugs = {
+                slug for (slug,) in session.query(FragranceStock.slug).all()
+            }
+
+            updates = []
+            inserts = []
+            now = datetime.utcnow()
+
+            for frag_data in fragrance_list:
+                slug = frag_data['slug']
+                if slug in existing_slugs:
+                    updates.append({
+                        'slug': slug,
+                        'name': frag_data['name'],
+                        'url': frag_data['url'],
+                        'price': frag_data['price'],
+                        'in_stock': frag_data['in_stock'],
+                        'last_seen': now,
+                        'updated_at': now
+                    })
+                else:
+                    inserts.append(FragranceStock(
+                        slug=slug,
+                        name=frag_data['name'],
+                        url=frag_data['url'],
+                        price=frag_data['price'],
+                        in_stock=frag_data['in_stock']
+                    ))
+
+            # Bulk update existing records
+            if updates:
+                session.bulk_update_mappings(FragranceStock, updates)
+
+            # Bulk insert new records
+            if inserts:
+                session.bulk_save_objects(inserts)
+
+            session.commit()
+            logger.info(f"Bulk saved {len(inserts)} new, {len(updates)} updated fragrances")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error bulk saving fragrances: {e}")
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+    def bulk_save_stock_changes(self, changes_list: List[Dict]) -> int:
+        """
+        Bulk save multiple stock changes efficiently
+
+        Args:
+            changes_list: List of stock change data dictionaries
+
+        Returns:
+            Number of changes saved
+        """
+        if not changes_list:
+            return 0
+
+        session = self.get_session()
+        try:
+            change_objects = [
+                StockChange(
+                    fragrance_slug=change['fragrance_slug'],
+                    change_type=change['change_type'],
+                    old_value=change.get('old_value'),
+                    new_value=change.get('new_value')
+                )
+                for change in changes_list
+            ]
+
+            session.bulk_save_objects(change_objects)
+            session.commit()
+
+            logger.info(f"Bulk saved {len(change_objects)} stock changes")
+            return len(change_objects)
+
+        except Exception as e:
+            logger.error(f"Error bulk saving stock changes: {e}")
+            session.rollback()
+            return 0
         finally:
             session.close()

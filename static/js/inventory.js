@@ -83,16 +83,13 @@ const InventoryManager = {
             this.showLoading(true);
 
             // Pass sort parameters to API for proper server-side sorting
-            const params = new URLSearchParams({
+            const params = {
                 sort_by: this.sortBy,
                 sort_order: this.sortOrder,
                 t: Date.now()
-            });
+            };
 
-            const response = await fetch(`/api/stock/fragrances?${params}`);
-            if (!response.ok) throw new Error('Failed to load inventory');
-
-            const data = await response.json();
+            const data = await StockService.getFragrances(params);
             this.allItems = data.items || [];
             this.totalItems = data.total || 0;
 
@@ -322,15 +319,9 @@ const InventoryManager = {
     async toggleWatchlist(slug, isWatched) {
         try {
             console.log(`Toggling watchlist for ${slug}, currently watched: ${isWatched}`);
-            const endpoint = isWatched ? '/api/stock/watchlist/remove' : '/api/stock/watchlist/add';
-            const response = await fetch(`${endpoint}/${slug}?t=${Date.now()}`, {
-                method: 'POST',
-                cache: 'no-cache'
-            });
-
-            if (!response.ok) throw new Error('Failed to update watchlist');
-
-            const result = await response.json();
+            const result = isWatched
+                ? await WatchlistService.removeItem(slug)
+                : await WatchlistService.addItem(slug);
             console.log('Watchlist update result:', result);
 
             // Update local data
@@ -447,15 +438,7 @@ const InventoryManager = {
         if (this.selectedItems.size === 0) return;
 
         try {
-            const response = await fetch('/api/watchlist/bulk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slugs: Array.from(this.selectedItems) })
-            });
-
-            if (!response.ok) throw new Error('Failed to add to watchlist');
-
-            const result = await response.json();
+            const result = await WatchlistService.bulkAdd(Array.from(this.selectedItems));
 
             // Update local data
             this.selectedItems.forEach(slug => {
@@ -482,15 +465,7 @@ const InventoryManager = {
         if (this.selectedItems.size === 0) return;
 
         try {
-            const response = await fetch('/api/watchlist/bulk', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slugs: Array.from(this.selectedItems) })
-            });
-
-            if (!response.ok) throw new Error('Failed to remove from watchlist');
-
-            const result = await response.json();
+            const result = await WatchlistService.bulkRemove(Array.from(this.selectedItems));
 
             // Update local data
             this.selectedItems.forEach(slug => {

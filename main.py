@@ -21,8 +21,8 @@ from services.drop_detector import DropDetector
 from services.notifiers import PushoverNotifier, DiscordWebhookNotifier, EmailNotifier, NotificationManager
 from services.stock_monitor_enhanced import EnhancedStockMonitor, FragranceProduct
 from services.log_manager import LogManager
-from services.schedule_manager import ScheduleManager
-from models.database import Database
+from services.container import get_container
+from services.parfumo_scheduler import get_parfumo_scheduler
 
 
 class FragDropMonitor:
@@ -36,19 +36,19 @@ class FragDropMonitor:
         # Load environment variables
         load_dotenv()
 
-        # Load YAML configuration
-        self.config = self._load_yaml_config()
+        # Get service container
+        container = get_container()
+        self.config = container.config
+        self.db = container.database
+        self.schedule_manager = container.schedule_manager
+        self.detector = container.drop_detector
+        self.parfumo_scheduler = get_parfumo_scheduler(self.config)
 
         # Initialize components
         self.reddit_client = None
         self.reddit_enabled = False  # Track if Reddit monitoring is active
-        # Initialize drop detector with configuration
-        detection_config = self.config.get('detection', {})
-        self.detector = DropDetector(detection_config)
-        self.db = Database()
         self.notification_manager = NotificationManager()
         self.stock_monitor = None  # Will be initialized asynchronously
-        self.schedule_manager = ScheduleManager(self.config)
 
         # Configuration
         self.subreddit = os.getenv('SUBREDDIT', 'MontagneParfums')
@@ -84,14 +84,6 @@ class FragDropMonitor:
 
         self._setup_reddit_client()
         self._setup_notifications()
-
-    def _load_yaml_config(self):
-        """Load configuration from config.yaml"""
-        config_path = os.path.join(os.path.dirname(__file__), 'config', 'config.yaml')
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                return yaml.safe_load(f)
-        return {}
 
     def _setup_reddit_client(self):
         """Setup Reddit client"""
@@ -175,18 +167,6 @@ class FragDropMonitor:
             self.logger.warning("No notification services configured!")
             self.logger.warning("Set PUSHOVER or DISCORD credentials in .env")
 
-    def is_drop_window(self):
-        """Check if current time is within configured drop window"""
-        return self.schedule_manager.is_drop_window()
-
-    def is_stock_window(self):
-        """Check if current time is within configured stock monitoring window"""
-        return self.stock_schedule_enabled and self.stock_enabled and self.schedule_manager.is_stock_window()
-
-    def get_time_until_next_window(self):
-        """Calculate time until next configured drop window"""
-        return self.schedule_manager.get_time_until_next_drop_window()
-
     def check_for_drops(self):
         """Check for new drops"""
         # Skip if Reddit monitoring is disabled
@@ -194,7 +174,7 @@ class FragDropMonitor:
             return
 
         # Check if we're in the drop window
-        if not self.is_drop_window():
+        if not self.schedule_manager.is_drop_window():
             tz = pytz.timezone(self.drop_window_config.get('timezone', 'America/New_York'))
             now = datetime.now(tz)
 
@@ -202,7 +182,7 @@ class FragDropMonitor:
             self.logger.info(f"Outside drop window ({window_desc}). Current time: {now.strftime('%A %I:%M %p %Z')}")
 
             # Calculate time until next window
-            seconds_until = self.get_time_until_next_window()
+            seconds_until = self.schedule_manager.get_time_until_next_drop_window()
             hours_until = seconds_until / 3600
             self.logger.info(f"Next drop window in {hours_until:.1f} hours")
             return
@@ -262,77 +242,12 @@ class FragDropMonitor:
             self.logger.error(f"Error during drop check: {e}")
 
     def start_parfumo_scheduler(self):
-        """Start a thread that runs Parfumo update at the scheduled daily time"""
-        if not self.config.get('parfumo', {}).get('enabled', True):
-            return
-
-        import threading
-        import pytz
-
-        def parfumo_scheduler():
-            while True:
-                try:
-                    # Calculate seconds until next scheduled time
-                    update_time_str = self.config.get('parfumo', {}).get('update_time', '02:00')
-                    update_hour, update_minute = map(int, update_time_str.split(':'))
-
-                    # Use the same timezone as Reddit drop window
-                    tz = pytz.timezone(self.drop_window_timezone)
-                    now = datetime.now(tz)
-                    scheduled_time = now.replace(hour=update_hour, minute=update_minute, second=0, microsecond=0)
-
-                    # If the scheduled time has already passed today, schedule for tomorrow
-                    if scheduled_time <= now:
-                        scheduled_time = scheduled_time + timedelta(days=1)
-
-                    # Calculate seconds to wait
-                    seconds_to_wait = (scheduled_time - now).total_seconds()
-
-                    self.logger.info(f"Next Parfumo update scheduled for {scheduled_time.strftime('%Y-%m-%d %H:%M %Z')} ({seconds_to_wait/3600:.1f} hours from now)")
-
-                    # Sleep until the scheduled time
-                    time.sleep(seconds_to_wait)
-
-                    # Run the update
-                    self.run_parfumo_update()
-
-                except Exception as e:
-                    self.logger.error(f"Error in Parfumo scheduler: {e}")
-                    # Wait an hour before trying again if there's an error
-                    time.sleep(3600)
-
-        # Start the scheduler in a daemon thread
-        scheduler_thread = threading.Thread(target=parfumo_scheduler, daemon=True)
-        scheduler_thread.start()
+        """Start the Parfumo scheduler service"""
+        self.parfumo_scheduler.start()
 
     def run_parfumo_update(self):
-        """Run the Parfumo update"""
-        try:
-            from src.services.parfumo_updater import get_parfumo_updater
-
-            updater = get_parfumo_updater()
-
-            # Check if not already updating
-            status = updater.get_status()
-            if status.get('currently_updating'):
-                self.logger.info("Parfumo update already in progress, skipping")
-                return
-
-            self.logger.info("Starting scheduled daily Parfumo update")
-
-            # Run update
-            results = updater.update_all_ratings()
-            self.logger.info(f"Parfumo update completed: {results}")
-
-            # Update config with last update time
-            self.config['parfumo']['last_update'] = datetime.now().isoformat()
-            # Save config
-            with open('config/config.yaml', 'w') as f:
-                import yaml
-                yaml.dump(self.config, f, default_flow_style=False)
-
-        except Exception as e:
-            self.logger.error(f"Error running Parfumo update: {e}")
+        """Run a Parfumo update immediately"""
+        return self.parfumo_scheduler.run_update()
 
     async def check_stock_changes(self):
         """Check for stock changes on Montagne Parfums website"""
@@ -340,7 +255,7 @@ class FragDropMonitor:
             return
 
         # Check if we're in the stock monitoring window (independent of Reddit drop window)
-        if not self.is_stock_window():
+        if not (self.stock_schedule_enabled and self.stock_enabled and self.schedule_manager.is_stock_window()):
             if self.stock_window_enabled:
                 tz = pytz.timezone(self.stock_schedule_config.get('timezone', 'America/New_York'))
                 now = datetime.now(tz)

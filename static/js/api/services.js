@@ -42,26 +42,30 @@ const StockService = {
 
 const WatchlistService = {
     async addItem(slug) {
-        await apiClient.post(endpoints.watchlist.add(slug));
+        const result = await apiClient.post(endpoints.watchlist.add(slug));
         // Clear fragrance cache to reflect changes
         apiClient.clearCache('/api/stock/fragrances');
+        return result;
     },
 
     async removeItem(slug) {
-        await apiClient.post(endpoints.watchlist.remove(slug));
+        const result = await apiClient.post(endpoints.watchlist.remove(slug));
         apiClient.clearCache('/api/stock/fragrances');
+        return result;
     },
 
     async bulkAdd(slugs) {
-        await apiClient.post(endpoints.watchlist.bulkAdd(), { slugs });
+        const result = await apiClient.post(endpoints.watchlist.bulkAdd(), { slugs });
         apiClient.clearCache('/api/stock/fragrances');
+        return result;
     },
 
     async bulkRemove(slugs) {
-        await apiClient.delete(endpoints.watchlist.bulkRemove(), {
+        const result = await apiClient.delete(endpoints.watchlist.bulkRemove(), {
             body: { slugs }
         });
         apiClient.clearCache('/api/stock/fragrances');
+        return result;
     }
 };
 
