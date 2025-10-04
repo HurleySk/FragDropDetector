@@ -136,27 +136,27 @@
 }
 
 .alert.success {
-    background-color: #f0fdf4;
-    color: var(--green-600);
-    border: 1px solid #bbf7d0;
+    background-color: var(--green-50);
+    color: var(--green-700);
+    border: 1px solid var(--green-200);
 }
 
 .alert.error {
-    background-color: #fef2f2;
-    color: var(--red-600);
-    border: 1px solid #fecaca;
+    background-color: var(--red-50);
+    color: var(--red-700);
+    border: 1px solid var(--red-200);
 }
 
 .alert.warning {
-    background-color: #fffbeb;
-    color: var(--amber-600);
-    border: 1px solid #fed7aa;
+    background-color: var(--amber-50);
+    color: var(--amber-700);
+    border: 1px solid var(--amber-200);
 }
 
 .alert.info {
     background-color: var(--blue-50);
-    color: var(--blue-600);
-    border: 1px solid #bfdbfe;
+    color: var(--blue-700);
+    border: 1px solid var(--blue-200);
 }
 
 /* Toast Notification System */
@@ -492,6 +492,81 @@
     border-bottom-color: var(--border);
 }
 
+[data-theme="dark"] .nav-item:hover {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .nav-item.active {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .bottom-nav-item:hover,
+[data-theme="dark"] .bottom-nav-item.active {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .alert.success {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #ffffff;
+    border-color: var(--green-400);
+}
+
+[data-theme="dark"] .alert.error {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--red-300);
+    border-color: var(--red-400);
+}
+
+[data-theme="dark"] .alert.warning {
+    background-color: rgba(251, 146, 60, 0.15);
+    color: var(--amber-300);
+    border-color: var(--amber-400);
+}
+
+[data-theme="dark"] .alert.info {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--blue-300);
+    border-color: var(--blue-400);
+}
+
+[data-theme="dark"] .toast.success {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: var(--green-400);
+}
+
+[data-theme="dark"] .toast.success .toast-message {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .toast.error {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--red-400);
+}
+
+[data-theme="dark"] .toast.error .toast-message {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .toast.warning {
+    background: rgba(251, 146, 60, 0.15);
+    border-color: var(--amber-400);
+}
+
+[data-theme="dark"] .toast.warning .toast-message {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .toast.info {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--blue-400);
+}
+
+[data-theme="dark"] .toast.info .toast-message {
+    color: #ffffff;
+}
 
 /* Utility overrides */
 .hidden {

@@ -1,13 +1,8 @@
 /* Lightweight Dark Mode System */
 
 :root {
-    --primary: #667eea;
     --primary-hover: #5a67d8;
     --secondary: #764ba2;
-    --success: #48bb78;
-    --warning: #ed8936;
-    --error: #f56565;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
     --radius: 8px;
     --radius-lg: 12px;
@@ -50,10 +45,6 @@
     color: var(--text-primary);
 }
 
-/* Smooth transitions for theme changes */
-* {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
 
 /* Loading Skeleton System */
 .skeleton {

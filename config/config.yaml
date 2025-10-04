@@ -74,6 +74,7 @@ stock_monitoring:
     out_of_stock: false
     price_changes: false
     restocked_products: true
+  watchlist: []
 stock_schedule:
   check_interval: 900
   days_of_week: []

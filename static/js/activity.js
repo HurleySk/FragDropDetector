@@ -181,7 +181,7 @@ function renderDropEvent(drop) {
     const confidenceClass = confidencePercent >= 80 ? 'high' : confidencePercent >= 60 ? 'medium' : 'low';
 
     return `
-        <div class="activity-event drop-event">
+        <div class="activity-event drop-event" data-event-id="${drop.id}" data-event-type="drop">
             <div class="activity-event-icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.2"/>
@@ -200,6 +200,11 @@ function renderDropEvent(drop) {
                     ${drop.url ? `<a href="${escapeHtml(drop.url)}" target="_blank" class="btn btn-primary btn-sm">View →</a>` : ''}
                 </div>
             </div>
+            <button class="activity-delete-btn" onclick="deleteActivity(${drop.id}, 'drop')" title="Delete">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2h4M2 4h12M13 4l-.5 8a2 2 0 01-2 1.9H5.5a2 2 0 01-2-1.9L3 4m3 3v4m4-4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
         </div>
     `;
 }
@@ -230,7 +235,7 @@ function renderStockEvent(change) {
     }[change.change_type] || 'change';
 
     return `
-        <div class="activity-event stock-event ${changeTypeClass}">
+        <div class="activity-event stock-event ${changeTypeClass}" data-event-id="${change.id}" data-event-type="stock">
             <div class="activity-event-icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="10" cy="10" r="8" fill="currentColor" opacity="0.2"/>
@@ -248,6 +253,11 @@ function renderStockEvent(change) {
                     ${change.product_url ? `<a href="${escapeHtml(change.product_url)}" target="_blank" class="btn btn-primary btn-sm">View →</a>` : ''}
                 </div>
             </div>
+            <button class="activity-delete-btn" onclick="deleteActivity(${change.id}, 'stock')" title="Delete">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 2h4M2 4h12M13 4l-.5 8a2 2 0 01-2 1.9H5.5a2 2 0 01-2-1.9L3 4m3 3v4m4-4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
         </div>
     `;
 }
@@ -255,6 +265,58 @@ function renderStockEvent(change) {
 function loadMoreActivity() {
     activityCurrentPage++;
     loadActivityTimeline();
+}
+
+async function deleteActivity(id, type) {
+    if (!confirm('Are you sure you want to delete this activity?')) {
+        return;
+    }
+
+    const eventElement = document.querySelector(`[data-event-id="${id}"][data-event-type="${type}"]`);
+
+    try {
+        const endpoint = type === 'drop' ? `/api/drops/${id}` : `/api/stock/changes/${id}`;
+        const response = await fetch(endpoint, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete activity');
+        }
+
+        if (eventElement) {
+            eventElement.style.opacity = '0';
+            eventElement.style.transform = 'translateX(20px)';
+            setTimeout(() => {
+                eventElement.remove();
+                checkEmptyDateGroups();
+            }, 300);
+        }
+
+        showToast('Activity deleted successfully', 'success');
+    } catch (error) {
+        console.error('Failed to delete activity:', error);
+        showToast('Failed to delete activity', 'error');
+    }
+}
+
+function checkEmptyDateGroups() {
+    const dateGroups = document.querySelectorAll('.activity-date-group');
+    dateGroups.forEach(group => {
+        const events = group.querySelector('.activity-events');
+        if (events && events.children.length === 0) {
+            group.remove();
+        }
+    });
+
+    const timeline = document.getElementById('activity-timeline');
+    if (timeline && timeline.children.length === 0) {
+        timeline.innerHTML = `
+            <div class="empty-state">
+                <p class="empty-state-message">No activity found</p>
+            </div>
+        `;
+    }
 }
 
 function escapeHtml(unsafe) {

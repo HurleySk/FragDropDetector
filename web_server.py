@@ -775,6 +775,9 @@ async def update_stock_monitoring_config(config: StockMonitoringConfig):
     try:
         yaml_config = load_yaml_config()
 
+        # Preserve existing watchlist
+        existing_watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+
         yaml_config["stock_monitoring"] = {
             "enabled": config.enabled,
             "notifications": {
@@ -782,7 +785,8 @@ async def update_stock_monitoring_config(config: StockMonitoringConfig):
                 "restocked_products": config.restocked_products,
                 "price_changes": config.price_changes,
                 "out_of_stock": config.out_of_stock
-            }
+            },
+            "watchlist": existing_watchlist
         }
 
         if not save_yaml_config(yaml_config):
@@ -943,6 +947,54 @@ async def get_stock_changes(limit: int = 10):
     except Exception as e:
         logger.error("Failed to get stock changes", error=str(e))
         raise HTTPException(status_code=500, detail="Failed to retrieve stock changes")
+
+@app.delete("/api/drops/{drop_id}")
+async def delete_drop(drop_id: int):
+    """Delete a drop by ID"""
+    try:
+        db = get_database()
+        session = db.get_session()
+        try:
+            from models.database import Drop
+            drop = session.query(Drop).filter_by(id=drop_id).first()
+            if not drop:
+                raise HTTPException(status_code=404, detail="Drop not found")
+
+            session.delete(drop)
+            session.commit()
+            logger.info(f"Deleted drop {drop_id}")
+            return {"status": "success", "message": "Drop deleted"}
+        finally:
+            session.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to delete drop", error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to delete drop")
+
+@app.delete("/api/stock/changes/{change_id}")
+async def delete_stock_change(change_id: int):
+    """Delete a stock change by ID"""
+    try:
+        db = get_database()
+        session = db.get_session()
+        try:
+            from models.database import StockChange
+            change = session.query(StockChange).filter_by(id=change_id).first()
+            if not change:
+                raise HTTPException(status_code=404, detail="Stock change not found")
+
+            session.delete(change)
+            session.commit()
+            logger.info(f"Deleted stock change {change_id}")
+            return {"status": "success", "message": "Stock change deleted"}
+        finally:
+            session.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to delete stock change", error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to delete stock change")
 
 @app.get("/api/stock/fragrances")
 async def get_fragrances(

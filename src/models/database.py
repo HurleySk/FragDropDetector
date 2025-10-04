@@ -385,7 +385,8 @@ class Database:
                     'old_value': change.old_value,
                     'new_value': change.new_value,
                     'detected_at': change.detected_at.isoformat(),
-                    'notified': change.notified
+                    'notified': change.notified,
+                    'product_url': fragrance.url
                 })
             return result
         finally:
