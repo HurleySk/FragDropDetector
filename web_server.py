@@ -1004,10 +1004,14 @@ async def get_fragrances(
     sort_order: Optional[str] = "asc",
     limit: Optional[int] = None,
     offset: Optional[int] = 0,
-    watchlist_only: Optional[bool] = False
+    watchlist_only: Optional[bool] = False,
+    include_ratings: Optional[bool] = True
 ):
     """Get all tracked fragrances with search and filter support"""
     try:
+        from src.services.fragrance_mapper import get_fragrance_mapper
+        from src.services.parfumo_scraper import get_parfumo_scraper
+
         db = get_database()
         fragrances = db.get_all_fragrances()
 
@@ -1015,6 +1019,10 @@ async def get_fragrances(
         yaml_config = load_yaml_config()
         watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
         logger.info(f"Loaded watchlist with {len(watchlist)} items: {watchlist}")
+
+        # Get fragrance mapper and parfumo scraper if ratings are requested
+        mapper = get_fragrance_mapper() if include_ratings else None
+        scraper = get_parfumo_scraper() if include_ratings else None
 
         # Convert to list for filtering
         result = []
@@ -1024,6 +1032,21 @@ async def get_fragrances(
                 'slug': slug,
                 'is_watchlisted': slug in watchlist
             }
+
+            # Add original fragrance info and ratings if requested
+            if include_ratings and mapper:
+                mapping = mapper.get_mapping(slug)
+                if mapping:
+                    item['original_brand'] = mapping.get('original_brand')
+                    item['original_name'] = mapping.get('original_name')
+
+                    # Get Parfumo rating if we have the ID
+                    if scraper and mapping.get('parfumo_id'):
+                        rating_data = scraper.fetch_rating(mapping['parfumo_id'])
+                        if rating_data:
+                            item['parfumo_score'] = rating_data.get('score')
+                            item['parfumo_votes'] = rating_data.get('votes')
+
             result.append(item)
 
         # Apply search filter

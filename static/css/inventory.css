@@ -383,6 +383,42 @@
     text-transform: capitalize;
 }
 
+/* Original Fragrance Rating Display */
+.item-rating {
+    margin-top: var(--space-1);
+    padding: var(--space-2);
+    background: var(--gray-50);
+    border-radius: var(--rounded);
+    border-left: 3px solid var(--blue-600);
+}
+
+.original-info {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    font-weight: var(--font-medium);
+    margin-bottom: 2px;
+}
+
+.rating-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.parfumo-score {
+    font-weight: var(--font-bold);
+    color: var(--blue-600);
+    background: var(--blue-50);
+    padding: 1px var(--space-2);
+    border-radius: var(--rounded);
+}
+
+.parfumo-votes {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
 /* Mobile text optimization */
 @media (max-width: 480px) {
     .item-name {
@@ -392,6 +428,29 @@
 
     .item-header {
         margin-bottom: var(--space-2);
+    }
+
+    /* Compact rating display on mobile */
+    .item-rating {
+        padding: var(--space-1);
+        margin-top: var(--space-1);
+    }
+
+    .original-info {
+        font-size: 11px;
+    }
+
+    .rating-line {
+        gap: var(--space-1);
+    }
+
+    .parfumo-score {
+        font-size: var(--text-xs);
+        padding: 0 var(--space-1);
+    }
+
+    .parfumo-votes {
+        font-size: 10px;
     }
 }
 
@@ -613,6 +672,25 @@
 [data-theme="dark"] .pagination-container {
     background: var(--surface);      /* Uses proper surface layering */
     border-color: var(--border);     /* Consistent border color */
+}
+
+/* Rating display in dark mode */
+[data-theme="dark"] .item-rating {
+    background: var(--surface-2);
+    border-left-color: var(--blue-500);
+}
+
+[data-theme="dark"] .original-info {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .parfumo-score {
+    background: rgba(37, 99, 235, 0.2);
+    color: var(--blue-400);
+}
+
+[data-theme="dark"] .parfumo-votes {
+    color: var(--text-muted);
 }
 
 [data-theme="dark"] .search-input,

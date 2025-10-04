@@ -79,6 +79,15 @@ class FragranceStock(Base):
     url = Column(String(500), nullable=False)
     price = Column(String(20))
     in_stock = Column(Boolean, default=True, index=True)
+    # Original fragrance info (what Montagne is cloning)
+    original_brand = Column(String(100))
+    original_name = Column(String(200))
+    parfumo_id = Column(String(200))
+    parfumo_score = Column(Float)  # 0-10 scale
+    parfumo_votes = Column(Integer)
+    original_rating = Column(Float)  # Rating from original brand site if available
+    original_reviews_count = Column(Integer)
+    rating_last_updated = Column(DateTime)
     first_seen = Column(DateTime, default=datetime.utcnow)
     last_seen = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)

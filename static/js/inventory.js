@@ -192,6 +192,24 @@ const InventoryManager = {
         const isSelected = this.selectedItems.has(item.slug) ? 'selected' : '';
         const checkboxChecked = this.selectedItems.has(item.slug) ? 'checked' : '';
 
+        // Build rating display if we have original fragrance info
+        let ratingHtml = '';
+        if (item.original_brand && item.original_name) {
+            const scoreDisplay = item.parfumo_score
+                ? `<span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>`
+                : '';
+            const votesDisplay = item.parfumo_votes
+                ? `<span class="parfumo-votes">(${item.parfumo_votes.toLocaleString()})</span>`
+                : '';
+
+            ratingHtml = `
+                <div class="item-rating">
+                    <div class="original-info">Inspired by ${item.original_brand} ${item.original_name}</div>
+                    ${scoreDisplay || votesDisplay ? `<div class="rating-line">${scoreDisplay} ${votesDisplay}</div>` : ''}
+                </div>
+            `;
+        }
+
         return `
             <div class="inventory-item ${stockClass} ${isSelected}" data-slug="${item.slug}">
                 <input type="checkbox" class="item-checkbox" data-slug="${item.slug}" ${checkboxChecked}>
@@ -199,6 +217,7 @@ const InventoryManager = {
                 <div class="item-header">
                     <div>
                         <div class="item-name">${item.name}</div>
+                        ${ratingHtml}
                     </div>
                 </div>
                 <div class="item-details">

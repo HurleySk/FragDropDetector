@@ -10,6 +10,7 @@ import re
 from typing import List, Dict, Optional
 from datetime import datetime
 import time
+from .fragrance_mapper import get_fragrance_mapper
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,21 @@ logger = logging.getLogger(__name__)
 class FragranceProduct:
     """Represents a fragrance product"""
 
-    def __init__(self, name: str, url: str, price: str, in_stock: bool):
+    def __init__(self, name: str, url: str, price: str, in_stock: bool, description: str = ""):
         self.name = name.strip()
         self.url = url
         self.price = price.strip()
         self.in_stock = in_stock
         self.slug = self._extract_slug_from_url(url)
+        self.description = description
+
+        # Get original fragrance mapping
+        mapper = get_fragrance_mapper()
+        self.mapping = mapper.get_mapping(self.slug)
+
+        # If no existing mapping, try to extract from name/description
+        if not self.mapping:
+            self.mapping = mapper.update_mapping(self.slug, self.name, self.description)
 
     def _extract_slug_from_url(self, url: str) -> str:
         """Extract product slug from URL"""
