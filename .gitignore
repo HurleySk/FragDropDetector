@@ -104,3 +104,4 @@ systemd.error.log
 cache/
 # Private documentation
 FUTURE_IMPROVEMENTS.md
+data/parfumo_cache.json
