@@ -1,8 +1,8 @@
 # FragDropDetector
 
-Automated monitoring system for Montagne Parfums fragrance drops and stock changes with real-time notifications.
+Automated monitoring system for Montagne Parfums fragrance drops and stock changes with real-time notifications and Parfumo ratings integration.
 
-**What it does:** Monitors r/MontagneParfums subreddit for drop announcements and tracks the Montagne Parfums website for stock changes, sending instant notifications via Pushover, Discord, or Email when drops or restocks occur.
+**What it does:** Monitors r/MontagneParfums subreddit for drop announcements and tracks the Montagne Parfums website for stock changes, sending instant notifications via Pushover, Discord, or Email when drops or restocks occur. Shows Parfumo ratings for original fragrances that Montagne clones.
 
 ## Features
 
@@ -23,7 +23,11 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
   - Date grouping: Today, Yesterday, day names, full dates
   - Confidence badges, author attribution, direct links
   - Load more pagination (20 items per page)
-- **Inventory**: Browse all 158+ products with search, filters, and bulk operations
+- **Inventory**: Browse all 158+ products with:
+  - Parfumo ratings for original fragrances
+  - Advanced sorting: Name, Price, Availability, Rating, Popularity
+  - Ascending/descending sort toggle
+  - Search, filters, bulk watchlist operations
 - **Configuration**: Full control over all settings:
   - Detection Rules: Keywords, trusted authors, confidence threshold
   - Monitoring schedules and time windows
@@ -46,14 +50,8 @@ Automated monitoring system for Montagne Parfums fragrance drops and stock chang
 
 ## Quick Start
 
-### Easy Installation (Recommended)
+### Installation
 
-#### Option 1: One-Line Install
-```bash
-curl -sSL https://raw.githubusercontent.com/HurleySk/FragDropDetector/main/install.sh | bash
-```
-
-#### Option 2: Clone and Install
 ```bash
 # Clone the repository
 git clone https://github.com/HurleySk/FragDropDetector.git
@@ -74,12 +72,9 @@ The installer will:
 ### Manual Installation
 
 #### Prerequisites
-```bash
-# System requirements
 - Python 3.11+
 - 1GB+ RAM
 - Network access to Reddit and montagneparfums.com
-```
 
 #### Steps
 ```bash
@@ -223,27 +218,14 @@ Access through **System & Logs** tab in web interface to:
 3. Use "Watchlist Only" toggle to filter view
 4. Bulk operations with checkboxes
 
-### API Endpoints
-```
-GET  /api/status                     # System status with window info
-GET  /api/monitor/status             # Monitor process health check
-GET  /api/drops                      # Recent drops with pagination
-GET  /api/stock/fragrances           # All products with filters
-GET  /api/stock/changes              # Recent stock changes
-POST /api/stock/watchlist/add/{slug} # Add to watchlist
-POST /api/stock/watchlist/remove/{slug} # Remove from watchlist
-POST /api/watchlist/bulk             # Bulk add/remove operations
-GET  /api/config                     # Get all configuration
-POST /api/config/reddit              # Update Reddit settings
-POST /api/config/stock               # Update stock settings
-POST /api/config/detection           # Update detection rules
-POST /api/config/notifications       # Update notification settings
-POST /api/config/logging             # Update logging configuration
-POST /api/test/notifications         # Test notification services
-GET  /api/logs/usage                 # Disk usage and log statistics
-POST /api/logs/cleanup               # Trigger manual log cleanup
-GET  /api/logs/download              # Download all logs as zip
-```
+### API
+REST API with endpoints for:
+- System status and monitoring
+- Drops and stock data with filtering/sorting
+- Watchlist management
+- Configuration updates
+- Notification testing
+- Log management
 
 ## Architecture
 
@@ -270,12 +252,8 @@ FragDropDetector/
 └── cache/                 # Temporary cache files
 ```
 
-### Database Schema
-- `posts`: Reddit posts cache
-- `drops`: Detected drops with confidence scores
-- `fragrance_stock`: Product inventory (158+ items)
-- `stock_changes`: Historical changes
-- `notifications`: Sent notification log
+### Database
+SQLite database with tables for posts, drops, product inventory (158+ items), stock changes, and notifications.
 
 ### Key Technologies
 - **Backend**: Python, FastAPI, SQLAlchemy, Playwright
@@ -294,22 +272,10 @@ FragDropDetector/
    - Vendor matching: montagneparfums variations
    - Confidence scoring (threshold: 0.8)
 
-### How Drop Detection Works
-The system tracks the last check timestamp and only processes **new posts** since that time. Each post gets a confidence score:
-
-**High-Impact Signals** (0.3-0.6 points each):
-- Trusted authors (configurable via web interface)
-- "Restock" in title or flair
-- Time patterns ("5pm EST", "today at")
-- Vendor mentions ("Montagne Parfums", "MP")
-
-**Medium-Impact** (0.1-0.2 points):
-- Keywords: drop, release, available, launch
-- Purchase links in post
-
-**Auto-Excluded**: Posts with "looking for", "wtb/wts", "iso", "recommendation", "review"
-
-Posts scoring ≥0.8 trigger notifications. The system remembers processed posts to avoid duplicates.
+### Drop Detection
+- Uses confidence scoring (threshold: 0.8) based on keywords, authors, and patterns
+- Tracks processed posts to avoid duplicate notifications
+- Configurable trusted authors and detection rules via web interface
 
 ### Stock Monitoring (Independent)
 1. **Flexible Scheduling**: Runs on separate schedule (15 minutes by default)
