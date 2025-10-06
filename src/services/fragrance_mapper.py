@@ -134,13 +134,13 @@ class FragranceMapper:
 
     def get_parfumo_id(self, brand: str, fragrance_name: str) -> Optional[str]:
         """
-        Get Parfumo ID for a fragrance by searching Parfumo
+        Get Parfumo ID for a fragrance by searching via fragscrape API
         """
         # Import here to avoid circular dependency
-        from .parfumo_scraper import get_parfumo_scraper
+        from .fragscrape_client import get_fragscrape_client
 
-        scraper = get_parfumo_scraper()
-        parfumo_id = scraper.search_fragrance(brand, fragrance_name)
+        client = get_fragscrape_client()
+        parfumo_id = client.search_perfume(brand, fragrance_name)
 
         return parfumo_id
 

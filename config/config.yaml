@@ -66,9 +66,10 @@ notifications:
 parfumo:
   auto_scrape_new: true
   enabled: true
-  last_update: null
-  update_time: '02:00'
-  rate_limit_delay: 5.0
+  fragscrape_url: http://localhost:3000
+  last_update: '2025-10-06T07:00:00.988741'
+  rate_limit_delay: 2.0
+  update_time: 02:00
 reddit:
   check_interval: 300
   post_limit: 50

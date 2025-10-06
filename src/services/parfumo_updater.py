@@ -27,17 +27,30 @@ class ParfumoUpdater:
             self.update_progress = 0
             self.update_message = ''
 
-    def update_all_ratings(self, config: Dict = None) -> Dict:
+    def update_all_ratings(self, config: Dict = None, force_refresh: bool = False) -> Dict:
         """Update Parfumo ratings for all fragrances needing updates"""
         from .fragrance_mapper import get_fragrance_mapper
-        from .parfumo_scraper import get_parfumo_scraper
+        from .fragscrape_client import get_fragscrape_client
         from src.models.database import Database
         import yaml
         from pathlib import Path
 
         mapper = get_fragrance_mapper()
-        scraper = get_parfumo_scraper()
+        client = get_fragscrape_client()
         db = Database()
+
+        # Check if fragscrape is available before proceeding
+        if not client.health_check():
+            logger.error("fragscrape API is not available - cannot update ratings")
+            return {
+                'updated': 0,
+                'failed': 0,
+                'not_found': 0,
+                'skipped': 0,
+                'extracted': 0,
+                'rate_limited': 0,
+                'errors': ['fragscrape API is not available']
+            }
 
         # Load config for rate limit delay
         if config is None:
@@ -56,8 +69,13 @@ class ParfumoUpdater:
             'not_found': 0,
             'skipped': 0,
             'extracted': 0,
+            'rate_limited': 0,
             'errors': []
         }
+
+        # Track consecutive rate limits for backoff
+        consecutive_rate_limits = 0
+        max_consecutive_rate_limits = 5
 
         try:
             # First, extract brand/name for fragrances that don't have it
@@ -69,22 +87,54 @@ class ParfumoUpdater:
             ).all()
             session.close()
 
-            if unextracted:
-                logger.info(f"Extracting brand/name for {len(unextracted)} fragrances")
-                extraction_total = len(unextracted)
-                for idx, frag in enumerate(unextracted):
-                    self.update_progress = int((idx / extraction_total) * 50)  # Extraction is first 50%
-                    self.update_message = f"Extracting {idx+1}/{extraction_total}"
-                    if mapper.update_mapping(frag.slug, frag.name, ''):
-                        results['extracted'] += 1
-                    sleep(0.1)  # Small delay
-                self.update_progress = 50  # Extraction complete
-
             # Get fragrances needing updates from database
-            fragrances = db.get_fragrances_needing_parfumo_update(skip_not_found_days=90)
-            total = len(fragrances)
+            # force_refresh=True for manual updates, False for scheduled
+            fragrances = db.get_fragrances_needing_parfumo_update(
+                skip_not_found_days=90,
+                force_refresh_all=force_refresh,
+                max_rating_age_days=7
+            )
 
-            logger.info(f"Found {total} fragrances needing Parfumo updates")
+            # Calculate total work
+            extraction_count = len(unextracted) if unextracted else 0
+            rating_count = len(fragrances)
+            total_work = extraction_count + rating_count
+            completed = 0
+
+            if unextracted:
+                from .fragscrape_client import RateLimitError
+
+                logger.info(f"Extracting brand/name for {extraction_count} fragrances")
+                for idx, frag in enumerate(unextracted):
+                    self.update_progress = int((completed / max(total_work, 1)) * 100)
+                    self.update_message = f"Extracting {idx+1}/{extraction_count}"
+
+                    try:
+                        if mapper.update_mapping(frag.slug, frag.name, ''):
+                            results['extracted'] += 1
+                            consecutive_rate_limits = 0  # Reset on success
+                        sleep(0.1)
+
+                    except RateLimitError as rate_err:
+                        consecutive_rate_limits += 1
+                        results['rate_limited'] += 1
+
+                        # Check if we're being rate limited too much
+                        if consecutive_rate_limits >= max_consecutive_rate_limits:
+                            logger.error(f"Hit {consecutive_rate_limits} consecutive rate limits during extraction - pausing update")
+                            self.update_message = f"Rate limited - pausing"
+                            results['errors'].append(f"Exceeded max consecutive rate limits during extraction ({max_consecutive_rate_limits})")
+                            raise  # Exit the entire update
+
+                        # Exponential backoff
+                        backoff_delay = min(rate_err.retry_after or (2 ** consecutive_rate_limits), 30)
+                        logger.warning(f"Rate limited during extraction, waiting {backoff_delay}s")
+                        self.update_message = f"Rate limited - waiting {backoff_delay}s"
+                        sleep(backoff_delay)
+
+                    completed += 1
+
+            logger.info(f"Found {rating_count} fragrances needing Parfumo updates")
 
             for idx, frag in enumerate(fragrances):
                 slug = frag['slug']
@@ -92,11 +142,19 @@ class ParfumoUpdater:
                 name = frag['original_name']
                 parfumo_id = frag['parfumo_id']
 
-                # Update progress: 50% for extraction + 50% for rating fetch
-                self.update_progress = 50 + int((idx / max(total, 1)) * 50)
-                self.update_message = f"Updating {idx+1}/{total}"
+                # Update progress based on total work
+                self.update_progress = int((completed / max(total_work, 1)) * 100)
+                self.update_message = f"Updating {idx+1}/{rating_count}"
 
-                logger.info(f"Processing {idx+1}/{total}: {slug}")
+                logger.info(f"Processing {idx+1}/{rating_count}: {slug}")
+
+                # Check if we should preemptively throttle
+                if client.should_throttle(threshold=10):
+                    status = client.get_rate_limit_status()
+                    wait_time = status.get('reset_in_seconds', 60)
+                    logger.warning(f"Preemptively throttling - {status['remaining']}/{status['limit']} requests remaining, waiting {wait_time}s")
+                    self.update_message = f"Rate limit low - waiting {wait_time}s"
+                    sleep(wait_time + 1)  # Wait for reset + 1 second buffer
 
                 # If no parfumo_id, try to find one
                 if not parfumo_id:
@@ -112,22 +170,52 @@ class ParfumoUpdater:
                         # Mark as not found
                         db.mark_parfumo_not_found(slug)
                         results['not_found'] += 1
+                        completed += 1
                         continue
 
-                # Fetch rating
+                # Fetch rating with retry on rate limiting
                 try:
-                    # Force refresh by clearing cache for this item
-                    if parfumo_id in scraper.cache:
-                        del scraper.cache[parfumo_id]
-                        scraper.save_cache()
+                    from .fragscrape_client import RateLimitError
 
-                    rating_data = scraper.fetch_rating(parfumo_id)
+                    max_retries = 3
+                    retry_count = 0
+                    rating_data = None
+
+                    while retry_count <= max_retries:
+                        try:
+                            # Note: fragscrape has its own caching system
+                            rating_data = client.fetch_rating(parfumo_id)
+                            consecutive_rate_limits = 0  # Reset on success
+                            break
+
+                        except RateLimitError as rate_err:
+                            retry_count += 1
+                            consecutive_rate_limits += 1
+                            results['rate_limited'] += 1
+
+                            # Check if we're being rate limited too much
+                            if consecutive_rate_limits >= max_consecutive_rate_limits:
+                                logger.error(f"Hit {consecutive_rate_limits} consecutive rate limits - pausing update")
+                                self.update_message = f"Rate limited - pausing"
+                                results['errors'].append(f"Exceeded max consecutive rate limits ({max_consecutive_rate_limits})")
+                                raise  # Exit the entire update
+
+                            if retry_count > max_retries:
+                                logger.warning(f"Max retries ({max_retries}) exceeded for {slug}")
+                                results['errors'].append(f"{slug}: Rate limited after {max_retries} retries")
+                                break
+
+                            # Exponential backoff: 2s, 4s, 8s
+                            backoff_delay = min(rate_err.retry_after or (2 ** retry_count), 30)
+                            logger.warning(f"Rate limited on {slug}, retry {retry_count}/{max_retries} after {backoff_delay}s")
+                            self.update_message = f"Rate limited - waiting {backoff_delay}s"
+                            sleep(backoff_delay)
 
                     if rating_data and rating_data.get('score'):
-                        # Save rating to database
+                        # Save rating to database (use URL from rating_data)
                         db.update_fragrance_rating(
                             slug=slug,
-                            parfumo_id=parfumo_id,
+                            parfumo_id=rating_data.get('parfumo_id', parfumo_id),
                             score=rating_data.get('score'),
                             votes=rating_data.get('votes')
                         )
@@ -140,8 +228,16 @@ class ParfumoUpdater:
                     results['failed'] += 1
                     results['errors'].append(str(e))
 
-                # Rate limiting - be respectful to Parfumo's servers
-                sleep(rate_limit_delay)
+                # Only sleep normal delay if we weren't rate limited
+                if consecutive_rate_limits == 0:
+                    # Use dynamic delay based on current rate limit status
+                    dynamic_delay = client.get_recommended_delay(rate_limit_delay)
+                    if dynamic_delay > rate_limit_delay * 1.5:
+                        logger.info(f"Auto-adjusted delay to {dynamic_delay:.1f}s based on rate limits")
+                    sleep(dynamic_delay)
+
+                # Increment progress after work is complete
+                completed += 1
 
         except Exception as e:
             logger.error(f"Error during Parfumo update: {e}")
@@ -166,12 +262,17 @@ class ParfumoUpdater:
     def update_single_fragrance(self, slug: str) -> bool:
         """Update Parfumo data for a single fragrance"""
         from .fragrance_mapper import get_fragrance_mapper
-        from .parfumo_scraper import get_parfumo_scraper
+        from .fragscrape_client import get_fragscrape_client
         from src.models.database import Database
 
         mapper = get_fragrance_mapper()
-        scraper = get_parfumo_scraper()
+        client = get_fragscrape_client()
         db = Database()
+
+        # Check if fragscrape is available
+        if not client.health_check():
+            logger.warning("fragscrape API is not available - skipping update")
+            return False
 
         # Get mapping from database
         mapping = mapper.get_mapping(slug)
@@ -197,12 +298,12 @@ class ParfumoUpdater:
         # Fetch rating
         if parfumo_id:
             try:
-                rating_data = scraper.fetch_rating(parfumo_id)
+                rating_data = client.fetch_rating(parfumo_id)
 
                 if rating_data and rating_data.get('score'):
                     db.update_fragrance_rating(
                         slug=slug,
-                        parfumo_id=parfumo_id,
+                        parfumo_id=rating_data.get('parfumo_id', parfumo_id),
                         score=rating_data.get('score'),
                         votes=rating_data.get('votes')
                     )
@@ -217,6 +318,8 @@ class ParfumoUpdater:
     def get_status(self) -> Dict:
         """Get current update status"""
         from src.models.database import Database
+        import yaml
+        from pathlib import Path
 
         db = Database()
         session = db.get_session()
@@ -238,13 +341,25 @@ class ParfumoUpdater:
                 FragranceStock.parfumo_score.isnot(None)
             ).scalar()
 
+            # Read last_update from config.yaml
+            last_full_update = None
+            try:
+                config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
+                if config_path.exists():
+                    with open(config_path, 'r') as f:
+                        config = yaml.safe_load(f)
+                        last_full_update = config.get('parfumo', {}).get('last_update')
+            except Exception as e:
+                logger.debug(f"Error reading last_update from config: {e}")
+
             return {
                 'currently_updating': self.currently_updating,
                 'update_progress': self.update_progress,
                 'update_message': self.update_message,
                 'total_mapped': total_mapped,
                 'total_not_found': total_not_found,
-                'total_with_ratings': total_with_ratings
+                'total_with_ratings': total_with_ratings,
+                'last_full_update': last_full_update
             }
 
         finally:

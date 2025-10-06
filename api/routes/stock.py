@@ -126,7 +126,8 @@ async def get_fragrances(
                 if data.get('parfumo_votes'):
                     item['parfumo_votes'] = data['parfumo_votes']
                 if data.get('parfumo_id'):
-                    item['parfumo_url'] = f"https://www.parfumo.com/Perfumes/{data['parfumo_id']}"
+                    # parfumo_id now stores full URLs (after migration to URL format)
+                    item['parfumo_url'] = data['parfumo_id']
 
             result.append(item)
 

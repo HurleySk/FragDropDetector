@@ -696,13 +696,17 @@ class Database:
 
     def get_fragrances_needing_parfumo_update(
         self,
-        skip_not_found_days: int = 90
+        skip_not_found_days: int = 90,
+        force_refresh_all: bool = False,
+        max_rating_age_days: int = 7
     ) -> List[Dict[str, Any]]:
         """
         Get fragrances that need Parfumo data updates
 
         Args:
             skip_not_found_days: Skip fragrances marked not found within this many days
+            force_refresh_all: If True, refresh all fragrances (manual update). If False, only update stale/missing ratings (scheduled)
+            max_rating_age_days: For scheduled updates, only refresh ratings older than this many days
 
         Returns:
             List of fragrance dictionaries
@@ -711,7 +715,8 @@ class Database:
 
         session = self.get_session()
         try:
-            cutoff_date = datetime.utcnow() - timedelta(days=skip_not_found_days)
+            not_found_cutoff = datetime.utcnow() - timedelta(days=skip_not_found_days)
+            rating_staleness_cutoff = datetime.utcnow() - timedelta(days=max_rating_age_days)
 
             # Get fragrances that:
             # 1. Have original brand/name but no parfumo_id, OR
@@ -725,8 +730,13 @@ class Database:
             results = []
             for frag in fragrances:
                 # Skip if marked not found recently
-                if frag.parfumo_not_found and frag.last_searched and frag.last_searched > cutoff_date:
+                if frag.parfumo_not_found and frag.last_searched and frag.last_searched > not_found_cutoff:
                     continue
+
+                # If not forcing refresh, skip fragrances with recent ratings
+                if not force_refresh_all:
+                    if frag.rating_last_updated and frag.rating_last_updated > rating_staleness_cutoff:
+                        continue
 
                 results.append({
                     'slug': frag.slug,
@@ -738,6 +748,13 @@ class Database:
                     'rating_last_updated': frag.rating_last_updated,
                     'last_searched': frag.last_searched
                 })
+
+            # Prioritize unmatched fragrances (no score) over matched (stale scores)
+            # Within each group, process oldest first
+            results.sort(key=lambda f: (
+                f['parfumo_score'] is not None,  # False (no score) sorts before True (has score)
+                f['rating_last_updated'] or datetime.min  # Oldest first, nulls sort first
+            ))
 
             return results
 

@@ -42,7 +42,7 @@ Modern single-page application with real-time updates:
   - Website monitor schedules and windows
   - Detection rules (keywords, trusted authors, threshold)
   - Notification services (Pushover, Discord, Email)
-  - Parfumo integration with smart scraping controls
+  - Parfumo integration via fragscrape API
   - System settings and log management
 
 - **Responsive Design** - Dark mode support, mobile-friendly
@@ -54,12 +54,13 @@ Modern single-page application with real-time updates:
 - **Configurable**: Enable per event type (drops, restocks, new products)
 
 ### Parfumo Integration
-- **Automatic Rating Fetch**: Scrapes Parfumo.com for fragrance ratings
+- **Automatic Rating Fetch**: Fetches Parfumo ratings via fragscrape API
 - **Smart Mapping**: Maps Montagne products to original fragrances
 - **Daily Updates**: Configurable scheduled rating updates (default: 2:00 AM)
 - **Manual Triggers**: Update ratings on-demand via web interface
 - **Popularity Scores**: Shows rating counts for each fragrance
 - **Clickable Links**: Direct links to Parfumo pages from inventory
+- **fragscrape Dependency**: Requires fragscrape API service (https://github.com/HurleySk/fragscrape)
 
 ### System Management
 - **Automatic Log Rotation**: Size-based with configurable retention
@@ -67,6 +68,25 @@ Modern single-page application with real-time updates:
 - **Log Compression**: Gzip compression of rotated logs
 - **Download Logs**: Export all logs as zip archive
 - **Resource Monitoring**: Track disk usage and log statistics
+
+## Prerequisites
+
+Before installing FragDropDetector, ensure you have:
+
+**System Requirements:**
+- **Python 3.11+** - Modern Python with type hints
+- **1GB+ RAM** - For browser automation and monitoring
+- **Network Access** - To Reddit API and montagneparfums.com
+
+**Required External Services:**
+- **fragscrape API** - For Parfumo ratings integration
+  - Repository: https://github.com/HurleySk/fragscrape
+  - Must be running on http://localhost:3000 (or configure custom URL)
+  - Install separately before using Parfumo features
+
+**Optional but Recommended:**
+- **Redis/Memcached** - For distributed caching (future)
+- **Reverse Proxy** - nginx/Apache for production deployments
 
 ## Quick Start
 
@@ -88,10 +108,7 @@ The installer will:
 
 ### Manual Installation
 
-#### Prerequisites
-- Python 3.11 or higher
-- 1GB+ RAM
-- Network access to Reddit and montagneparfums.com
+See [Prerequisites](#prerequisites) section above for system requirements.
 
 #### Installation Steps
 
@@ -242,13 +259,16 @@ EMAIL_RECIPIENTS=recipient1@example.com,recipient2@example.com
 
 ### Parfumo Configuration
 
+**Note**: Parfumo integration requires the fragscrape API to be running. See [Prerequisites](#prerequisites) for installation instructions. If fragscrape is not available, the web interface will show a warning banner.
+
 Edit `config/config.yaml`:
 ```yaml
 parfumo:
   enabled: true
+  fragscrape_url: "http://localhost:3000"  # fragscrape API endpoint
   auto_scrape_new: true    # Auto-fetch ratings for new products
   update_time: "02:00"     # Daily update time (24-hour format)
-  rate_limit_delay: 2.0    # Seconds between requests (be nice)
+  rate_limit_delay: 2.0    # Seconds between requests
 ```
 
 ## Usage
@@ -307,9 +327,8 @@ The system exposes a REST API for programmatic access:
 - `POST /api/config/detection` - Update detection rules
 
 **Parfumo:**
-- `GET /api/parfumo/status` - Get update status
-- `POST /api/parfumo/update-all` - Trigger full rating update
-- `POST /api/parfumo/update/{slug}` - Update specific fragrance
+- `GET /api/parfumo/status` - Get update status and fragscrape availability
+- `POST /api/parfumo/update` - Trigger full rating update
 
 **Logs:**
 - `GET /api/logs/download` - Download all logs as zip
@@ -335,6 +354,8 @@ python check_setup.py
 ```
 
 ## Production Deployment
+
+**Important**: Ensure fragscrape API is installed and running before deploying FragDropDetector if you plan to use Parfumo integration. See [Prerequisites](#prerequisites).
 
 ### Systemd Services (Recommended)
 
@@ -450,9 +471,10 @@ python web_server.py --port 8001
 ```
 
 **Parfumo Updates Failing**
-- Parfumo.com may have changed structure
-- Check rate limiting (default: 2 seconds between requests)
-- View logs for specific errors
+- Check if fragscrape API is running: `curl http://localhost:3000/api/proxy/status`
+- Web interface shows warning banner if fragscrape unavailable
+- Verify fragscrape_url in `config/config.yaml` matches your fragscrape instance
+- View logs for specific errors: `tail -f logs/fragdrop.log`
 - Disable temporarily: set `parfumo.enabled: false` in config
 
 **Watchlist Not Saving**
@@ -535,7 +557,7 @@ FragDropDetector/
 │   │   ├── notifiers.py          # Notification handlers
 │   │   ├── log_manager.py        # Log rotation and cleanup
 │   │   ├── parfumo_scheduler.py  # Daily rating updates
-│   │   ├── parfumo_scraper.py    # Parfumo.com scraper
+│   │   ├── fragscrape_client.py  # fragscrape API client
 │   │   ├── parfumo_updater.py    # Rating update orchestration
 │   │   └── fragrance_mapper.py   # Product → original mapping
 │   └── utils/
@@ -608,12 +630,32 @@ FragDropDetector/
 ```
 
 ### Database Schema
-- **posts** - Reddit posts scanned
-- **drops** - Detected drop events with confidence scores
-- **fragrance_stock** - Product inventory (158+ items)
-- **stock_changes** - Stock change history
-- **notifications** - Notification log
-- **settings** - Application settings
+
+**posts** - Reddit posts scanned
+- `reddit_id`, `title`, `author`, `url`, `selftext`
+- `link_flair_text`, `score`, `num_comments`
+- `processed`, `created_utc`, `created_at`
+
+**drops** - Detected drop events
+- `post_reddit_id` (foreign key to posts)
+- `confidence_score` (0.0-1.0)
+- `detection_metadata` (JSON)
+- `notified`, `notification_sent_at`
+
+**fragrance_stock** - Product inventory (158+ fragrances)
+- `slug` (unique identifier), `name`, `url`, `price`, `in_stock`
+- `original_brand`, `original_name` (cloned from)
+- `parfumo_id` (URL format), `parfumo_score`, `parfumo_votes`
+- `rating_last_updated`, `first_seen`, `last_seen`
+
+**stock_changes** - Stock change history
+- `fragrance_slug`, `change_type` (restocked, out_of_stock, price_change, new_product)
+- `old_value`, `new_value`, `notified`
+
+**notifications** - Notification dispatch log
+- `event_type`, `recipient`, `status`, `sent_at`
+
+**settings** - Application settings cache
 
 ### Monitoring Logic
 

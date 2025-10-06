@@ -21,6 +21,15 @@ async def trigger_parfumo_update():
     """Manually trigger Parfumo update"""
     try:
         from services.parfumo_updater import get_parfumo_updater
+        from services.fragscrape_client import get_fragscrape_client
+
+        # Check fragscrape availability first
+        client = get_fragscrape_client()
+        if not client.health_check():
+            return {
+                "success": False,
+                "message": "fragscrape API is not available. Please ensure fragscrape is running."
+            }
 
         updater = get_parfumo_updater()
 
@@ -33,7 +42,8 @@ async def trigger_parfumo_update():
             }
 
         def run_update():
-            results = updater.update_all_ratings()
+            # Manual updates force refresh ALL fragrances
+            results = updater.update_all_ratings(force_refresh=True)
             logger.info(f"Parfumo update completed: {results}")
 
         thread = threading.Thread(target=run_update)
@@ -54,9 +64,17 @@ async def get_parfumo_status():
     """Get Parfumo update status"""
     try:
         from services.parfumo_updater import get_parfumo_updater
+        from services.fragscrape_client import get_fragscrape_client
 
         updater = get_parfumo_updater()
         status = updater.get_status()
+
+        # Check fragscrape availability
+        client = get_fragscrape_client()
+        fragscrape_available = client.health_check()
+
+        # Get rate limit status
+        rate_limit_status = client.get_rate_limit_status()
 
         config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
         parfumo_config = {}
@@ -67,7 +85,10 @@ async def get_parfumo_status():
 
         return {
             **status,
-            'config': parfumo_config
+            'config': parfumo_config,
+            'fragscrape_available': fragscrape_available,
+            'fragscrape_url': parfumo_config.get('fragscrape_url', 'http://localhost:3000'),
+            'rate_limit': rate_limit_status
         }
 
     except Exception as e:

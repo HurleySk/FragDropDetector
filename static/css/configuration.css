@@ -96,6 +96,56 @@
     color: var(--green-400);
 }
 
+/* fragscrape Warning Banner */
+.warning-banner {
+    background: var(--amber-50);
+    border: 1px solid var(--amber-200);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    color: var(--amber-900);
+}
+
+.warning-banner strong {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--text-base);
+    font-weight: 600;
+}
+
+.warning-banner p {
+    margin: var(--space-1) 0;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.warning-banner a {
+    color: var(--amber-700);
+    text-decoration: underline;
+}
+
+.warning-banner code {
+    background: rgba(0, 0, 0, 0.1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: monospace;
+    font-size: var(--text-sm);
+}
+
+[data-theme="dark"] .warning-banner {
+    background: rgba(120, 53, 15, 0.15);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--amber-200);
+}
+
+[data-theme="dark"] .warning-banner a {
+    color: var(--amber-400);
+}
+
+[data-theme="dark"] .warning-banner code {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .configuration-page {
     animation: fadeIn 0.3s ease-in-out;
 }
