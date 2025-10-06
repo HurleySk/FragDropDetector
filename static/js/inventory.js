@@ -51,8 +51,9 @@ const InventoryManager = {
             });
         }
 
-        // Filter dropdown
+        // Filter dropdowns
         document.getElementById('stock-filter')?.addEventListener('change', () => this.applyFilters(true));
+        document.getElementById('gender-filter')?.addEventListener('change', () => this.applyFilters(true));
 
         // Sort dropdown
         document.getElementById('sort-select')?.addEventListener('change', (e) => {
@@ -113,6 +114,7 @@ const InventoryManager = {
         // Get filter values
         const searchTerm = document.getElementById('inventory-search')?.value.toLowerCase() || '';
         const stockFilter = document.getElementById('stock-filter')?.value;
+        const genderFilter = document.getElementById('gender-filter')?.value;
 
         // Filter items
         this.filteredItems = this.allItems.filter(item => {
@@ -127,6 +129,11 @@ const InventoryManager = {
             if (stockFilter !== '' && stockFilter !== null) {
                 const inStock = stockFilter === 'true';
                 if (item.in_stock !== inStock) return false;
+            }
+
+            // Gender filter
+            if (genderFilter && item.gender !== genderFilter) {
+                return false;
             }
 
             // Watchlist filter (from toggle button only)

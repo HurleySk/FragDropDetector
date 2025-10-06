@@ -78,17 +78,23 @@ async def get_parfumo_status():
 
         config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
         parfumo_config = {}
+        timezone = 'America/New_York'  # Default
         if config_path.exists():
             with open(config_path, 'r') as f:
                 full_config = yaml.safe_load(f)
                 parfumo_config = full_config.get('parfumo', {})
+                # Get timezone from drop_window or stock_schedule
+                timezone = (full_config.get('drop_window', {}).get('timezone') or
+                           full_config.get('stock_schedule', {}).get('timezone') or
+                           'America/New_York')
 
         return {
             **status,
             'config': parfumo_config,
             'fragscrape_available': fragscrape_available,
             'fragscrape_url': parfumo_config.get('fragscrape_url', 'http://localhost:3000'),
-            'rate_limit': rate_limit_status
+            'rate_limit': rate_limit_status,
+            'timezone': timezone
         }
 
     except Exception as e:

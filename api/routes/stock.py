@@ -90,6 +90,7 @@ async def delete_stock_change(change_id: int):
 async def get_fragrances(
     search: Optional[str] = None,
     in_stock: Optional[bool] = None,
+    gender: Optional[str] = None,
     sort_by: Optional[str] = "name",
     sort_order: Optional[str] = "asc",
     limit: Optional[int] = None,
@@ -142,6 +143,9 @@ async def get_fragrances(
 
         if watchlist_only:
             result = [f for f in result if f['is_watchlisted']]
+
+        if gender:
+            result = [f for f in result if f.get('gender') == gender]
 
         if sort_by in ['name', 'slug', 'price', 'in_stock', 'parfumo_score', 'parfumo_votes']:
             reverse = sort_order == 'desc'

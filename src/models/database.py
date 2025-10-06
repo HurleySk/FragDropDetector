@@ -87,6 +87,7 @@ class FragranceStock(Base):
     parfumo_id = Column(String(200))
     parfumo_score = Column(Float)  # 0-10 scale
     parfumo_votes = Column(Integer)
+    gender = Column(String(20))  # male, female, unisex
     parfumo_not_found = Column(Boolean, default=False)  # Mark if Parfumo search failed
     last_searched = Column(DateTime)  # Last time we searched Parfumo
     original_rating = Column(Float)  # Rating from original brand site if available
@@ -620,7 +621,8 @@ class Database:
         slug: str,
         parfumo_id: str,
         score: Optional[float] = None,
-        votes: Optional[int] = None
+        votes: Optional[int] = None,
+        gender: Optional[str] = None
     ) -> bool:
         """
         Update Parfumo rating for a fragrance
@@ -630,6 +632,7 @@ class Database:
             parfumo_id: Parfumo ID
             score: Rating score (0-10)
             votes: Number of votes
+            gender: Gender classification (male, female, unisex)
 
         Returns:
             True if successful, False otherwise
@@ -646,6 +649,8 @@ class Database:
                 fragrance.parfumo_score = score
             if votes is not None:
                 fragrance.parfumo_votes = votes
+            if gender is not None:
+                fragrance.gender = gender
             fragrance.rating_last_updated = datetime.utcnow()
             fragrance.last_searched = datetime.utcnow()
             fragrance.parfumo_not_found = False

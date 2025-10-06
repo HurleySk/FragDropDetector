@@ -6,6 +6,7 @@ Handles periodic updates of Parfumo ratings and automatic scraping of new produc
 import logging
 from typing import Dict
 from time import sleep
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -87,18 +88,8 @@ class ParfumoUpdater:
             ).all()
             session.close()
 
-            # Get fragrances needing updates from database
-            # force_refresh=True for manual updates, False for scheduled
-            fragrances = db.get_fragrances_needing_parfumo_update(
-                skip_not_found_days=90,
-                force_refresh_all=force_refresh,
-                max_rating_age_days=7
-            )
-
-            # Calculate total work
+            # Calculate total work (will update rating_count after extraction)
             extraction_count = len(unextracted) if unextracted else 0
-            rating_count = len(fragrances)
-            total_work = extraction_count + rating_count
             completed = 0
 
             if unextracted:
@@ -106,7 +97,8 @@ class ParfumoUpdater:
 
                 logger.info(f"Extracting brand/name for {extraction_count} fragrances")
                 for idx, frag in enumerate(unextracted):
-                    self.update_progress = int((completed / max(total_work, 1)) * 100)
+                    # Progress during extraction phase (assume 50% for extraction, 50% for ratings)
+                    self.update_progress = int((completed / (extraction_count * 2)) * 100)
                     self.update_message = f"Extracting {idx+1}/{extraction_count}"
 
                     try:
@@ -133,6 +125,17 @@ class ParfumoUpdater:
                         sleep(backoff_delay)
 
                     completed += 1
+
+            # Query for fragrances needing ratings AFTER extraction completes
+            # force_refresh=True for manual updates, False for scheduled
+            fragrances = db.get_fragrances_needing_parfumo_update(
+                skip_not_found_days=90,
+                force_refresh_all=force_refresh,
+                max_rating_age_days=7
+            )
+
+            rating_count = len(fragrances)
+            total_work = extraction_count + rating_count
 
             logger.info(f"Found {rating_count} fragrances needing Parfumo updates")
 
@@ -217,7 +220,8 @@ class ParfumoUpdater:
                             slug=slug,
                             parfumo_id=rating_data.get('parfumo_id', parfumo_id),
                             score=rating_data.get('score'),
-                            votes=rating_data.get('votes')
+                            votes=rating_data.get('votes'),
+                            gender=rating_data.get('gender')
                         )
                         results['updated'] += 1
                     else:
@@ -249,6 +253,25 @@ class ParfumoUpdater:
             self.update_message = 'Complete'
 
         logger.info(f"Parfumo update complete: {results}")
+
+        # Update last_update timestamp in config.yaml
+        try:
+            config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    full_config = yaml.safe_load(f)
+
+                if 'parfumo' not in full_config:
+                    full_config['parfumo'] = {}
+
+                full_config['parfumo']['last_update'] = datetime.now().isoformat()
+
+                with open(config_path, 'w') as f:
+                    yaml.safe_dump(full_config, f, default_flow_style=False, sort_keys=False)
+
+                logger.info(f"Updated last_update timestamp in config")
+        except Exception as e:
+            logger.error(f"Failed to update last_update in config: {e}")
 
         # Reset progress after short delay
         from threading import Timer

@@ -377,6 +377,33 @@ class FragscrapeClient:
                 logger.info(f"Fetched rating by URL: {result.get('score', 'N/A')}")
                 return result
 
+            # If cached data had no rating, retry with fresh data (cache=false)
+            # This handles stale cache entries missing the rating field
+            logger.warning(f"Cached data missing rating for {url}, retrying with fresh data")
+
+            response_fresh = self.session.post(
+                f"{self.base_url}/api/perfume/by-url",
+                json={'url': url},
+                params={'cache': 'false'},
+                timeout=self.timeout
+            )
+
+            self._parse_rate_limit_headers(response_fresh)
+
+            if response_fresh.status_code == 200:
+                data_fresh = response_fresh.json()
+                if isinstance(data_fresh, dict) and data_fresh.get('success', True):
+                    perfume_data_fresh = data_fresh if 'data' not in data_fresh else data_fresh.get('data', {})
+                    result_fresh = self._map_perfume_response(perfume_data_fresh, brand, name)
+
+                    if result_fresh:
+                        result_fresh['parfumo_id'] = url
+                        result_fresh['url'] = url
+
+                        if result_fresh.get('score'):
+                            logger.info(f"Fetched fresh rating: {result_fresh.get('score', 'N/A')}")
+                            return result_fresh
+
             logger.warning(f"No rating data found for URL: {url}")
             return None
 
@@ -444,7 +471,8 @@ class FragscrapeClient:
                 'votes': votes,
                 'parfumo_id': f"{brand}/{name}",
                 'url': data.get('url', f"https://www.parfumo.com/Perfumes/{brand}/{name}"),
-                'cached_at': datetime.now().isoformat()
+                'cached_at': datetime.now().isoformat(),
+                'gender': data.get('gender')
             }
 
             # Add subcategories if available

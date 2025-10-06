@@ -50,9 +50,20 @@ async function loadParfumoStatus() {
         const notFoundEl = document.getElementById('parfumo-not-found');
 
         if (lastUpdateEl) {
-            lastUpdateEl.textContent = data.last_full_update
-                ? new Date(data.last_full_update).toLocaleString()
-                : 'Never';
+            if (data.last_full_update) {
+                const timezone = data.timezone || 'America/New_York';
+                lastUpdateEl.textContent = new Date(data.last_full_update).toLocaleString('en-US', {
+                    timeZone: timezone,
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            } else {
+                lastUpdateEl.textContent = 'Never';
+            }
         }
         if (totalMappedEl) totalMappedEl.textContent = data.total_mapped || 0;
         if (withRatingsEl) withRatingsEl.textContent = data.total_with_ratings || 0;
