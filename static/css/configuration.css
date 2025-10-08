@@ -690,3 +690,128 @@
     color: var(--text-secondary);
 }
 
+
+/* Unmatched Fragrances Styles */
+.count-badge {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    background: var(--surface-elevated);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--rounded);
+    margin-left: 0.5rem;
+}
+
+.unmatched-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.unmatched-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--rounded-lg);
+    gap: var(--space-4);
+    transition: all 0.15s ease;
+}
+
+.unmatched-item:hover {
+    border-color: var(--border-strong);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fragrance-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.fragrance-info strong {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.fragrance-info small {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.url-input-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.url-input-group .form-input {
+    width: 300px;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    background: var(--surface);
+    border-radius: var(--rounded);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 1rem;
+}
+
+.btn-icon:hover:not(:disabled) {
+    background: var(--surface-elevated);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+}
+
+.btn-icon:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-icon.success {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.btn-icon.success:hover:not(:disabled) {
+    background: var(--success-dark, #16a34a);
+    border-color: var(--success-dark, #16a34a);
+}
+
+.search-btn {
+    font-size: 1.125rem;
+}
+
+@media (max-width: 768px) {
+    .unmatched-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .url-input-group {
+        flex-direction: column;
+    }
+
+    .url-input-group .form-input {
+        width: 100%;
+    }
+}

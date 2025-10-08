@@ -5,46 +5,17 @@ Stock and watchlist management endpoints
 import os
 import sys
 from typing import Optional
-from pathlib import Path
 from fastapi import APIRouter, HTTPException
 import structlog
-import yaml
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'src'))
 
 from api.dependencies import get_database
+from api.services.config_service import get_config_service
 from models.database import StockChange
 
 logger = structlog.get_logger(__name__)
 router = APIRouter(tags=["stock"])
-
-
-def load_yaml_config():
-    """Load configuration from YAML file"""
-    config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
-    if config_path.exists():
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f) or {}
-        except Exception as e:
-            logger.error("Failed to load YAML config", error=str(e))
-            return {}
-    return {}
-
-
-def save_yaml_config(config):
-    """Save configuration to YAML file"""
-    config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
-    config_path.parent.mkdir(exist_ok=True)
-
-    try:
-        with open(config_path, 'w', encoding='utf-8') as f:
-            yaml.dump(config, f, default_flow_style=False, indent=2)
-        logger.info("Configuration saved successfully")
-        return True
-    except Exception as e:
-        logger.error("Failed to save YAML config", error=str(e))
-        return False
 
 
 @router.get("/api/stock/changes")
@@ -103,8 +74,8 @@ async def get_fragrances(
         db = get_database()
         fragrances = db.get_all_fragrances()
 
-        yaml_config = load_yaml_config()
-        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+        config_service = get_config_service()
+        watchlist = config_service.get_nested('stock_monitoring.watchlist', [])
         logger.info(f"Loaded watchlist with {len(watchlist)} items: {watchlist}")
 
         result = []
@@ -162,16 +133,12 @@ async def get_fragrances(
             elif sort_by == 'parfumo_score':
                 def score_key(item):
                     score = item.get('parfumo_score')
-                    if score is None:
-                        return float('-inf') if reverse else float('inf')
-                    return score
+                    return score if score is not None else 0
                 result.sort(key=score_key, reverse=reverse)
             elif sort_by == 'parfumo_votes':
                 def votes_key(item):
                     votes = item.get('parfumo_votes')
-                    if votes is None:
-                        return -1 if reverse else float('inf')
-                    return votes
+                    return votes if votes is not None else 0
                 result.sort(key=votes_key, reverse=reverse)
             else:
                 result.sort(key=lambda x: x[sort_by], reverse=reverse)
@@ -197,17 +164,13 @@ async def get_fragrances(
 async def add_to_watchlist(slug: str):
     """Add a product to the watchlist"""
     try:
-        yaml_config = load_yaml_config()
-        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+        config_service = get_config_service()
+        watchlist = config_service.get_nested('stock_monitoring.watchlist', [])
 
         if slug not in watchlist:
             watchlist.append(slug)
 
-            if 'stock_monitoring' not in yaml_config:
-                yaml_config['stock_monitoring'] = {}
-            yaml_config['stock_monitoring']['watchlist'] = watchlist
-
-            if not save_yaml_config(yaml_config):
+            if not config_service.set_nested('stock_monitoring.watchlist', watchlist):
                 raise HTTPException(status_code=500, detail="Failed to save watchlist")
 
             logger.info(f"Added {slug} to watchlist. New watchlist: {watchlist}")
@@ -224,17 +187,13 @@ async def add_to_watchlist(slug: str):
 async def remove_from_watchlist(slug: str):
     """Remove a product from the watchlist"""
     try:
-        yaml_config = load_yaml_config()
-        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+        config_service = get_config_service()
+        watchlist = config_service.get_nested('stock_monitoring.watchlist', [])
 
         if slug in watchlist:
             watchlist.remove(slug)
 
-            if 'stock_monitoring' not in yaml_config:
-                yaml_config['stock_monitoring'] = {}
-            yaml_config['stock_monitoring']['watchlist'] = watchlist
-
-            if not save_yaml_config(yaml_config):
+            if not config_service.set_nested('stock_monitoring.watchlist', watchlist):
                 raise HTTPException(status_code=500, detail="Failed to save watchlist")
 
             logger.info(f"Removed {slug} from watchlist. New watchlist: {watchlist}")
@@ -255,8 +214,8 @@ async def bulk_add_to_watchlist(request: dict):
         if not slugs:
             raise HTTPException(status_code=400, detail="No slugs provided")
 
-        yaml_config = load_yaml_config()
-        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+        config_service = get_config_service()
+        watchlist = config_service.get_nested('stock_monitoring.watchlist', [])
 
         added = []
         for slug in slugs:
@@ -264,11 +223,7 @@ async def bulk_add_to_watchlist(request: dict):
                 watchlist.append(slug)
                 added.append(slug)
 
-        if 'stock_monitoring' not in yaml_config:
-            yaml_config['stock_monitoring'] = {}
-        yaml_config['stock_monitoring']['watchlist'] = watchlist
-
-        if not save_yaml_config(yaml_config):
+        if not config_service.set_nested('stock_monitoring.watchlist', watchlist):
             raise HTTPException(status_code=500, detail="Failed to save watchlist")
 
         logger.info(f"Added {len(added)} items to watchlist")
@@ -292,8 +247,8 @@ async def bulk_remove_from_watchlist(request: dict):
         if not slugs:
             raise HTTPException(status_code=400, detail="No slugs provided")
 
-        yaml_config = load_yaml_config()
-        watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+        config_service = get_config_service()
+        watchlist = config_service.get_nested('stock_monitoring.watchlist', [])
 
         removed = []
         for slug in slugs:
@@ -301,11 +256,7 @@ async def bulk_remove_from_watchlist(request: dict):
                 watchlist.remove(slug)
                 removed.append(slug)
 
-        if 'stock_monitoring' not in yaml_config:
-            yaml_config['stock_monitoring'] = {}
-        yaml_config['stock_monitoring']['watchlist'] = watchlist
-
-        if not save_yaml_config(yaml_config):
+        if not config_service.set_nested('stock_monitoring.watchlist', watchlist):
             raise HTTPException(status_code=500, detail="Failed to save watchlist")
 
         logger.info(f"Removed {len(removed)} items from watchlist")

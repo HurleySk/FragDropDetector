@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 import structlog
-import yaml
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'src'))
@@ -17,37 +16,10 @@ from api.models import (
     DropWindowConfig, StockMonitoringConfig, StockScheduleConfig,
     LoggingConfig
 )
+from api.services.config_service import get_config_service
 
 logger = structlog.get_logger(__name__)
 router = APIRouter(tags=["config"])
-
-
-def load_yaml_config():
-    """Load configuration from YAML file"""
-    config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
-    if config_path.exists():
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f) or {}
-        except Exception as e:
-            logger.error("Failed to load YAML config", error=str(e))
-            return {}
-    return {}
-
-
-def save_yaml_config(config):
-    """Save configuration to YAML file"""
-    config_path = Path(__file__).parent.parent.parent / "config" / "config.yaml"
-    config_path.parent.mkdir(exist_ok=True)
-
-    try:
-        with open(config_path, 'w', encoding='utf-8') as f:
-            yaml.dump(config, f, default_flow_style=False, indent=2)
-        logger.info("Configuration saved successfully")
-        return True
-    except Exception as e:
-        logger.error("Failed to save YAML config", error=str(e))
-        return False
 
 
 def update_env_file(updates):
@@ -82,7 +54,8 @@ async def get_config():
     """Get current configuration"""
     try:
         load_dotenv(override=True)
-        yaml_config = load_yaml_config()
+        config_service = get_config_service()
+        yaml_config = config_service.load()
 
         refresh_token = os.getenv('REDDIT_REFRESH_TOKEN')
         username = os.getenv('REDDIT_USERNAME')
@@ -171,18 +144,15 @@ async def get_config():
 async def update_reddit_config(config: RedditConfig):
     """Update Reddit configuration with validation"""
     try:
-        yaml_config = load_yaml_config()
+        config_service = get_config_service()
 
-        if "reddit" not in yaml_config:
-            yaml_config["reddit"] = {}
-
-        yaml_config["reddit"].update({
+        reddit_config = {
             "subreddit": config.subreddit,
             "check_interval": config.check_interval,
             "post_limit": config.post_limit
-        })
+        }
 
-        if not save_yaml_config(yaml_config):
+        if not config_service.update_section("reddit", reddit_config, merge=True):
             raise HTTPException(status_code=500, detail="Failed to save configuration")
 
         env_updates = {
@@ -233,9 +203,9 @@ async def update_notification_config(config: NotificationConfig):
 async def update_detection_config(config: DetectionConfig):
     """Update detection configuration with validation"""
     try:
-        yaml_config = load_yaml_config()
+        config_service = get_config_service()
 
-        yaml_config["detection"] = {
+        detection_config = {
             "primary_keywords": config.primary_keywords,
             "secondary_keywords": config.secondary_keywords,
             "confidence_threshold": config.confidence_threshold,
@@ -244,7 +214,7 @@ async def update_detection_config(config: DetectionConfig):
             "trusted_authors": config.trusted_authors
         }
 
-        if not save_yaml_config(yaml_config):
+        if not config_service.update_section("detection", detection_config, merge=False):
             raise HTTPException(status_code=500, detail="Failed to save configuration")
 
         logger.info("Detection configuration updated",
@@ -261,9 +231,9 @@ async def update_detection_config(config: DetectionConfig):
 async def update_drop_window_config(config: DropWindowConfig):
     """Update drop window configuration with validation"""
     try:
-        yaml_config = load_yaml_config()
+        config_service = get_config_service()
 
-        yaml_config["drop_window"] = {
+        drop_window_config = {
             "enabled": config.enabled,
             "timezone": config.timezone,
             "days_of_week": config.days_of_week,
@@ -273,7 +243,7 @@ async def update_drop_window_config(config: DropWindowConfig):
             "end_minute": config.end_minute
         }
 
-        if not save_yaml_config(yaml_config):
+        if not config_service.update_section("drop_window", drop_window_config, merge=False):
             raise HTTPException(status_code=500, detail="Failed to save configuration")
 
         logger.info("Drop window configuration updated",
@@ -291,11 +261,11 @@ async def update_drop_window_config(config: DropWindowConfig):
 async def update_stock_monitoring_config(config: StockMonitoringConfig):
     """Update stock monitoring configuration with validation"""
     try:
-        yaml_config = load_yaml_config()
+        config_service = get_config_service()
 
-        existing_watchlist = yaml_config.get('stock_monitoring', {}).get('watchlist', [])
+        existing_watchlist = config_service.get_nested('stock_monitoring.watchlist', [])
 
-        yaml_config["stock_monitoring"] = {
+        stock_monitoring_config = {
             "enabled": config.enabled,
             "notifications": {
                 "new_products": config.new_products,
@@ -306,7 +276,7 @@ async def update_stock_monitoring_config(config: StockMonitoringConfig):
             "watchlist": existing_watchlist
         }
 
-        if not save_yaml_config(yaml_config):
+        if not config_service.update_section("stock_monitoring", stock_monitoring_config, merge=False):
             raise HTTPException(status_code=500, detail="Failed to save configuration")
 
         logger.info("Stock monitoring configuration updated", enabled=config.enabled)
@@ -321,9 +291,9 @@ async def update_stock_monitoring_config(config: StockMonitoringConfig):
 async def update_stock_schedule_config(config: StockScheduleConfig):
     """Update stock schedule configuration with validation"""
     try:
-        yaml_config = load_yaml_config()
+        config_service = get_config_service()
 
-        yaml_config["stock_schedule"] = {
+        stock_schedule_config = {
             "enabled": config.enabled,
             "check_interval": config.check_interval,
             "window_enabled": config.window_enabled,
@@ -335,7 +305,7 @@ async def update_stock_schedule_config(config: StockScheduleConfig):
             "end_minute": config.end_minute
         }
 
-        if not save_yaml_config(yaml_config):
+        if not config_service.update_section("stock_schedule", stock_schedule_config, merge=False):
             raise HTTPException(status_code=500, detail="Failed to save configuration")
 
         logger.info("Stock schedule configuration updated",
@@ -353,18 +323,15 @@ async def update_stock_schedule_config(config: StockScheduleConfig):
 async def update_parfumo_config(config: dict):
     """Update Parfumo configuration"""
     try:
-        yaml_config = load_yaml_config()
+        config_service = get_config_service()
 
-        if 'parfumo' not in yaml_config:
-            yaml_config['parfumo'] = {}
-
-        yaml_config['parfumo'].update({
+        parfumo_config = {
             'enabled': config.get('enabled', True),
             'update_time': config.get('update_time', '02:00'),
             'auto_scrape_new': config.get('auto_scrape_new', True)
-        })
+        }
 
-        if save_yaml_config(yaml_config):
+        if config_service.update_section('parfumo', parfumo_config, merge=True):
             return {"success": True, "message": "Parfumo configuration updated"}
         else:
             raise HTTPException(status_code=500, detail="Failed to save configuration")
@@ -378,8 +345,9 @@ async def update_parfumo_config(config: dict):
 async def update_logging_config(config: LoggingConfig):
     """Update logging configuration with validation"""
     try:
-        yaml_config = load_yaml_config()
-        yaml_config['logging'] = {
+        config_service = get_config_service()
+
+        logging_config = {
             'level': config.level,
             'file_enabled': config.file_enabled,
             'file_path': config.file_path,
@@ -388,7 +356,7 @@ async def update_logging_config(config: LoggingConfig):
             'auto_cleanup': config.auto_cleanup
         }
 
-        if not save_yaml_config(yaml_config):
+        if not config_service.update_section('logging', logging_config, merge=False):
             raise HTTPException(status_code=500, detail="Failed to save configuration")
 
         logger.info("Logging configuration updated", level=config.level)

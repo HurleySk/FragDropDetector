@@ -26,24 +26,25 @@ class FragranceMapper:
             self.database = Database()
 
         # Multi-word brands to detect before applying regex
+        # Note: Order matters - longer matches should come first
         self.multi_word_brands = {
-            'PARFUMS DE MARLY': 'Parfums de Marly',
             'MAISON FRANCIS KURKDJIAN': 'Maison Francis Kurkdjian',
+            'MARC ANTOINE BARROIS': 'Marc-Antoine Barrois',
             'YVES SAINT LAURENT': 'Yves Saint Laurent',
-            'LOUIS VUITTON': 'Louis Vuitton',
+            'VILHELM PARFUMERIE': 'Vilhelm Parfumerie',
+            'PARFUMS DE MARLY': 'Parfums de Marly',
             'FRAGRANCE DU BOIS': 'Fragrance Du Bois',
+            'TIZIANA TERENZI': 'Tiziana Terenzi',
+            'MAISON MARGIELA': 'Maison Margiela',
+            'FREDERIC MALLE': 'Frederic Malle',
+            'LOUIS VUITTON': 'Louis Vuitton',
+            'ORMONDE JAYNE': 'Ormonde Jayne',
+            'MEMO PARIS': 'Memo Paris',
+            'MIND GAMES': 'Mind Games',
             'TOM FORD': 'Tom Ford',
             'LE LABO': 'Le Labo',
             'BY KILIAN': 'By Kilian',
-            'MAISON MARGIELA': 'Maison Margiela',
-            'MEMO PARIS': 'Memo Paris',
-            'TIZIANA TERENZI': 'Tiziana Terenzi',
-            'ORMONDE JAYNE': 'Ormonde Jayne',
             'BOND NO': 'Bond No. 9',
-            'FREDERIC MALLE': 'Frederic Malle',
-            'VILHELM PARFUMERIE': 'Vilhelm Parfumerie',
-            'MARC ANTOINE BARROIS': 'Marc-Antoine Barrois',
-            'MIND GAMES': 'Mind Games',
         }
 
         # Regex patterns to extract original info from product names
@@ -56,6 +57,11 @@ class FragranceMapper:
             # Alternative patterns for edge cases
             re.compile(r'inspired by:\s*([^-]+?)\s*-\s*(.+)', re.IGNORECASE),
             re.compile(r'clone of\s+([\w\s&\.]+?)\s+([\w\s]+)', re.IGNORECASE | re.UNICODE),
+            # Lenient patterns for typos and missing BY
+            # "INSPIRED TOM FORD NAME" (missing BY)
+            re.compile(r'INSPIRED\s+([A-Z][A-Z\s&\.]+?)\s+([\w\s\-\']+?)(?:\s*$|\s*-)', re.IGNORECASE | re.UNICODE),
+            # "ISNPIRED BY BRAND NAME" (typo: missing S)
+            re.compile(r'ISNPIRED BY\s+([\w\s&\.\']+?)\s+([\w\s\-\']+?)(?:\s*$|\s*-)', re.IGNORECASE | re.UNICODE),
         ]
 
         # Brand name normalization
@@ -66,6 +72,8 @@ class FragranceMapper:
             'TF': 'Tom Ford',
             'BVLGARI': 'Bvlgari',
             'BULGARI': 'Bvlgari',
+            'BN9': 'Bond No. 9',
+            'BOND NO': 'Bond No. 9',
         }
 
     def extract_from_name(self, product_name: str, product_description: str = "") -> Optional[Tuple[str, str]]:
@@ -94,11 +102,25 @@ class FragranceMapper:
                 brand = match.group(1).strip()
                 fragrance = match.group(2).strip()
 
+                # Handle double-BY cases: "INSPIRED BY L'IMMENSITE BY LOUIS VUITTON"
+                # If fragrance starts with "BY", the brand might be at the end
+                if fragrance.upper().startswith('BY '):
+                    # Check if we have a detected multi-word brand
+                    if detected_brand:
+                        # Use detected brand and remove "BY" from fragrance
+                        fragrance = fragrance[3:].strip()
+                        # The actual fragrance name is what was captured as "brand"
+                        # Swap them
+                        temp = brand
+                        brand = detected_brand
+                        fragrance = temp
+
                 # If we detected a multi-word brand, use that instead and remove it from fragrance
                 if detected_brand:
                     brand = detected_brand
                     # Remove brand words from the start of fragrance name
-                    brand_words = set(brand.upper().split())
+                    # Split hyphens to catch hyphenated names like "Marc-Antoine"
+                    brand_words = set(brand.upper().replace('-', ' ').split())
                     fragrance_words = fragrance.upper().split()
 
                     # Skip brand words at the start of fragrance
@@ -154,6 +176,22 @@ class FragranceMapper:
 
         if extracted:
             brand, fragrance = extracted
+
+            # Check if this is a blend (contains "AND" suggesting multiple fragrances mixed)
+            # Check for " AND " or "AND " at start (after regex extraction removes leading brand words)
+            frag_upper = fragrance.upper()
+            is_blend = ' AND ' in frag_upper or frag_upper.startswith('AND ')
+
+            if is_blend:
+                logger.info(f"Detected blend: {brand} - {fragrance}. Skipping Parfumo lookup.")
+                # Save mapping without parfumo_id, mark as not found
+                self.database.update_fragrance_mapping(
+                    slug=slug,
+                    original_brand=brand,
+                    original_name=fragrance
+                )
+                self.database.mark_parfumo_not_found(slug)
+                return True
 
             # Search for Parfumo ID
             parfumo_id = self.get_parfumo_id(brand, fragrance)

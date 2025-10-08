@@ -179,24 +179,23 @@ class FragscrapeClient:
         """
         normalized = name
 
-        # Remove common suffixes (case insensitive)
+        # Remove common suffixes (case insensitive) - but be conservative
+        # Only remove clear concentration descriptors, not parts of compound names
         suffixes_to_remove = [
-            'eau de parfum', 'edp', 'eau de toilette', 'edt',
-            'parfum', 'cologne', 'eau de cologne', 'edc',
-            'extrait', 'intense', 'absolu', 'pure perfume',
-            'city exclusive', 'city'
+            'eau de parfum', 'eau de toilette', 'eau de cologne',
+            'pure perfume', 'extrait'
         ]
 
         for suffix in suffixes_to_remove:
             # Remove from end
-            pattern = r'\s+' + suffix + r'(\s+\d+)?$'
+            pattern = r'\s+' + suffix + r'$'
             normalized = re.sub(pattern, '', normalized, flags=re.IGNORECASE)
 
-        # Remove brand name repetitions (e.g., "Antoine Barrois Ganymede" → "Ganymede")
-        words = normalized.split()
-        if len(words) > 2:
-            # Keep only the last 1-2 significant words
-            normalized = ' '.join(words[-2:]) if len(words[-1]) > 3 else ' '.join(words[-1:])
+        # Don't remove "edp", "edt", "parfum", "cologne", "city", "city exclusive", "intense", "absolu"
+        # as these might be part of the actual fragrance name (e.g., "Elysium Parfum Cologne", "City Exclusive")
+
+        # Brand name repetitions should already be handled in extraction phase
+        # Don't try to guess here as it removes important words (e.g., "Gaiac 10 Tokyo City" → "Tokyo City" losing "Gaiac")
 
         return normalized.strip()
 
@@ -217,14 +216,52 @@ class FragscrapeClient:
         normalized_brand = self._normalize_brand_name(brand)
         normalized_name = self._normalize_fragrance_name(name)
 
+        # Additional variations for better matching
+        name_no_apostrophe = name.replace("'", "").replace("'", "")
+        name_no_numbers = re.sub(r'\b\d{4}\b', '', name).strip()  # Remove years like "2011"
+        name_no_numbers_all = re.sub(r'\d+', '', name).strip()  # Remove all numbers
+
+        # Remove concentration descriptors from end
+        name_no_concentration = re.sub(r'\s+(edp|edt|parfum|cologne|extrait)$', '', name, flags=re.IGNORECASE).strip()
+
+        # Try singular/plural variants
+        name_singular = re.sub(r'\s+men$', ' man', name, flags=re.IGNORECASE).strip()
+
+        # Combine removals
+        name_clean = re.sub(r'\s+(edp|edt|parfum|cologne|extrait|city|exclusive)$', '', name, flags=re.IGNORECASE).strip()
+        name_clean = re.sub(r'\b\d+\b', '', name_clean).strip()  # Also remove numbers
+
         search_strategies = [
             (f"{brand} {name}", brand),  # Original
             (f"{normalized_brand} {name}", normalized_brand),  # Normalized brand
+            (f"{brand} {name_no_concentration}", brand),  # Without EDP/EDT/Parfum/Cologne
+            (f"{normalized_brand} {name_no_concentration}", normalized_brand),  # Normalized + no concentration
+            (f"{brand} {name_singular}", brand),  # Try singular (Men → Man)
+            (f"{normalized_brand} {name_singular}", normalized_brand),  # Normalized + singular
+            (f"{brand} {name_clean}", brand),  # Clean: no concentration, numbers, city
+            (f"{normalized_brand} {name_clean}", normalized_brand),  # Normalized + clean
             (f"{normalized_brand} {normalized_name}", normalized_brand),  # Fully normalized
             (f"{brand} {normalized_name}", brand),  # Normalized name only
+            (f"{brand} {name_no_apostrophe}", brand),  # Without apostrophes
+            (f"{normalized_brand} {name_no_apostrophe}", normalized_brand),  # Normalized brand, no apostrophe
+            (f"{brand} {name_no_numbers}", brand),  # Without years
+            (f"{brand} {name_no_numbers_all}", brand),  # Without any numbers
             (normalized_name, None),  # Just normalized name as fallback
-            (name, None)  # Just original name as final fallback
+            (name, None),  # Just original name
+            (name_no_apostrophe, None),  # Just name without apostrophes
+            (name_clean, None)  # Just clean name
         ]
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_strategies = []
+        for query, expected_brand in search_strategies:
+            query_key = (query.strip().lower(), expected_brand)
+            if query_key not in seen and query.strip():
+                seen.add(query_key)
+                unique_strategies.append((query.strip(), expected_brand))
+
+        search_strategies = unique_strategies
 
         for query, expected_brand in search_strategies:
             try:

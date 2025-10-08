@@ -83,6 +83,9 @@ async function loadParfumoStatus() {
             // Start periodic refresh when not updating
             startPeriodicRefresh();
         }
+
+        // Load unmatched fragrances list
+        loadUnmatchedFragrances();
     } catch (error) {
         console.error('Error loading Parfumo status:', error);
     }
@@ -248,4 +251,123 @@ function updateParfumoStats(data) {
     if (notFoundEl) notFoundEl.textContent = data.total_not_found || 0;
 }
 
+async function loadUnmatchedFragrances() {
+    try {
+        const response = await fetch('/api/parfumo/unmatched');
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        const card = document.getElementById('unmatched-fragrances-card');
+        const countBadge = document.getElementById('unmatched-count');
+        const listEl = document.getElementById('unmatched-list');
+
+        if (data.count === 0) {
+            // Hide card if no unmatched fragrances
+            if (card) card.style.display = 'none';
+            return;
+        }
+
+        // Show card and update count
+        if (card) card.style.display = 'block';
+        if (countBadge) countBadge.textContent = `(${data.count})`;
+
+        // Render list
+        if (listEl) {
+            listEl.innerHTML = data.fragrances.map(frag => `
+                <div class="unmatched-item" data-slug="${frag.slug}">
+                    <div class="fragrance-info">
+                        <strong>${frag.name}</strong>
+                        <small>Original: ${frag.original_brand} - ${frag.original_name}</small>
+                    </div>
+                    <div class="url-input-group">
+                        <input
+                            type="url"
+                            placeholder="https://www.parfumo.com/..."
+                            class="form-input parfumo-url-input"
+                            data-slug="${frag.slug}"
+                        >
+                        <button
+                            class="btn-icon search-btn"
+                            title="Search Parfumo"
+                            onclick="searchParfumoFor('${frag.original_brand.replace(/'/g, "\\'")}', '${frag.original_name.replace(/'/g, "\\'")}')"
+                        >
+                            🔍
+                        </button>
+                        <button
+                            class="btn-icon save-btn success"
+                            title="Save URL"
+                            onclick="saveParfumoUrl('${frag.slug}')"
+                        >
+                            ✓
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error loading unmatched fragrances:', error);
+    }
+}
+
+function searchParfumoFor(brand, name) {
+    // Parfumo uses this search format: s_perfumes_x.php?in=1&order=&filter=query
+    const query = encodeURIComponent(`${brand} ${name}`);
+    const url = `https://www.parfumo.com/s_perfumes_x.php?in=1&order=&filter=${query}`;
+    window.open(url, '_blank');
+}
+
+async function saveParfumoUrl(slug) {
+    const input = document.querySelector(`.parfumo-url-input[data-slug="${slug}"]`);
+    if (!input) return;
+
+    const parfumoUrl = input.value.trim();
+
+    if (!parfumoUrl) {
+        showAlert('Please enter a Parfumo URL', 'error');
+        return;
+    }
+
+    if (!parfumoUrl.startsWith('https://www.parfumo.com/')) {
+        showAlert('Invalid Parfumo URL. Must start with https://www.parfumo.com/', 'error');
+        return;
+    }
+
+    // Disable button during save
+    const saveBtn = input.parentElement.querySelector('.save-btn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+        const response = await fetch('/api/parfumo/manual-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, parfumo_url: parfumoUrl })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showAlert(result.message, 'success');
+
+            // Remove this item from the list
+            const item = document.querySelector(`.unmatched-item[data-slug="${slug}"]`);
+            if (item) item.remove();
+
+            // Reload stats and unmatched list
+            loadParfumoStatus();
+            loadUnmatchedFragrances();
+        } else {
+            showAlert(result.message || 'Failed to save Parfumo URL', 'error');
+            if (saveBtn) saveBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error saving Parfumo URL:', error);
+        showAlert('Failed to save Parfumo URL', 'error');
+        if (saveBtn) saveBtn.disabled = false;
+    }
+}
+
 window.triggerParfumoUpdate = triggerParfumoUpdate;
+window.searchParfumoFor = searchParfumoFor;
+window.saveParfumoUrl = saveParfumoUrl;
+window.loadUnmatchedFragrances = loadUnmatchedFragrances;
