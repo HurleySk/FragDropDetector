@@ -346,7 +346,7 @@ class FragDropMonitor:
                     })
                     notifications_to_send.append({
                         'title': f'Watchlist Item Back in Stock!',
-                        'url': product.url,
+                        'url': f"https://www.montagneparfums.com{product.url}",
                         'price': product.price,
                         'change_type': 'watchlist_restock',
                         'message': f'{product.name} is now available'

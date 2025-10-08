@@ -460,6 +460,7 @@ class Database:
                     'parfumo_id': f.parfumo_id,
                     'parfumo_score': f.parfumo_score,
                     'parfumo_votes': f.parfumo_votes,
+                    'gender': f.gender,
                     'parfumo_not_found': f.parfumo_not_found,
                     'rating_last_updated': f.rating_last_updated.isoformat() if f.rating_last_updated else None
                 } for f in fragrances

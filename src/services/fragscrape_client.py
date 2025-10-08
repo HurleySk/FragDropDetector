@@ -5,6 +5,7 @@ Wraps the fragscrape API for fetching Parfumo data
 
 import logging
 import requests
+import re
 from typing import Optional, Dict, List
 from datetime import datetime
 import time
@@ -144,9 +145,65 @@ class FragscrapeClient:
             logger.debug(f"fragscrape health check failed: {e}")
             return False
 
+    def _normalize_brand_name(self, brand: str) -> str:
+        """
+        Normalize brand name for better search matching
+
+        Examples:
+        - "By Kilian" → "Kilian"
+        - "Bond No. 9" → "Bond No 9"
+        - "Marc-Antoine Barrois" → "Marc Antoine Barrois"
+        """
+        normalized = brand
+
+        # Remove "By " prefix
+        if normalized.lower().startswith('by '):
+            normalized = normalized[3:].strip()
+
+        # Remove dots (Bond No. 9 → Bond No 9)
+        normalized = normalized.replace('.', '')
+
+        # Replace hyphens with spaces in brand names
+        normalized = normalized.replace('-', ' ')
+
+        return normalized.strip()
+
+    def _normalize_fragrance_name(self, name: str) -> str:
+        """
+        Normalize fragrance name by removing common modifiers
+
+        Examples:
+        - "Ganymede Edp" → "Ganymede"
+        - "Elysium Parfum Cologne" → "Elysium"
+        - "Antoine Barrois Ganymede Edp" → "Ganymede"
+        """
+        normalized = name
+
+        # Remove common suffixes (case insensitive)
+        suffixes_to_remove = [
+            'eau de parfum', 'edp', 'eau de toilette', 'edt',
+            'parfum', 'cologne', 'eau de cologne', 'edc',
+            'extrait', 'intense', 'absolu', 'pure perfume',
+            'city exclusive', 'city'
+        ]
+
+        for suffix in suffixes_to_remove:
+            # Remove from end
+            pattern = r'\s+' + suffix + r'(\s+\d+)?$'
+            normalized = re.sub(pattern, '', normalized, flags=re.IGNORECASE)
+
+        # Remove brand name repetitions (e.g., "Antoine Barrois Ganymede" → "Ganymede")
+        words = normalized.split()
+        if len(words) > 2:
+            # Keep only the last 1-2 significant words
+            normalized = ' '.join(words[-2:]) if len(words[-1]) > 3 else ' '.join(words[-1:])
+
+        return normalized.strip()
+
     def search_perfume(self, brand: str, name: str, limit: int = 5) -> Optional[str]:
         """
         Search for a perfume and return its Parfumo URL
+        Uses multiple search strategies for better matching
 
         Args:
             brand: Brand name
@@ -156,79 +213,97 @@ class FragscrapeClient:
         Returns:
             Full Parfumo URL or None if not found
         """
-        try:
-            query = f"{brand} {name}".strip()
-            logger.info(f"Searching fragscrape for: {query}")
+        # Try multiple search strategies
+        normalized_brand = self._normalize_brand_name(brand)
+        normalized_name = self._normalize_fragrance_name(name)
 
-            response = self.session.get(
-                f"{self.base_url}/api/search",
-                params={'q': query, 'limit': limit, 'cache': 'true'},
-                timeout=self.timeout
-            )
+        search_strategies = [
+            (f"{brand} {name}", brand),  # Original
+            (f"{normalized_brand} {name}", normalized_brand),  # Normalized brand
+            (f"{normalized_brand} {normalized_name}", normalized_brand),  # Fully normalized
+            (f"{brand} {normalized_name}", brand),  # Normalized name only
+            (normalized_name, None),  # Just normalized name as fallback
+            (name, None)  # Just original name as final fallback
+        ]
 
-            # Parse rate limit headers
-            self._parse_rate_limit_headers(response)
+        for query, expected_brand in search_strategies:
+            try:
+                query = query.strip()
+                logger.info(f"Searching fragscrape for: {query}")
 
-            if response.status_code == 429:
-                retry_after = response.headers.get('Retry-After')
-                retry_after_seconds = int(retry_after) if retry_after else None
-                logger.warning(f"Rate limited by fragscrape API during search (retry after: {retry_after_seconds}s)")
-                raise RateLimitError(retry_after=retry_after_seconds)
+                response = self.session.get(
+                    f"{self.base_url}/api/search",
+                    params={'q': query, 'limit': limit, 'cache': 'true'},
+                    timeout=self.timeout
+                )
 
-            if response.status_code != 200:
-                logger.warning(f"Search request failed with status {response.status_code}")
-                return None
+                # Parse rate limit headers
+                self._parse_rate_limit_headers(response)
 
-            data = response.json()
+                if response.status_code == 429:
+                    retry_after = response.headers.get('Retry-After')
+                    retry_after_seconds = int(retry_after) if retry_after else None
+                    logger.warning(f"Rate limited by fragscrape API during search (retry after: {retry_after_seconds}s)")
+                    raise RateLimitError(retry_after=retry_after_seconds)
 
-            # Handle error responses
-            if isinstance(data, dict) and not data.get('success', True):
-                error_msg = data.get('error', 'Unknown error')
-                logger.error(f"fragscrape search error: {error_msg}")
-                return None
+                if response.status_code != 200:
+                    logger.warning(f"Search request failed with status {response.status_code}")
+                    continue  # Try next strategy
 
-            # Extract results - handle different possible response formats
-            results = []
-            if isinstance(data, dict):
-                results = data.get('results', data.get('data', []))
-            elif isinstance(data, list):
-                results = data
+                data = response.json()
 
-            if not results:
-                logger.info(f"No results found for: {query}")
-                return None
+                # Handle error responses
+                if isinstance(data, dict) and not data.get('success', True):
+                    error_msg = data.get('error', 'Unknown error')
+                    logger.error(f"fragscrape search error: {error_msg}")
+                    continue  # Try next strategy
 
-            # Try to find best match based on brand name
-            brand_lower = brand.lower()
-            best_match = None
+                # Extract results - handle different possible response formats
+                results = []
+                if isinstance(data, dict):
+                    results = data.get('results', data.get('data', []))
+                elif isinstance(data, list):
+                    results = data
 
-            for result in results:
-                result_brand = result.get('brand', '').lower()
-                if brand_lower in result_brand or result_brand in brand_lower:
-                    best_match = result
-                    break
+                if not results:
+                    logger.info(f"No results found for: {query}")
+                    continue  # Try next strategy
 
-            # If no brand match, use first result
-            if not best_match:
-                best_match = results[0]
-                logger.debug(f"No exact brand match, using first result")
+                # Try to find best match based on brand name
+                best_match = None
 
-            # Extract the full Parfumo URL
-            parfumo_url = best_match.get('url', '')
+                if expected_brand:
+                    brand_lower = expected_brand.lower()
+                    for result in results:
+                        result_brand = result.get('brand', '').lower()
+                        if brand_lower in result_brand or result_brand in brand_lower:
+                            best_match = result
+                            break
 
-            if parfumo_url:
-                logger.info(f"Found Parfumo match: {parfumo_url}")
-                return parfumo_url
+                # If no brand match, use first result
+                if not best_match:
+                    best_match = results[0]
+                    logger.debug(f"No exact brand match, using first result")
 
-            logger.warning(f"Could not extract URL from result: {best_match}")
-            return None
+                # Extract the full Parfumo URL
+                parfumo_url = best_match.get('url', '')
 
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error searching fragscrape: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Unexpected error in fragscrape search: {e}")
-            return None
+                if parfumo_url:
+                    logger.info(f"Found Parfumo match: {parfumo_url} (strategy: {query})")
+                    return parfumo_url
+
+            except RateLimitError:
+                raise  # Re-raise rate limit errors
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Error searching fragscrape: {e}")
+                continue  # Try next strategy
+            except Exception as e:
+                logger.error(f"Unexpected error in fragscrape search: {e}")
+                continue  # Try next strategy
+
+        # All strategies failed
+        logger.warning(f"Could not find match for: {brand} {name}")
+        return None
 
     def get_perfume_details(self, brand: str, name: str, year: Optional[str] = None) -> Optional[Dict]:
         """

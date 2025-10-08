@@ -264,7 +264,8 @@ class ParfumoUpdater:
                 if 'parfumo' not in full_config:
                     full_config['parfumo'] = {}
 
-                full_config['parfumo']['last_update'] = datetime.now().isoformat()
+                # Store timestamp in UTC with Z suffix for proper timezone handling
+                full_config['parfumo']['last_update'] = datetime.utcnow().isoformat() + 'Z'
 
                 with open(config_path, 'w') as f:
                     yaml.safe_dump(full_config, f, default_flow_style=False, sort_keys=False)
@@ -352,7 +353,13 @@ class ParfumoUpdater:
             from sqlalchemy import func
 
             # Count statistics from database
-            total_mapped = session.query(func.count(FragranceStock.id)).filter(
+            total_fragrances = session.query(func.count(FragranceStock.id)).scalar()
+
+            total_extracted = session.query(func.count(FragranceStock.id)).filter(
+                FragranceStock.original_brand.isnot(None)
+            ).scalar()
+
+            total_linked = session.query(func.count(FragranceStock.id)).filter(
                 FragranceStock.parfumo_id.isnot(None)
             ).scalar()
 
@@ -379,7 +386,10 @@ class ParfumoUpdater:
                 'currently_updating': self.currently_updating,
                 'update_progress': self.update_progress,
                 'update_message': self.update_message,
-                'total_mapped': total_mapped,
+                'total_fragrances': total_fragrances,
+                'total_extracted': total_extracted,
+                'total_linked': total_linked,
+                'total_mapped': total_linked,  # Legacy compatibility
                 'total_not_found': total_not_found,
                 'total_with_ratings': total_with_ratings,
                 'last_full_update': last_full_update

@@ -120,8 +120,23 @@ class PushoverNotifier(NotificationService):
 
     def _send_notification(self, drop: Dict) -> bool:
         """Internal method to send notification via Pushover"""
-        title = f"🚨 FragDrop: {drop.get('author', 'Unknown')}"
-        message = f"{drop['title'][:100]}\n\nConfidence: {drop.get('confidence', 0) * 100:.0f}%"
+        # Detect if this is a stock notification (author = 'Stock Monitor')
+        is_stock_notification = drop.get('author') == 'Stock Monitor'
+
+        if is_stock_notification:
+            # Stock notification formatting
+            title = f"🛍️ {drop['title']}"
+            message = drop.get('message', drop['title'])
+            metadata = drop.get('detection_metadata', {})
+            price = metadata.get('price', '')
+            if price:
+                message += f"\n\nPrice: {price}"
+            url_title = "View Product"
+        else:
+            # Reddit drop notification formatting
+            title = f"🚨 FragDrop: {drop.get('author', 'Unknown')}"
+            message = f"{drop['title'][:100]}\n\nConfidence: {drop.get('confidence', 0) * 100:.0f}%"
+            url_title = "View on Reddit"
 
         data = {
             "token": self.app_token,
@@ -129,7 +144,7 @@ class PushoverNotifier(NotificationService):
             "title": title,
             "message": message,
             "url": drop.get("url", ""),
-            "url_title": "View on Reddit",
+            "url_title": url_title,
             "priority": 1,
             "sound": "cashregister"
         }

@@ -163,7 +163,8 @@ class ParfumoScheduler:
         try:
             import yaml
 
-            self.config['parfumo']['last_update'] = datetime.now().isoformat()
+            # Store timestamp in UTC with Z suffix for proper timezone handling
+            self.config['parfumo']['last_update'] = datetime.utcnow().isoformat() + 'Z'
 
             # Save config
             with open('config/config.yaml', 'w') as f:
