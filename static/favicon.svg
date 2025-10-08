@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Perfume bottle body -->
+  <path d="M24 28h16v24c0 3.314-2.686 6-6 6h-4c-3.314 0-6-2.686-6-6V28z" fill="#3B82F6"/>
+
+  <!-- Bottle neck -->
+  <rect x="28" y="18" width="8" height="10" rx="1" fill="#60A5FA"/>
+
+  <!-- Bottle cap -->
+  <rect x="26" y="12" width="12" height="6" rx="2" fill="#93C5FD"/>
+
+  <!-- Droplet accent -->
+  <path d="M32 6c-2 3-4 6-4 8.5 0 2.21 1.79 4 4 4s4-1.79 4-4c0-2.5-2-5.5-4-8.5z" fill="#DBEAFE"/>
+
+  <!-- Shine effect -->
+  <ellipse cx="28" cy="38" rx="2" ry="6" fill="#DBEAFE" opacity="0.3"/>
+</svg>

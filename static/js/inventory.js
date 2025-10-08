@@ -11,6 +11,7 @@ const InventoryManager = {
     selectedItems: new Set(),
     watchlistOnly: false,
     compactMode: false,
+    selectedGenders: new Set(),
 
     init() {
         this.bindEvents();
@@ -53,7 +54,9 @@ const InventoryManager = {
 
         // Filter dropdowns
         document.getElementById('stock-filter')?.addEventListener('change', () => this.applyFilters(true));
-        document.getElementById('gender-filter')?.addEventListener('change', () => this.applyFilters(true));
+
+        // Multi-select gender filter
+        this.initGenderFilter();
 
         // Sort dropdown
         document.getElementById('sort-select')?.addEventListener('change', (e) => {
@@ -77,6 +80,60 @@ const InventoryManager = {
         // Pagination
         document.getElementById('prev-page')?.addEventListener('click', () => this.changePage(-1));
         document.getElementById('next-page')?.addEventListener('click', () => this.changePage(1));
+    },
+
+    initGenderFilter() {
+        const button = document.getElementById('gender-filter-button');
+        const container = document.getElementById('gender-filter-container');
+        const dropdown = document.getElementById('gender-filter-dropdown');
+        const checkboxes = document.querySelectorAll('.gender-checkbox');
+        const clearButton = document.getElementById('gender-filter-clear');
+
+        if (!button || !container || !dropdown) return;
+
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            container.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                container.classList.remove('open');
+            }
+        });
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    this.selectedGenders.add(checkbox.value);
+                } else {
+                    this.selectedGenders.delete(checkbox.value);
+                }
+                this.updateGenderLabel();
+                this.applyFilters(true);
+            });
+        });
+
+        clearButton?.addEventListener('click', () => {
+            this.selectedGenders.clear();
+            checkboxes.forEach(cb => cb.checked = false);
+            this.updateGenderLabel();
+            this.applyFilters(true);
+        });
+    },
+
+    updateGenderLabel() {
+        const label = document.getElementById('gender-filter-label');
+        if (!label) return;
+
+        if (this.selectedGenders.size === 0) {
+            label.textContent = 'All Genders';
+        } else if (this.selectedGenders.size === 1) {
+            const gender = Array.from(this.selectedGenders)[0];
+            label.textContent = gender.charAt(0).toUpperCase() + gender.slice(1);
+        } else {
+            label.textContent = `${this.selectedGenders.size} Genders`;
+        }
     },
 
     async loadInventory() {
@@ -114,7 +171,6 @@ const InventoryManager = {
         // Get filter values
         const searchTerm = document.getElementById('inventory-search')?.value.toLowerCase() || '';
         const stockFilter = document.getElementById('stock-filter')?.value;
-        const genderFilter = document.getElementById('gender-filter')?.value;
 
         // Filter items
         this.filteredItems = this.allItems.filter(item => {
@@ -131,8 +187,8 @@ const InventoryManager = {
                 if (item.in_stock !== inStock) return false;
             }
 
-            // Gender filter
-            if (genderFilter && item.gender !== genderFilter) {
+            // Gender filter (multi-select)
+            if (this.selectedGenders.size > 0 && !this.selectedGenders.has(item.gender)) {
                 return false;
             }
 

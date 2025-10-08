@@ -916,3 +916,122 @@
         padding: var(--space-3);
     }
 }
+
+/* Multi-Select Filter Styles */
+.multi-select-filter {
+    position: relative;
+    display: inline-block;
+}
+
+.multi-select-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-width: 140px;
+}
+
+.dropdown-arrow {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.multi-select-filter.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.multi-select-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 180px;
+    background: var(--surface);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--rounded-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-2);
+    z-index: 100;
+    display: none;
+}
+
+.multi-select-filter.open .multi-select-dropdown {
+    display: block;
+}
+
+.multi-select-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    border-radius: var(--rounded);
+    transition: background-color 0.15s ease;
+}
+
+.multi-select-option:hover {
+    background: var(--gray-50);
+}
+
+.multi-select-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.multi-select-option span {
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    user-select: none;
+}
+
+.multi-select-actions {
+    border-top: 1px solid var(--gray-200);
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.multi-select-clear {
+    padding: var(--space-1) var(--space-3);
+    background: transparent;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--rounded);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.multi-select-clear:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    color: var(--text-primary);
+}
+
+/* Dark mode support for multi-select */
+[data-theme="dark"] .multi-select-dropdown {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .multi-select-option:hover {
+    background: var(--surface-3);
+}
+
+[data-theme="dark"] .multi-select-actions {
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .multi-select-clear {
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .multi-select-clear:hover {
+    background: var(--surface-3);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}

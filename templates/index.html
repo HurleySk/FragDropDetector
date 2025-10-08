@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>FragDropDetector</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/design-system.css?v=42">
     <link rel="stylesheet" href="/static/css/base.css?v=42">
     <link rel="stylesheet" href="/static/css/theme.css?v=42">
@@ -315,12 +316,29 @@
                                 <option value="false">Out of Stock</option>
                             </select>
 
-                            <select id="gender-filter" class="filter-select">
-                                <option value="">All Genders</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="unisex">Unisex</option>
-                            </select>
+                            <div class="multi-select-filter" id="gender-filter-container">
+                                <button class="filter-select multi-select-button" id="gender-filter-button">
+                                    <span id="gender-filter-label">All Genders</span>
+                                    <span class="dropdown-arrow">▼</span>
+                                </button>
+                                <div class="multi-select-dropdown" id="gender-filter-dropdown">
+                                    <label class="multi-select-option">
+                                        <input type="checkbox" value="male" class="gender-checkbox">
+                                        <span>Male</span>
+                                    </label>
+                                    <label class="multi-select-option">
+                                        <input type="checkbox" value="female" class="gender-checkbox">
+                                        <span>Female</span>
+                                    </label>
+                                    <label class="multi-select-option">
+                                        <input type="checkbox" value="unisex" class="gender-checkbox">
+                                        <span>Unisex</span>
+                                    </label>
+                                    <div class="multi-select-actions">
+                                        <button class="multi-select-clear" id="gender-filter-clear">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
 
                             <select id="sort-select" class="filter-select">
                                 <option value="name">Sort by Name</option>

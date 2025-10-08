@@ -329,7 +329,8 @@ class ParfumoUpdater:
                         slug=slug,
                         parfumo_id=rating_data.get('parfumo_id', parfumo_id),
                         score=rating_data.get('score'),
-                        votes=rating_data.get('votes')
+                        votes=rating_data.get('votes'),
+                        gender=rating_data.get('gender')
                     )
                     return True
 
