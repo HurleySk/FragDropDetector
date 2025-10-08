@@ -10,8 +10,9 @@ function displayRecentActivity(drops, stockChanges) {
         ...drops.map(drop => ({ ...drop, type: 'drop' })),
         ...stockChanges.map(change => ({ ...change, type: 'stock' }))
     ].sort((a, b) => {
-        const aTime = a.created_at || a.timestamp || 0;
-        const bTime = b.created_at || b.timestamp || 0;
+        // Use DateUtils to parse timestamps properly
+        const aTime = window.DateUtils.toUnixMillis(a.created_at || a.detected_at);
+        const bTime = window.DateUtils.toUnixMillis(b.created_at || b.detected_at);
         return bTime - aTime;
     }).slice(0, 5);
 
@@ -33,7 +34,7 @@ function displayRecentActivity(drops, stockChanges) {
                         <div class="activity-title">${item.title || 'Drop Detected'}</div>
                         <div class="activity-meta">
                             <span class="activity-confidence">Confidence: ${Math.round((item.confidence || 0) * 100)}%</span>
-                            <span class="activity-time">${formatTimeAgo(item.created_at)}</span>
+                            <span class="activity-time">${window.DateUtils.formatTimeAgo(item.created_at)}</span>
                         </div>
                     </div>
                     ${item.url ? `<a href="${item.url}" target="_blank" class="activity-link">View</a>` : ''}
@@ -47,7 +48,7 @@ function displayRecentActivity(drops, stockChanges) {
                         <div class="activity-title">${item.change_type || 'Stock Change'}</div>
                         <div class="activity-meta">
                             <span class="activity-fragrance">${item.fragrance_name || 'Unknown'}</span>
-                            <span class="activity-time">${formatTimeAgo(item.timestamp)}</span>
+                            <span class="activity-time">${window.DateUtils.formatTimeAgo(item.detected_at)}</span>
                         </div>
                     </div>
                 </div>

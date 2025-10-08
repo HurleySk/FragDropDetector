@@ -234,6 +234,9 @@ async def get_status():
         stock_window = calculate_window_status(config, "stock")
         watchlist_alerts = get_watchlist_alerts(db, config)
 
+        # Get configured timezone
+        timezone = config.get('drop_window', {}).get('timezone', 'America/New_York')
+
         return {
             "running": monitor_status["running"],
             "monitor_status": monitor_status,
@@ -247,7 +250,8 @@ async def get_status():
             "reddit_status": reddit_status,
             "reddit_window": reddit_window,
             "stock_window": stock_window,
-            "watchlist_alerts": watchlist_alerts
+            "watchlist_alerts": watchlist_alerts,
+            "timezone": timezone
         }
 
     except Exception as e:

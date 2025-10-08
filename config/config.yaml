@@ -67,7 +67,7 @@ parfumo:
   auto_scrape_new: true
   enabled: true
   fragscrape_url: http://localhost:3000
-  last_update: '2025-10-08T15:28:01.722649Z'
+  last_update: '2025-10-08T17:25:54.759132Z'
   rate_limit_delay: 2.0
   update_time: 02:00
 reddit:

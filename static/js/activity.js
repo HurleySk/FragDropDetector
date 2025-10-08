@@ -69,12 +69,12 @@ function combineAndSortActivity(drops, stockChanges) {
         ...(drops || []).map(drop => ({
             ...drop,
             type: 'drop',
-            timestamp: new Date(drop.created_at).getTime()
+            timestamp: window.DateUtils.toUnixMillis(drop.created_at)
         })),
         ...(stockChanges || []).map(change => ({
             ...change,
             type: 'stock',
-            timestamp: new Date(change.timestamp || change.detected_at).getTime()
+            timestamp: window.DateUtils.toUnixMillis(change.detected_at)
         }))
     ];
 
@@ -167,15 +167,7 @@ function renderActivityEvent(event) {
 }
 
 function renderDropEvent(drop) {
-    const dropDate = new Date(drop.timestamp);
-    const time = dropDate.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-    }) + ', ' + dropDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
+    const time = window.DateUtils.formatDateTime(drop.timestamp);
 
     const confidencePercent = Math.round((drop.confidence || 0) * 100);
     const confidenceClass = confidencePercent >= 80 ? 'high' : confidencePercent >= 60 ? 'medium' : 'low';
@@ -210,15 +202,7 @@ function renderDropEvent(drop) {
 }
 
 function renderStockEvent(change) {
-    const changeDate = new Date(change.timestamp);
-    const time = changeDate.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-    }) + ', ' + changeDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
+    const time = window.DateUtils.formatDateTime(change.timestamp);
 
     const changeTypeLabel = {
         'restocked': 'Restocked',

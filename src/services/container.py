@@ -63,7 +63,8 @@ class ServiceContainer:
             from config.constants import DatabaseConfig
 
             db_path = self.config.get('database', {}).get('path', DatabaseConfig.DEFAULT_PATH)
-            self._instances['database'] = Database(db_path)
+            # Inject timezone manager for timezone-aware datetime handling
+            self._instances['database'] = Database(db_path, timezone_manager=self.timezone_manager)
 
         return self._instances['database']
 
@@ -136,6 +137,16 @@ class ServiceContainer:
             self._instances['log_manager'] = LogManager(logging_config)
 
         return self._instances['log_manager']
+
+    @property
+    def timezone_manager(self):
+        """Get TimezoneManager instance"""
+        if 'timezone_manager' not in self._instances:
+            from utils.timezone import TimezoneManager
+            timezone = self.config.get('drop_window', {}).get('timezone', 'America/New_York')
+            self._instances['timezone_manager'] = TimezoneManager(timezone)
+
+        return self._instances['timezone_manager']
 
     @property
     def fragrance_mapper(self):

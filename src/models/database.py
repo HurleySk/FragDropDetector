@@ -115,12 +115,13 @@ class StockChange(Base):
 class Database:
     """Database manager class"""
 
-    def __init__(self, db_path: Optional[str] = None) -> None:
+    def __init__(self, db_path: Optional[str] = None, timezone_manager=None) -> None:
         """
         Initialize database connection
 
         Args:
             db_path: Path to SQLite database file
+            timezone_manager: Optional TimezoneManager instance for timezone-aware operations
         """
         if db_path is None:
             db_path = os.path.join(os.getcwd(), 'data', 'fragdrop.db')
@@ -146,9 +147,20 @@ class Database:
             expire_on_commit=False
         )
 
+        # Store timezone manager (lazy load if not provided)
+        self._timezone_manager = timezone_manager
+
         # Create tables
         Base.metadata.create_all(self.engine)
         logger.info(f"Database initialized at {db_path}")
+
+    @property
+    def timezone_manager(self):
+        """Get or create timezone manager instance"""
+        if self._timezone_manager is None:
+            from utils.timezone import get_timezone_manager
+            self._timezone_manager = get_timezone_manager()
+        return self._timezone_manager
 
     def get_session(self) -> Session:
         """Get a new database session"""
@@ -346,7 +358,7 @@ class Database:
                     'author': post.author,
                     'url': post.url,
                     'confidence': drop.confidence_score,
-                    'created_at': drop.created_at.isoformat(),
+                    'created_at': self.timezone_manager.to_iso_with_tz(drop.created_at),
                     'notified': drop.notified,
                     'metadata': json.loads(drop.detection_metadata) if drop.detection_metadata else {}
                 })
@@ -435,7 +447,7 @@ class Database:
                     'change_type': change.change_type,
                     'old_value': change.old_value,
                     'new_value': change.new_value,
-                    'detected_at': change.detected_at.isoformat(),
+                    'detected_at': self.timezone_manager.to_iso_with_tz(change.detected_at),
                     'notified': change.notified,
                     'product_url': fragrance.url
                 })
@@ -454,7 +466,7 @@ class Database:
                     'url': f.url,
                     'price': f.price,
                     'in_stock': f.in_stock,
-                    'last_seen': f.last_seen.isoformat(),
+                    'last_seen': self.timezone_manager.to_iso_with_tz(f.last_seen),
                     'original_brand': f.original_brand,
                     'original_name': f.original_name,
                     'parfumo_id': f.parfumo_id,
@@ -462,7 +474,7 @@ class Database:
                     'parfumo_votes': f.parfumo_votes,
                     'gender': f.gender,
                     'parfumo_not_found': f.parfumo_not_found,
-                    'rating_last_updated': f.rating_last_updated.isoformat() if f.rating_last_updated else None
+                    'rating_last_updated': self.timezone_manager.to_iso_with_tz(f.rating_last_updated)
                 } for f in fragrances
             }
         finally:
