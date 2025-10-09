@@ -463,6 +463,47 @@
     color: var(--text-muted);
 }
 
+.parfumo-score-placeholder {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Parfumo Refresh Button */
+.parfumo-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    border-radius: var(--rounded);
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.parfumo-refresh-btn:hover:not(:disabled) {
+    background: var(--blue-50);
+    color: var(--blue-600);
+    transform: scale(1.1);
+}
+
+.parfumo-refresh-btn.updating {
+    animation: spin 1s linear infinite;
+    color: var(--blue-600);
+    cursor: not-allowed;
+}
+
+.parfumo-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Mobile text optimization */
 @media (max-width: 480px) {
     .item-name {
@@ -734,6 +775,23 @@
 
 [data-theme="dark"] .parfumo-votes {
     color: var(--text-muted);
+}
+
+[data-theme="dark"] .parfumo-score-placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .parfumo-refresh-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .parfumo-refresh-btn:hover:not(:disabled) {
+    background: rgba(37, 99, 235, 0.2);
+    color: var(--blue-400);
+}
+
+[data-theme="dark"] .parfumo-refresh-btn.updating {
+    color: var(--blue-400);
 }
 
 [data-theme="dark"] .search-input,

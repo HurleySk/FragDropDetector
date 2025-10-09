@@ -170,6 +170,13 @@ const ParfumoService = {
 
     async triggerUpdate() {
         return await apiClient.post(endpoints.parfumo.update());
+    },
+
+    async updateSingleFragrance(slug) {
+        const result = await apiClient.post(endpoints.parfumo.updateSingle(slug));
+        // Clear fragrance cache to reflect changes
+        apiClient.clearCache('/api/stock/fragrances');
+        return result;
     }
 };
 

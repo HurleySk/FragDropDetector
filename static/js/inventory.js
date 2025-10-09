@@ -12,10 +12,27 @@ const InventoryManager = {
     watchlistOnly: false,
     compactMode: false,
     selectedGenders: new Set(),
+    // Parfumo integration state
+    parfumoEnabled: false,
+    fragscrapeAvailable: false,
+    updatingFragrances: new Set(),
 
     init() {
         this.bindEvents();
+        this.loadParfumoStatus();
         this.loadInventory();
+    },
+
+    async loadParfumoStatus() {
+        try {
+            const status = await ParfumoService.getStatus();
+            this.parfumoEnabled = status.config?.enabled || false;
+            this.fragscrapeAvailable = status.fragscrape_available || false;
+        } catch (error) {
+            console.error('Error loading Parfumo status:', error);
+            this.parfumoEnabled = false;
+            this.fragscrapeAvailable = false;
+        }
     },
 
     bindEvents() {
@@ -288,17 +305,32 @@ const InventoryManager = {
 
         // Build rating display if we have Parfumo score
         let ratingHtml = '';
-        if (item.parfumo_score) {
+        const isUpdating = this.updatingFragrances.has(item.slug);
+        const canRefresh = this.parfumoEnabled && this.fragscrapeAvailable;
+
+        if (item.parfumo_score || canRefresh) {
             const votesDisplay = item.parfumo_votes
                 ? `<span class="parfumo-votes">(${item.parfumo_votes.toLocaleString()} votes)</span>`
                 : '';
 
             // Create link if we have a Parfumo URL
-            const scoreContent = item.parfumo_url
-                ? `<a href="${item.parfumo_url}" target="_blank" class="parfumo-link">
-                     <span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>
-                   </a>`
-                : `<span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>`;
+            const scoreContent = item.parfumo_score
+                ? (item.parfumo_url
+                    ? `<a href="${item.parfumo_url}" target="_blank" class="parfumo-link">
+                         <span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>
+                       </a>`
+                    : `<span class="parfumo-score">${item.parfumo_score.toFixed(1)}/10</span>`)
+                : `<span class="parfumo-score-placeholder">No rating</span>`;
+
+            // Add refresh button if Parfumo integration is available
+            const refreshButton = canRefresh
+                ? `<button class="parfumo-refresh-btn ${isUpdating ? 'updating' : ''}"
+                           data-slug="${item.slug}"
+                           ${isUpdating ? 'disabled' : ''}
+                           title="Refresh Parfumo data">
+                       ${isUpdating ? '⟳' : '↻'}
+                   </button>`
+                : '';
 
             ratingHtml = `
                 <div class="item-rating">
@@ -306,6 +338,7 @@ const InventoryManager = {
                         <span class="parfumo-label">Parfumo:</span>
                         ${scoreContent}
                         ${votesDisplay}
+                        ${refreshButton}
                     </div>
                 </div>
             `;
@@ -363,6 +396,15 @@ const InventoryManager = {
                 }
 
                 this.updateBulkActionsBar();
+            });
+        });
+
+        // Parfumo refresh buttons
+        document.querySelectorAll('.parfumo-refresh-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const slug = e.target.dataset.slug;
+                await this.refreshParfumoData(slug);
             });
         });
     },
@@ -495,6 +537,52 @@ const InventoryManager = {
         document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = false);
         document.querySelectorAll('.inventory-item').forEach(item => item.classList.remove('selected'));
         this.updateBulkActionsBar();
+    },
+
+    async refreshParfumoData(slug) {
+        if (!this.parfumoEnabled || !this.fragscrapeAvailable) {
+            if (window.showAlert) {
+                showAlert('Parfumo integration is not available', 'error');
+            }
+            return;
+        }
+
+        try {
+            // Mark as updating
+            this.updatingFragrances.add(slug);
+            this.renderGrid();
+
+            // Call API to refresh Parfumo data
+            const result = await ParfumoService.updateSingleFragrance(slug);
+
+            if (result.success && result.rating) {
+                // Update local data with new rating
+                const item = this.allItems.find(i => i.slug === slug);
+                if (item) {
+                    item.parfumo_score = result.rating.score;
+                    item.parfumo_votes = result.rating.votes;
+                    item.gender = result.rating.gender || item.gender;
+                    item.parfumo_url = result.rating.parfumo_url || item.parfumo_url;
+                }
+
+                if (window.showAlert) {
+                    showAlert('Parfumo data updated successfully', 'success');
+                }
+            } else {
+                if (window.showAlert) {
+                    showAlert(result.message || 'Failed to update Parfumo data', 'warning');
+                }
+            }
+        } catch (error) {
+            console.error('Error refreshing Parfumo data:', error);
+            if (window.showAlert) {
+                showAlert('Failed to refresh Parfumo data', 'error');
+            }
+        } finally {
+            // Remove from updating set and re-render
+            this.updatingFragrances.delete(slug);
+            this.renderGrid();
+        }
     },
 
     async bulkAddToWatchlist() {

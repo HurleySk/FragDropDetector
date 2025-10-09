@@ -84,7 +84,8 @@ const endpoints = {
     // Parfumo endpoints
     parfumo: {
         status: () => '/api/parfumo/status',
-        update: () => '/api/parfumo/update'
+        update: () => '/api/parfumo/update',
+        updateSingle: (slug) => `/api/parfumo/update/${slug}`
     }
 };
 

@@ -139,6 +139,52 @@ async def get_unmatched_fragrances():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/api/parfumo/update/{slug}")
+async def update_single_fragrance(slug: str):
+    """Manually trigger Parfumo update for a specific fragrance"""
+    try:
+        from services.parfumo_updater import get_parfumo_updater
+        from services.fragscrape_client import get_fragscrape_client
+        from src.models.database import Database
+
+        # Check fragscrape availability
+        client = get_fragscrape_client()
+        if not client.health_check():
+            return {
+                "success": False,
+                "message": "fragscrape API is not available. Please ensure fragscrape is running."
+            }
+
+        updater = get_parfumo_updater()
+        success = updater.update_single_fragrance(slug)
+
+        if success:
+            # Get updated data to return
+            db = Database()
+            fragrances = db.get_all_fragrances()
+            frag_data = fragrances.get(slug, {})
+
+            return {
+                "success": True,
+                "message": "Parfumo data updated successfully",
+                "rating": {
+                    "score": frag_data.get('parfumo_score'),
+                    "votes": frag_data.get('parfumo_votes'),
+                    "gender": frag_data.get('gender'),
+                    "parfumo_url": frag_data.get('parfumo_id')
+                }
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to update Parfumo data. The fragrance may not have a Parfumo match."
+            }
+
+    except Exception as e:
+        logger.error("Failed to update single fragrance", error=str(e), slug=slug)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/api/parfumo/manual-url")
 async def set_manual_parfumo_url(request: dict):
     """Manually set Parfumo URL for a fragrance and fetch its rating"""
