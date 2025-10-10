@@ -346,7 +346,7 @@ class FragDropMonitor:
                     })
                     notifications_to_send.append({
                         'title': f'Watchlist Item Back in Stock!',
-                        'url': f"https://www.montagneparfums.com{product.url}",
+                        'url': product.url,
                         'price': product.price,
                         'change_type': 'watchlist_restock',
                         'message': f'{product.name} is now available'
@@ -363,7 +363,7 @@ class FragDropMonitor:
                 })
                 notifications_to_send.append({
                     'title': f'New Fragrance: {product.name}',
-                    'url': f"https://www.montagneparfums.com{product.url}",
+                    'url': product.url,
                     'price': product.price,
                     'change_type': 'new_product'
                 })
@@ -388,7 +388,7 @@ class FragDropMonitor:
                 })
                 notifications_to_send.append({
                     'title': f'Restocked: {product.name}',
-                    'url': f"https://www.montagneparfums.com{product.url}",
+                    'url': product.url,
                     'price': product.price,
                     'change_type': 'restock'
                 })
@@ -405,7 +405,7 @@ class FragDropMonitor:
                 })
                 notifications_to_send.append({
                     'title': f'Price Change: {product.name}',
-                    'url': f"https://www.montagneparfums.com{product.url}",
+                    'url': product.url,
                     'price': f"{change['old_price']} → {change['new_price']}",
                     'change_type': 'price_change'
                 })
