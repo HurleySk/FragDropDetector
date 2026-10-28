@@ -9,7 +9,7 @@ User=pi
 Group=pi
 WorkingDirectory=/home/pi/source/FragDropDetector
 Environment="PATH=/usr/bin:/usr/local/bin"
-ExecStart=/usr/bin/python3 /home/pi/source/FragDropDetector/web_server.py
+ExecStart=/home/pi/source/FragDropDetector/venv/bin/python /home/pi/source/FragDropDetector/web_server.py
 Restart=always
 RestartSec=30
 

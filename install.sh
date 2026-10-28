@@ -199,12 +199,12 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]; then
 
     # Update service files with correct paths
     sed -i "s|WorkingDirectory=.*|WorkingDirectory=$WORKING_DIR|g" fragdrop.service
-    sed -i "s|ExecStart=.*|ExecStart=/usr/bin/python3 $WORKING_DIR/main.py|g" fragdrop.service
+    sed -i "s|ExecStart=.*|ExecStart=$WORKING_DIR/venv/bin/python $WORKING_DIR/main.py|g" fragdrop.service
     sed -i "s|User=.*|User=$USER|g" fragdrop.service
 
     if [ -f "fragdrop-web.service" ]; then
         sed -i "s|WorkingDirectory=.*|WorkingDirectory=$WORKING_DIR|g" fragdrop-web.service
-        sed -i "s|ExecStart=.*|ExecStart=/usr/bin/python3 $WORKING_DIR/web_server.py|g" fragdrop-web.service
+        sed -i "s|ExecStart=.*|ExecStart=$WORKING_DIR/venv/bin/python $WORKING_DIR/web_server.py|g" fragdrop-web.service
         sed -i "s|User=.*|User=$USER|g" fragdrop-web.service
     fi
 
