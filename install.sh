@@ -102,7 +102,12 @@ print_info "Installing Chromium browser for web scraping..."
 playwright install chromium
 playwright install-deps chromium
 
-# Step 5: Create default .env file if it doesn't exist
+# Step 5: Create default config.yaml and .env files if they don't exist
+if [ ! -f "config/config.yaml" ]; then
+    cp config/config.example.yaml config/config.yaml
+    print_info "config/config.yaml created from template"
+fi
+
 if [ ! -f ".env" ]; then
     print_info "Creating configuration file..."
     cp .env.example .env

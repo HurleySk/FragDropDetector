@@ -127,6 +127,7 @@ playwright install chromium
 
 # 4. Configure environment
 cp .env.example .env
+cp config/config.example.yaml config/config.yaml
 # Edit .env with your Reddit API credentials
 nano .env
 
@@ -620,7 +621,8 @@ FragDropDetector/
 │   └── test_service_container.py # Container tests
 │
 ├── config/
-│   └── config.yaml               # User configuration
+│   ├── config.example.yaml       # Template (tracked)
+│   └── config.yaml               # User configuration (untracked; the app rewrites it)
 ├── data/
 │   ├── fragdrop.db               # SQLite database
 │   └── parfumo_status.json       # Parfumo update status

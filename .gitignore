@@ -96,6 +96,7 @@ test_fcm.py
 
 # Config overrides (keep example)
 config/config.local.yaml
+config/config.yaml
 
 # Systemd logs
 systemd.log
