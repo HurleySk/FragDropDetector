@@ -287,7 +287,8 @@ class EnhancedStockMonitor:
                 return products
 
             finally:
-                await page.close()
+                # Close the context, not just the page: each _create_page opens one
+                await page.context.close()
 
         return await self.retry_strategy.execute(fetch)
 
@@ -328,6 +329,7 @@ class EnhancedStockMonitor:
         """Get detailed information for a specific product"""
         url = f"{self.base_url}/fragrance/{product_slug}"
 
+        page = None
         try:
             page = await self._create_page()
             await page.goto(url, wait_until='networkidle')
@@ -348,8 +350,6 @@ class EnhancedStockMonitor:
                 };
             }''')
 
-            await page.close()
-
             return FragranceProduct(
                 name=product_data['name'],
                 slug=product_slug,
@@ -364,6 +364,9 @@ class EnhancedStockMonitor:
         except Exception as e:
             logger.error(f"Failed to get product details for {product_slug}: {e}")
             return None
+        finally:
+            if page:
+                await page.context.close()
 
     async def monitor_watchlist(self) -> Dict[str, FragranceProduct]:
         """Monitor only products in the watchlist"""
